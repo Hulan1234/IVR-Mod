@@ -501,42 +501,54 @@ public class IVRRouteMapGenerator implements IGui {
                                 if (!interchangeColors.isEmpty() && !currentStation && !passed) {
                                     int lineHeight = lineSize * 2;
                                     int lineWidth = (int) Math.ceil((float) lineSize / 4 / (float) interchangeColors.size());
-                                    int iconX, iconY;
-                                    if (vertical) {
-                                        iconX = x - 76 - lineSize / 2;
-                                        iconY = y - 108 / 2;
-                                    } else {
-                                        iconX = x - 76 / 2;
-                                        iconY = y - 108 - lineSize / 2 - (textBelow ? 0 : lines * lineSpacing);
-                                    }
+                                    int trainHeight = 74;
+                                    int trainWidth = (int) (62 / (float) interchangeColors.size());
                                     for (int i = 0; i < interchangeColors.size(); ++i) {
                                         for (int drawX = 0; drawX < lineWidth; ++drawX) {
                                             for (int drawY = 0; drawY < lineHeight; ++drawY) {
                                                 drawPixelSafe(
                                                         nativeImage,
                                                         x + drawX + lineWidth * i - lineWidth * interchangeColors.size() / 2,
-                                                        y + (textBelow ? -1 : lines * lineSpacing) + (textBelow ? -drawY : drawY),
+                                                        y - 1 - drawY,
                                                         -16777216 | interchangeColors.get(i));
                                             }
                                         }
                                         drawResource(
                                                 nativeImage,
                                                 "textures/block/sign/train.png",
-                                                x + 76 * i - 76 * interchangeColors.size() / 2,
-                                                y + (textBelow ? 0 : lines * lineSpacing + lineHeight),
-                                                76,
-                                                108,
-                                                true,
-                                                0.0F,
-                                                1.0F,
+                                                x - trainWidth * interchangeColors.size() / 2,
+                                                y - 1 - 2 * lineHeight,
+                                                62,
+                                                trainHeight,
+                                                false,
+                                                (float) i / (float) interchangeColors.size(),
+                                                ((float) i + 1.0F) / (float) interchangeColors.size(),
                                                 0.0F,
                                                 1.0F,
                                                 -16777216 | interchangeColors.get(i),
                                                 false);
                                     }
                                     int[] dimensionsX = new int[2];
-                                    byte[] pixelsX = clientCache.getTextPixels(IGui.mergeStations(stationPositionGrouped.interchangeNames), dimensionsX, maxStringWidth - (vertical ? lineHeight : 0), (int) ((float) (fontSizeBig + fontSizeSmall) * 1.25F / 2.0F), fontSizeBig / 2, fontSizeSmall / 2, 0, vertical ? HorizontalAlignment.LEFT : HorizontalAlignment.CENTER);
-                                    drawString(nativeImage, pixelsX, x, y + (textBelow ? -1 - lineHeight : lines * lineSpacing + lineHeight), dimensionsX, HorizontalAlignment.CENTER, textBelow ? VerticalAlignment.BOTTOM : VerticalAlignment.TOP, 0, -16777216, vertical);
+                                    byte[] pixelsX = clientCache.getTextPixels(
+                                            IGui.mergeStations(stationPositionGrouped.interchangeNames),
+                                            dimensionsX,
+                                            maxStringWidth - (vertical ? lineHeight : 0),
+                                            (int) ((float) (fontSizeBig + fontSizeSmall) * 1.25F / 2.0F),
+                                            fontSizeBig / 2,
+                                            fontSizeSmall / 2,
+                                            0,
+                                            vertical ? HorizontalAlignment.LEFT : HorizontalAlignment.CENTER);
+                                    drawString(
+                                            nativeImage,
+                                            pixelsX,
+                                            x,
+                                            y - 2 - lineHeight - trainHeight,
+                                            dimensionsX,
+                                            HorizontalAlignment.CENTER,
+                                            VerticalAlignment.BOTTOM,
+                                            0,
+                                            -16777216,
+                                            vertical);
                                 }
                                 drawStation(nativeImage, x, y, heightScale, lines, getLineColor(currentStation, passed, route.color), currentStation ? 1.25F : 1.0F);
                                 if (currentStation) {
@@ -583,10 +595,10 @@ public class IVRRouteMapGenerator implements IGui {
                                             nativeImage,
                                             pixels,
                                             x,
-                                            y + (textBelow ? lines * lineSpacing : -1) + (textBelow ? 1 : -1) * lineSize * 5 / 4,
+                                            y + lines * lineSpacing + lineSize * 5 / 4,
                                             dimensions,
                                             HorizontalAlignment.CENTER,
-                                            textBelow ? VerticalAlignment.TOP : VerticalAlignment.BOTTOM,
+                                            VerticalAlignment.TOP,
                                             0,
                                             currentStation ? ARGB_BLACK : -5592406,
                                             vertical);
@@ -609,16 +621,6 @@ public class IVRRouteMapGenerator implements IGui {
         return null;
     }
 
-    private static int darkenColor(int color) {
-        int r = (color >> 16) & 0xFF;
-        int g = (color >> 8) & 0xFF;
-        int b = color & 0xFF;
-        r = (int) (r * lightFactor);
-        g = (int) (g * lightFactor);
-        b = (int) (b * lightFactor);
-        return 0xFF000000 | (r << 16) | (g << 8) | b;
-    }
-
     private static int lightenColor(int color) {
         int r = (color >> 16) & 0xFF;
         int g = (color >> 8) & 0xFF;
@@ -631,11 +633,11 @@ public class IVRRouteMapGenerator implements IGui {
 
     private static int getLineColor(boolean current, boolean passed, int color) {
         if (current) {
-            return darkenColor(color);
+            return ARGB_BLACK | 0xFFD100;
         } else if (passed) {
             return lightenColor(color);
         } else {
-            return  -16777216 | color;
+            return -16777216 | color;
         }
     }
 
