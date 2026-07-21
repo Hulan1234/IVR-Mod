@@ -22,10 +22,10 @@ dependencies {
 sourceSets {
     main {
         java {
-            srcDirs = ['../src/main/java']  // 指向共用源码
+            srcDirs = ['../common/main/java', '/src/main/java']  // 指向共用源码
         }
         resources {
-            srcDirs = ['../src/main/resources']
+            srcDirs = ['../common/main/resources', '/src/main/resources']
         }
     }
 }
