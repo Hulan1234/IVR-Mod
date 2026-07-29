@@ -28,9 +28,9 @@ public class ItemKCRPlatformCellSideOSWithLight extends ItemWithCreativeTabBase 
         BlockPlaceContext _next = BlockPlaceContext.at(_this, pos.relative(facing), context.getClickedFace());
         if (IBlock.isReplaceable(_this, Direction.UP, 2) && IBlock.isReplaceable(_this, facing, 2) && IBlock.isReplaceable(_next, Direction.UP, 2)) {
             BlockPos newPos = pos.relative(facing);
-            world.setBlock(pos, KP_CELL_SIDE.get().defaultBlockState().setValue(BlockKCRPlatformCellSide.FACING, facing).setValue(BlockKCRPlatformCellSide.STYLE, BlockKCRPlatformCellSide.Style.SIDE_1_OS_WITH_LIGHT), 3);
+            world.setBlock(pos, KP_CELL_SIDE_WITH_LIGHT.get().defaultBlockState().setValue(BlockKCRPlatformCellSide.FACING, facing).setValue(BlockKCRPlatformCellSide.STYLE, BlockKCRPlatformCellSide.Style.SIDE_1_OS_WITH_LIGHT), 3);
             world.setBlock(pos.above(), KP_CELL_SIDE.get().defaultBlockState().setValue(BlockKCRPlatformCellSide.FACING, facing).setValue(BlockKCRPlatformCellSide.STYLE, BlockKCRPlatformCellSide.Style.SIDE_3_OS), 3);
-            world.setBlock(newPos, KP_CELL_SIDE.get().defaultBlockState().setValue(BlockKCRPlatformCellSide.FACING, facing).setValue(BlockKCRPlatformCellSide.STYLE, BlockKCRPlatformCellSide.Style.SIDE_2_OS_WITH_LIGHT), 3);
+            world.setBlock(newPos, KP_CELL_SIDE_WITH_LIGHT.get().defaultBlockState().setValue(BlockKCRPlatformCellSide.FACING, facing).setValue(BlockKCRPlatformCellSide.STYLE, BlockKCRPlatformCellSide.Style.SIDE_2_OS_WITH_LIGHT), 3);
             world.setBlock(newPos.above(), KP_CELL_SIDE.get().defaultBlockState().setValue(BlockKCRPlatformCellSide.FACING, facing).setValue(BlockKCRPlatformCellSide.STYLE, BlockKCRPlatformCellSide.Style.SIDE_3_OS), 3);
             return InteractionResult.SUCCESS;
         } else {

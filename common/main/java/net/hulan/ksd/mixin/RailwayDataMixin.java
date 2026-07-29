@@ -109,7 +109,7 @@ public class RailwayDataMixin {
         if (savedRailBase instanceof Platform) {
             KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
             if (railwayData != null) {
-                KSDPlatform platform = Utils.getFilteredValueFromDataSet(railwayData.platforms, p -> p.id == savedRailBase.id);
+                KSDPlatform platform = Utils.getInstance().getFilteredValueFromDataSet(railwayData.platforms, p -> p.id == savedRailBase.id);
                 if (platform != null) {
                     railwayData.platforms.remove(platform);
                     railwayData.dataCache.sync();

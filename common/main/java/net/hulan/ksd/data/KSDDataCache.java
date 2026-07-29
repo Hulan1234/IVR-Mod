@@ -16,6 +16,7 @@ public class KSDDataCache {
     public final Map<Long, KSDStation> stationIdMap = new HashMap<>();
     public final Map<Long, KSDPlatform> platformIdMap = new HashMap<>();
     public final Map<Long, KSDRoute> routeIdMap = new HashMap<>();
+    public final Map<Long, Set<KSDRoute>> stationIdToRoutes = new HashMap<>();
     public final Map<Long, KSDStation> platformIdToStation = new HashMap<>();
     public final Map<KSDStation, Set<KSDStation>> stationIdToConnectingStations = new HashMap<>();
     public final Map<BlockPos, KSDStation> blockPosToStation = new HashMap<>();
@@ -46,9 +47,22 @@ public class KSDDataCache {
                 });
             });
             mapSavedRailIdToStation(platformIdToStation, platforms, stations);
+            stationIdToRoutes.clear();
+            routes.forEach(route -> {
+                if (!route.isHidden) {
+                    route.platformIds.forEach(platformId -> {
+                        final KSDStation station = platformIdToStation.get(platformId.platformId);
+                        if (station != null) {
+                            if (!stationIdToRoutes.containsKey(station.id)) {
+                                stationIdToRoutes.put(station.id, new HashSet<>());
+                            }
+                            stationIdToRoutes.get(station.id).add(route);
+                        }
+                    });
+                }
+            });
             blockPosToPlatformId.clear();
             blockPosToStation.clear();
-            FirstClassValidationSystem.sync(routes, platformIdToStation);
             syncAdditional();
         } catch (Exception e) {
             throw new RuntimeException(e);

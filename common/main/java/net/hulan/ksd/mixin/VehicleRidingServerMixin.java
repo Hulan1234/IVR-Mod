@@ -50,9 +50,9 @@ public class VehicleRidingServerMixin {
                 if (Math.abs(positionRotated.x) < halfWidth + (double)0.5F && Math.abs(positionRotated.y) < (double)2.5F && Math.abs(positionRotated.z) <= halfLength && !railwayData.railwayDataCoolDownModule.shouldDismount(player)) {
                     KSDRailwayData ksd = KSDRailwayData.getInstance(world);
                     if (ksd != null) {
-                        KSDRoute route = Utils.getFilteredValueFromDataSet(ksd.routes, r -> r.id == routeId);
+                        KSDRoute route = Utils.getInstance().getFilteredValueFromDataSet(ksd.routes, r -> r.id == routeId);
                         if (route != null && route.hasFirstClassService) {
-                            FirstClassPlayer fcPlayer = Utils.getFilteredValueFromDataSet(ksd.jsonDataManager.fps, f -> f.uuid.equals(player.getUUID()));
+                            FirstClassPlayer fcPlayer = Utils.getInstance().getFilteredValueFromDataSet(ksd.jsonDataManager.fps, f -> f.uuid.equals(player.getUUID()));
                             if (fcPlayer != null && route.firstClassCar == percentageOffset && (fcPlayer.state.equals(FirstClassValidationSystem.FirstClassState.MTR) || fcPlayer.state.equals(FirstClassValidationSystem.FirstClassState.DENIED))) {
                                 System.out.println(fcPlayer.state);
                                 FirstClassValidationSystem.illegallyEntered(world, ksd.dataCache, fcPlayer, percentageOffset);

@@ -99,8 +99,7 @@ public class BlockKCRPlatformCellSide extends BlockDirectionalMapper implements 
         SIDE_2_OS,
         SIDE_2_OS_WITH_LIGHT,
         SIDE_3_IS,
-        SIDE_3_OS,
-        ;
+        SIDE_3_OS;
 
         @Override
         public @NotNull String getSerializedName() {

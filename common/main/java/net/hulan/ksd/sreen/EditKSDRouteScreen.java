@@ -108,7 +108,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
             if (textFieldLightRailRouteNumber.visible) {
                 drawString(matrices, font, lightRailRouteNumberText, SQUARE_SIZE, SQUARE_SIZE * 7 + TEXT_PADDING, ARGB_WHITE);
             }
-            if (textFieldFCCar.visible) {
+            if (routeType.equals(Utils.KCR_CLASSICAL)) {
                 drawString(matrices, font, fcCarNumberText, width / 2 + SQUARE_SIZE, SQUARE_SIZE * 4 + TEXT_PADDING, ARGB_WHITE);
             }
             super.render(matrices, mouseX, mouseY, delta);
@@ -147,7 +147,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         }
         data.setExtraData(packet -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_ROUTE, packet));
         data.setFirstClassData(packet -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_ROUTE, packet));
-        Utils.executeFromDataSet(ClientData.ROUTES, r -> r.id == data.id, mtrRoute -> {
+        Utils.getInstance().executeFromDataSet(ClientData.ROUTES, r -> r.id == data.id, mtrRoute -> {
             mtrRoute.name = data.name;
             mtrRoute.color = data.color;
             mtrRoute.routeType = data.routeType;
@@ -163,7 +163,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
     private void setRouteTypeText(TransportMode transportMode, RouteType newRouteType) {
         routeType = newRouteType;
         buttonRouteType.setMessage(Text.translatable(String.format("gui.mtr.route_type_%s_%s", transportMode, routeType).toLowerCase(Locale.ENGLISH)));
-        buttonHasFCService.visible = routeType.name().equals("KCR_CLASSICAL");
+        setShowFCService(routeType.equals(Utils.KCR_CLASSICAL));
     }
 
     private void setIsLightRailRoute(boolean isLightRailRoute) {
@@ -191,6 +191,11 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         if (isAntiClockwise) {
             buttonIsClockwiseRoute.setChecked(false);
         }
+    }
+
+    private void setShowFCService(boolean show) {
+        buttonHasFCService.visible = show;
+        textFieldFCCar.visible = show;
     }
 
     private void setHasFCService(boolean hasFCService) {

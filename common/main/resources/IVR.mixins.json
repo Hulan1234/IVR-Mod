@@ -4,8 +4,7 @@
   "package": "net.hulan.ivr.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "PacketTrainDataGuiClientMixin",
-    "PacketTrainDataGuiServerMixin"
+    "PacketTrainDataGuiClientMixin"
   ],
   "client": [
   ],

@@ -62,7 +62,7 @@ public class BlockModernSign extends BlockDirectionalMapper implements EntityBlo
                 final BlockPos checkPos = findEndWithDirection(world, pos, hitSide.getOpposite(), false);
                 if (checkPos != null) {
                     if (this == IVRBlocks.MODERN_SIGN_1_ODD.get()) {
-                        //IVRPacketTrainDataGuiServer.openModernSign1OddScreenS2C((ServerPlayer) player, checkPos);
+                        IVRPacketTrainDataGuiServer.openModernSign1OddScreenS2C((ServerPlayer) player, checkPos);
                     } else {
                         IVRPacketTrainDataGuiServer.openModernSignScreenS2C((ServerPlayer) player, checkPos);
                     }

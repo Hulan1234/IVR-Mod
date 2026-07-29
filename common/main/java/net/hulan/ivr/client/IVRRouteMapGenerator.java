@@ -999,7 +999,7 @@ public class IVRRouteMapGenerator implements IGui {
     }
 
     private static Map<Integer, ClientCache.ColorNameTuple> getInterchangeRoutes(long stationId) {
-        Map<Integer, ClientCache.ColorNameTuple> interChangeRoutes = KSDClientData.DATA_CACHE.stationIdToRoutes.get(stationId);
+        Map<Integer, ClientCache.ColorNameTuple> interChangeRoutes = KSDClientData.DATA_CACHE.stationIdToRoutesColor.get(stationId);
         return interChangeRoutes == null ? new HashMap<>() : interChangeRoutes;
     }
 

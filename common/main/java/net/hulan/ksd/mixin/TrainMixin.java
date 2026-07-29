@@ -127,13 +127,13 @@ public abstract class TrainMixin {
     @Unique
     private KSDPlatform getPlatform(Level world, long platformId) {
         if (world.isClientSide) {
-            return Utils.getFilteredValueFromDataSet(KSDClientData.PLATFORMS, p -> p.id == platformId);
+            return Utils.getInstance().getFilteredValueFromDataSet(KSDClientData.PLATFORMS, p -> p.id == platformId);
         } else {
             KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
             if (railwayData == null) {
                 return null;
             }
-            return Utils.getFilteredValueFromDataSet(railwayData.platforms, p -> p.id == platformId);
+            return Utils.getInstance().getFilteredValueFromDataSet(railwayData.platforms, p -> p.id == platformId);
         }
     }
 }

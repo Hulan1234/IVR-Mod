@@ -38,6 +38,12 @@ public class IVRPacketTrainDataGuiServer extends PacketTrainDataBase implements 
         Registry.sendToPlayer(player, IVRPacket.PACKET_OPEN_MODERN_SIGN_SCREEN, packet);
     }
 
+    public static void openModernSign1OddScreenS2C(ServerPlayer player, BlockPos signPos) {
+        final FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
+        packet.writeBlockPos(signPos);
+        Registry.sendToPlayer(player, PACKET_OPEN_MODERN_1ODD_SIGN_SCREEN, packet);
+    }
+
     public static void receiveClassicalSignIdsC2S(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
         final BlockPos signPos = packet.readBlockPos();
         final int selectedIdsLength = packet.readInt();
@@ -120,6 +126,31 @@ public class IVRPacketTrainDataGuiServer extends PacketTrainDataBase implements 
                 } else {
                     setTileEntityDataAndWriteUpdate(player, (entity2) -> entity2.setPlatformId(platformId), (BlockKCRRouteSignBase.TileEntityKCRRouteSignBase)entity);
                 }
+            }
+        });
+    }
+
+    public static void receiveModernSign1OddIdsC2S(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
+        final BlockPos signPos = packet.readBlockPos();
+        final int selectedIds1Length = packet.readInt();
+        final Set<Long> selectedIds1 = new HashSet<>();
+        for (int i = 0; i < selectedIds1Length; i++) {
+            selectedIds1.add(packet.readLong());
+        }
+        packet.readInt();
+        final String[] signId1 = new String[]{packet.readUtf(SerializedDataBase.PACKET_STRING_READ_LENGTH)};
+        final int selectedIds2Length = packet.readInt();
+        final Set<Long> selectedIds2 = new HashSet<>();
+        for (int i = 0; i < selectedIds2Length; i++) {
+            selectedIds2.add(packet.readLong());
+        }
+        packet.readInt();
+        final String[] signId2 = new String[]{packet.readUtf(SerializedDataBase.PACKET_STRING_READ_LENGTH)};
+        final boolean luminance = packet.readBoolean();
+        minecraftServer.execute(() -> {
+            final BlockEntity entity = player.level.getBlockEntity(signPos);
+            if (entity instanceof BlockModernSign.TileEntityModernSign1Odd) {
+                setTileEntityDataAndWriteUpdate(player, entity2 -> entity2.setData(selectedIds1, signId1, selectedIds2, signId2, luminance), (BlockModernSign.TileEntityModernSign1Odd) entity);
             }
         });
     }

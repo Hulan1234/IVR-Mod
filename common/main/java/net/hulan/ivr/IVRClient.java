@@ -46,7 +46,7 @@ public class IVRClient implements ClientModInitializer, IVRPacket, IVRBlockEntit
         RegistryClient.registerTileEntityRenderer(CLASSICAL_SIGN_7_EVEN_TILE_ENTITY.get(), RenderClassicalSign::new);
         RegistryClient.registerTileEntityRenderer(CLASSICAL_SIGN_7_ODD_TILE_ENTITY.get(), RenderClassicalSign::new);
         RegistryClient.registerTileEntityRenderer(MODERN_SIGN_1_EVEN_TILE_ENTITY.get(), RenderModernSign::new);
-        RegistryClient.registerTileEntityRenderer(MODERN_SIGN_1_ODD_TILE_ENTITY.get(), RenderModernSign::new);
+        RegistryClient.registerTileEntityRenderer(MODERN_SIGN_1_ODD_TILE_ENTITY.get(), RenderModernSign1Odd::new);
         RegistryClient.registerTileEntityRenderer(MODERN_SIGN_2_EVEN_TILE_ENTITY.get(), RenderModernSign::new);
         RegistryClient.registerTileEntityRenderer(MODERN_SIGN_2_ODD_TILE_ENTITY.get(), RenderModernSign::new);
         RegistryClient.registerTileEntityRenderer(MODERN_SIGN_3_EVEN_TILE_ENTITY.get(), RenderModernSign::new);
@@ -76,5 +76,6 @@ public class IVRClient implements ClientModInitializer, IVRPacket, IVRBlockEntit
         RegistryClient.registerNetworkReceiver(PACKET_OPEN_CLASSICAL_SIGN_SCREEN, packet -> IVRPacketTrainDataGuiClient.openClassicalSignScreenS2C(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(PACKET_OPEN_CLASSICAL_1ODD_SIGN_SCREEN, packet -> IVRPacketTrainDataGuiClient.openClassicalSign1OddScreenS2C(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(PACKET_OPEN_MODERN_SIGN_SCREEN, packet -> IVRPacketTrainDataGuiClient.openModernSignScreenS2C(Minecraft.getInstance(), packet));
+        RegistryClient.registerNetworkReceiver(PACKET_OPEN_MODERN_1ODD_SIGN_SCREEN, packet -> IVRPacketTrainDataGuiClient.openModernSign1OddScreenS2C(Minecraft.getInstance(), packet));
     }
 }

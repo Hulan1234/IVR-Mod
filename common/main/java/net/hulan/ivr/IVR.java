@@ -158,6 +158,7 @@ public class IVR implements ModInitializer, IVRPacket, IVRBlocks, IVRBlockEntity
         mtr.Registry.registerNetworkReceiver(PACKET_CLASSICAL_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveClassicalSignIdsC2S);
         mtr.Registry.registerNetworkReceiver(PACKET_CLASSICAL_1ODD_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveClassicalSign1OddIdsC2S);
         mtr.Registry.registerNetworkReceiver(PACKET_MODERN_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveModernSignIdsC2S);
+        mtr.Registry.registerNetworkReceiver(PACKET_MODERN_1ODD_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveModernSign1OddIdsC2S);
     }
 
     private static void registerItem(String path, RegistryObject<Item> item) {

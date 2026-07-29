@@ -31,6 +31,6 @@ public class BlockTicketBarrierMixin extends BlockDirectionalMapper {
 
     @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState blockState, Level world, BlockPos blockPos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
-        return Utils.checkHoldingItem(world, player, (item) -> System.out.println(1), null, KSDItems.OCTOPUS.get());
+        return Utils.getInstance().checkHoldingItem(world, player, (item) -> System.out.println(1), null, KSDItems.OCTOPUS.get());
     }
 }

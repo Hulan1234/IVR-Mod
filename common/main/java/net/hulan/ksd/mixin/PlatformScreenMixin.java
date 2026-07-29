@@ -33,7 +33,7 @@ public class PlatformScreenMixin extends SavedRailScreenBase<Platform> {
     private void onClose(CallbackInfo ci) {
         int minutes = this.sliderDwellTimeMin.getIntValue();
         float second = (float) this.sliderDwellTimeSec.getIntValue() / 2.0F;
-        Utils.executeFromDataSet(KSDClientData.PLATFORMS, p -> p.id == savedRailBase.id, platform -> platform.setDwellTime((int) ((second + (float) (minutes * 60)) * 2.0F), (packet) -> KSDPacketClient.sendUpdate(KSD_PACKET_UPDATE_PLATFORM, packet)));
+        Utils.getInstance().executeFromDataSet(KSDClientData.PLATFORMS, p -> p.id == savedRailBase.id, platform -> platform.setDwellTime((int) ((second + (float) (minutes * 60)) * 2.0F), (packet) -> KSDPacketClient.sendUpdate(KSD_PACKET_UPDATE_PLATFORM, packet)));
     }
 
     @Override

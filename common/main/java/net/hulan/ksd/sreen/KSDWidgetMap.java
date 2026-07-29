@@ -116,7 +116,7 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                                     -1));
                     for(KSDStation station : KSDClientData.STATIONS) {
                         if (KSDAreaBase.nonNullCorners(station)) {
-                            drawRectangleFromWorldCords(buffer, station.corner1.toTupleWithXY(), station.corner2.toTupleWithXY(), 2130706432 + station.color);
+                            drawRectangleFromWorldCords(buffer, station.corner1.toTupleWithXY(), station.corner2.toTupleWithXY(), ARGB_BLACK_TRANSLUCENT + station.color);
                         }
                     }
                     mouseOnSavedRail(mouseWorldPos, (savedRail, x1, z1, x2, z2) -> drawRectangleFromWorldCords(buffer, x1, z1, x2, z2, -1));
@@ -186,7 +186,7 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                                     -1));
                     for(KSDStation station : KSDClientData.STATIONS) {
                         if (KSDAreaBase.nonNullCorners(station)) {
-                            drawRectangleFromWorldCords(buffer, station.corner1.toTupleWithXZ(), station.corner2.toTupleWithXZ(), 2130706432 + station.color);
+                            drawRectangleFromWorldCords(buffer, station.corner1.toTupleWithXZ(), station.corner2.toTupleWithXZ(), ARGB_BLACK_TRANSLUCENT + station.color);
                         }
                     }
                     mouseOnSavedRail(mouseWorldPos, (savedRail, x1, z1, x2, z2) -> drawRectangleFromWorldCords(buffer, x1, z1, x2, z2, -1));
@@ -253,7 +253,7 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                                     -1));
                     for(KSDStation station : KSDClientData.STATIONS) {
                         if (KSDAreaBase.nonNullCorners(station)) {
-                            drawRectangleFromWorldCords(buffer, station.corner1.toTupleWithZY(), station.corner2.toTupleWithZY(), 2130706432 + station.color);
+                            drawRectangleFromWorldCords(buffer, station.corner1.toTupleWithZY(), station.corner2.toTupleWithZY(), ARGB_BLACK_TRANSLUCENT + station.color);
                         }
                     }
                     mouseOnSavedRail(mouseWorldPos, (savedRail, x1, z1, x2, z2) -> drawRectangleFromWorldCords(buffer, x1, z1, x2, z2, -1));

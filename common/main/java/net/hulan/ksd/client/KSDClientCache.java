@@ -6,10 +6,7 @@ import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import mtr.block.BlockLiftTrackFloor;
 import mtr.client.ClientCache;
 import mtr.client.Config;
-import mtr.data.IGui;
-import mtr.data.Route;
-import mtr.data.SavedRailBase;
-import mtr.data.TransportMode;
+import mtr.data.*;
 import mtr.mappings.Utilities;
 import net.hulan.ivr.client.IVRRouteMapGenerator;
 import net.hulan.ksd.data.*;
@@ -43,7 +40,7 @@ public class KSDClientCache extends KSDDataCache {
     private Font fontCjk;
     private final Object2ObjectLinkedOpenHashMap<String, DynamicResource> dynamicResources = new Object2ObjectLinkedOpenHashMap<>();
     private final ObjectLinkedOpenHashSet<String> resourcesToRefresh = new ObjectLinkedOpenHashSet<>();
-    public final Map<Long, Map<Integer, ClientCache.ColorNameTuple>> stationIdToRoutes = new HashMap<>();
+    public final Map<Long, Map<Integer, ClientCache.ColorNameTuple>> stationIdToRoutesColor = new HashMap<>();
     private final Map<TransportMode, Map<BlockPos, List<KSDPlatform>>> posToPlatforms = new HashMap<>();
     private final Map<Long, Map<Long, KSDPlatform>> stationIdToPlatforms = new HashMap<>();
     private final Map<Long, List<ClientCache.PlatformRouteDetails>> platformIdToRoutes = new HashMap<>();
@@ -66,16 +63,16 @@ public class KSDClientCache extends KSDDataCache {
         for (final TransportMode transportMode : TransportMode.values()) {
             mapPosToSavedRails(posToPlatforms.get(transportMode), platforms, transportMode);
         }
-        stationIdToRoutes.clear();
+        stationIdToRoutesColor.clear();
         routes.forEach(route -> {
             if (!route.isHidden) {
                 route.platformIds.forEach(platformId -> {
                     final KSDStation station = platformIdToStation.get(platformId.platformId);
                     if (station != null) {
-                        if (!stationIdToRoutes.containsKey(station.id)) {
-                            stationIdToRoutes.put(station.id, new HashMap<>());
+                        if (!stationIdToRoutesColor.containsKey(station.id)) {
+                            stationIdToRoutesColor.put(station.id, new HashMap<>());
                         }
-                        stationIdToRoutes.get(station.id).put(route.color, new ClientCache.ColorNameTuple(route.color, route.name.split("\\|\\|")[0]));
+                        stationIdToRoutesColor.get(station.id).put(route.color, new ClientCache.ColorNameTuple(route.color, route.name.split("\\|\\|")[0]));
                     }
                 });
             }
@@ -117,19 +114,19 @@ public class KSDClientCache extends KSDDataCache {
 
     public List<ClientCache.PlatformRouteDetails> requestPlatformIdToRoutes(long platformId) {
         if (!platformIdToRoutes.containsKey(platformId)) {
-            platformIdToRoutes.put(platformId, Utils.getMappedAndNonNullListFromDataCollection(routes, route -> {
+            platformIdToRoutes.put(platformId, Utils.getInstance().getMappedAndNonNullListFromDataCollection(routes, route -> {
                 final int index = route.getPlatformIdIndex(platformId);
                 if (index < 0) {
                     return null;
                 } else {
                     final List<ClientCache.PlatformRouteDetails.StationDetails> stationDetails =
-                            Utils.getMappedListFromDataCollection(route.platformIds, pi -> {
+                            Utils.getInstance().getMappedListFromDataCollection(route.platformIds, pi -> {
                                 final KSDStation station = platformIdToStation.get(pi.platformId);
-                                if (station == null || !stationIdToRoutes.containsKey(station.id)) {
+                                if (station == null || !stationIdToRoutesColor.containsKey(station.id)) {
                                     return new ClientCache.PlatformRouteDetails.StationDetails("", new ArrayList<>());
                                 } else {
                                     return new ClientCache.PlatformRouteDetails.StationDetails(station.name,
-                                            Utils.getFilteredListFromDataCollection(stationIdToRoutes.get(station.id).values(),
+                                            Utils.getInstance().getFilteredListFromDataCollection(stationIdToRoutesColor.get(station.id).values(),
                                                     colorNameTuple -> colorNameTuple.color != route.color));
                                 }
                             });
@@ -166,8 +163,8 @@ public class KSDClientCache extends KSDDataCache {
     public Map<Integer, ClientCache.ColorNameTuple> getAllRoutesIncludingConnectingStations(KSDStation station) {
         final Map<Integer, ClientCache.ColorNameTuple> routeMap = new HashMap<>();
         getConnectingStationsIncludingThisOne(station).forEach(checkStation -> {
-            if (stationIdToRoutes.containsKey(checkStation.id)) {
-                routeMap.putAll(stationIdToRoutes.get(checkStation.id));
+            if (stationIdToRoutesColor.containsKey(checkStation.id)) {
+                routeMap.putAll(stationIdToRoutesColor.get(checkStation.id));
             }
         });
         return routeMap;
@@ -187,7 +184,7 @@ public class KSDClientCache extends KSDDataCache {
                 String text = "";
 
                 for (int i = currentStationIndex + 1; i < route.platformIds.size() - 1; i++) {
-                    if (stationIdToRoutes.get(platformIdToStation.get(route.platformIds.get(i).platformId).id).size() > 1) {
+                    if (stationIdToRoutesColor.get(platformIdToStation.get(route.platformIds.get(i).platformId).id).size() > 1) {
                         text = platformIdToStation.get(route.platformIds.get(i).platformId).name;
                         isVia = true;
                         break;

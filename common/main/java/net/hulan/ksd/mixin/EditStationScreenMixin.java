@@ -109,6 +109,6 @@ public class EditStationScreenMixin extends EditNameColorScreenBase<Station> {
 
     @Unique
     private void executeKSDStationUpdate(Consumer<KSDStation> action) {
-        Utils.executeFromDataSet(KSDClientData.STATIONS, s -> s.id == data.id, action);
+        Utils.getInstance().executeFromDataSet(KSDClientData.STATIONS, s -> s.id == data.id, action);
     }
 }
