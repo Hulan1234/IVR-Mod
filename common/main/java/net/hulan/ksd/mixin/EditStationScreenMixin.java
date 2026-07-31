@@ -7,8 +7,9 @@ import mtr.screen.DashboardScreen;
 import mtr.screen.EditNameColorScreenBase;
 import mtr.screen.EditStationScreen;
 import net.hulan.ksd.client.KSDClientData;
+import net.hulan.ksd.data.DataUtilities;
 import net.hulan.ksd.data.KSDStation;
-import net.hulan.ksd.data.Utils;
+import net.hulan.ksd.data.Utilities;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketClient;
 import org.spongepowered.asm.mixin.Mixin;
@@ -109,6 +110,6 @@ public class EditStationScreenMixin extends EditNameColorScreenBase<Station> {
 
     @Unique
     private void executeKSDStationUpdate(Consumer<KSDStation> action) {
-        Utils.getInstance().executeFromDataSet(KSDClientData.STATIONS, s -> s.id == data.id, action);
+        DataUtilities.executeFromDataSet(KSDClientData.STATIONS, s -> s.id == data.id, action);
     }
 }

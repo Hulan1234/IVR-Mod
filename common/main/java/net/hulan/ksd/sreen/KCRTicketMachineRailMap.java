@@ -2,7 +2,6 @@ package net.hulan.ksd.sreen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import mtr.client.ClientData;
 import mtr.client.IDrawing;
 import mtr.data.IGui;
 import mtr.data.RailwayData;
@@ -11,9 +10,11 @@ import mtr.mappings.SelectableMapper;
 import mtr.mappings.UtilitiesClient;
 import mtr.mappings.WidgetMapper;
 import net.hulan.ksd.client.KSDClientData;
+import net.hulan.ksd.client.RenderUtilities;
 import net.hulan.ksd.data.KSDAreaBase;
-import net.hulan.ksd.data.KSDRoute;import net.hulan.ksd.data.KSDStation;
-import net.hulan.ksd.data.Utils;
+import net.hulan.ksd.data.KSDRoute;
+import net.hulan.ksd.data.KSDStation;
+import net.hulan.ksd.data.Utilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -38,7 +39,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
     private double scale;
     private double centerX;
     private double centerY;
-    private RouteType routeType = Utils.KCR_CLASSICAL;
+    private RouteType routeType = Utilities.KCR_CLASSICAL;
     private final Set<KSDStation> stations = new HashSet<>();
     private final Set<KSDRoute> routes = new HashSet<>();
     private final ClientLevel world;
@@ -76,7 +77,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
                     drawFromWorldCords(
                             midPos.getX(),
                             midPos.getZ(),
-                            (x1, y1) -> Utils.getInstance().drawStationCircle(
+                            (x1, y1) -> RenderUtilities.getInstance().drawStationCircle(
                                     matrices,
                                     x + x1.floatValue(),
                                     y + y1.floatValue(),

@@ -114,19 +114,19 @@ public class KSDClientCache extends KSDDataCache {
 
     public List<ClientCache.PlatformRouteDetails> requestPlatformIdToRoutes(long platformId) {
         if (!platformIdToRoutes.containsKey(platformId)) {
-            platformIdToRoutes.put(platformId, Utils.getInstance().getMappedAndNonNullListFromDataCollection(routes, route -> {
+            platformIdToRoutes.put(platformId, DataUtilities.getMappedAndNonNullListFromDataCollection(routes, route -> {
                 final int index = route.getPlatformIdIndex(platformId);
                 if (index < 0) {
                     return null;
                 } else {
                     final List<ClientCache.PlatformRouteDetails.StationDetails> stationDetails =
-                            Utils.getInstance().getMappedListFromDataCollection(route.platformIds, pi -> {
+                            DataUtilities.getMappedListFromDataCollection(route.platformIds, pi -> {
                                 final KSDStation station = platformIdToStation.get(pi.platformId);
                                 if (station == null || !stationIdToRoutesColor.containsKey(station.id)) {
                                     return new ClientCache.PlatformRouteDetails.StationDetails("", new ArrayList<>());
                                 } else {
                                     return new ClientCache.PlatformRouteDetails.StationDetails(station.name,
-                                            Utils.getInstance().getFilteredListFromDataCollection(stationIdToRoutesColor.get(station.id).values(),
+                                            DataUtilities.getFilteredListFromDataCollection(stationIdToRoutesColor.get(station.id).values(),
                                                     colorNameTuple -> colorNameTuple.color != route.color));
                                 }
                             });

@@ -7,7 +7,8 @@ import mtr.screen.DashboardScreen;
 import mtr.screen.PlatformScreen;
 import mtr.screen.SavedRailScreenBase;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.data.Utils;
+import net.hulan.ksd.data.DataUtilities;
+import net.hulan.ksd.data.Utilities;
 import net.hulan.ksd.packet.KSDPacketClient;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -33,7 +34,7 @@ public class PlatformScreenMixin extends SavedRailScreenBase<Platform> {
     private void onClose(CallbackInfo ci) {
         int minutes = this.sliderDwellTimeMin.getIntValue();
         float second = (float) this.sliderDwellTimeSec.getIntValue() / 2.0F;
-        Utils.getInstance().executeFromDataSet(KSDClientData.PLATFORMS, p -> p.id == savedRailBase.id, platform -> platform.setDwellTime((int) ((second + (float) (minutes * 60)) * 2.0F), (packet) -> KSDPacketClient.sendUpdate(KSD_PACKET_UPDATE_PLATFORM, packet)));
+        DataUtilities.executeFromDataSet(KSDClientData.PLATFORMS, p -> p.id == savedRailBase.id, platform -> platform.setDwellTime((int) ((second + (float) (minutes * 60)) * 2.0F), (packet) -> KSDPacketClient.sendUpdate(KSD_PACKET_UPDATE_PLATFORM, packet)));
     }
 
     @Override

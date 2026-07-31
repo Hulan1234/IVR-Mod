@@ -25,7 +25,8 @@ public final class FirstClassValidationSystem {
 
     private static final int BASE_FARE = 2;
     private static final int ZONE_FARE = 1;
-    private static final int EVASION_FINE = 1000;
+    private static final int MTR_EVASION_FINE = 500;
+    private static final int FC_EVASION_FINE = 1000;
     private static final String PLAYER_CAR_OBJECTIVE = "player_car";
 
     public static void tick(KSDRailwayData ksd, RailwayData mtr, Level world, List<ServerPlayer> players) {
@@ -49,13 +50,12 @@ public final class FirstClassValidationSystem {
                 int oldCar = carScore.getScore() - 1;
                 if (oldCar == newCar) return;
                 carScore.setScore(newCar + 1);
-                FirstClassPlayer firstClassPlayer = Utils.getInstance().getFilteredValueFromDataSet(ksd.jsonDataManager.fps, f -> f.uuid.equals(player.getUUID()));
+                FirstClassPlayer firstClassPlayer = DataUtilities.getFirstClassPlayer(ksd.jsonDataManager.fps, player);
                 if (firstClassPlayer == null || oldCar == -1) continue;
                 long routeId = ((TrainServerAccessor) playerTrain).getRouteId();
-                KSDStation enteredStation = Utils.getInstance().getFilteredValueFromDataSet(ksd.stations, s -> s.id == firstClassPlayer.enteredStationId);
+                KSDStation enteredStation = DataUtilities.getStation(ksd.stations, firstClassPlayer.enteredStationId);
                 if (enteredStation == null) continue;
-                KSDRoute route = Utils.getInstance().getFilteredValueFromDataSet(ksd.routes, r -> r.id == routeId);
-                System.out.println(newCar + 1);
+                KSDRoute route = DataUtilities.getRoute(ksd.routes, routeId);
                 if (route != null
                         && route.routeType.name().equals("KCR_CLASSICAL")
                         && route.hasFirstClassService
@@ -115,7 +115,7 @@ public final class FirstClassValidationSystem {
     private static FirstClassState validate(KSDRailwayData ksd, Level world, Player player, BlockPos pos, KSDStation validateStation, KSDRoute route) {
         Score balance = getPlayerScore(world, player, TicketSystem.BALANCE_OBJECTIVE);
         Score entryZone = getPlayerScore(world, player, "mtr_entry_zone");
-        FirstClassPlayer firstClassPlayer = Utils.getInstance().getFilteredValueFromDataSet(ksd.jsonDataManager.fps, f -> f.uuid.equals(player.getUUID()));
+        FirstClassPlayer firstClassPlayer = DataUtilities.getFirstClassPlayer(ksd.jsonDataManager.fps, player);
         if (entryZone.getScore() == 0 || firstClassPlayer == null) {
             playSoundAndSendMessage(world, pos, player, "gui.ksd.first_class_denied_no_entry");
             return FirstClassState.DENIED;
@@ -144,22 +144,20 @@ public final class FirstClassValidationSystem {
     }
 
     public static FirstClassState onExitStation(Level world, KSDRailwayData railwayData, KSDStation exitStation, Player player, Score balanceScore, Score entryZoneScore) {
-        FirstClassPlayer firstClassPlayer = Utils.getInstance().getFilteredValueFromDataSet(railwayData.jsonDataManager.fps, f -> f.uuid.equals(player.getUUID()));
+        FirstClassPlayer firstClassPlayer = DataUtilities.getFirstClassPlayer(railwayData.jsonDataManager.fps, player);
         if (firstClassPlayer != null) {
             Score playerCarScore = getPlayerScore(world, player, PLAYER_CAR_OBJECTIVE);
-            KSDStation enteredStation = Utils.getInstance().getFilteredValueFromDataSet(railwayData.stations, s -> s.id == firstClassPlayer.enteredStationId);
-            KSDStation validatedStation = Utils.getInstance().getFilteredValueFromDataSet(railwayData.stations, s -> s.id == firstClassPlayer.validatedStationId);
-            KSDRoute route = Utils.getInstance().getFilteredValueFromDataSet(railwayData.routes, r -> r.id == firstClassPlayer.routeId);
-            if (!firstClassPlayer.state.equals(FirstClassState.MTR) && enteredStation != null) {
+            KSDStation enteredStation = DataUtilities.getStation(railwayData.stations, firstClassPlayer.enteredStationId);
+            KSDStation validatedStation = DataUtilities.getStation(railwayData.stations, firstClassPlayer.validatedStationId);
+            KSDRoute route = DataUtilities.getRoute(railwayData.routes, firstClassPlayer.routeId);
+            if (!firstClassPlayer.state.equals(FirstClassState.MTR) && enteredStation != null && validatedStation != null) {
                 final int fare;
-                if (firstClassPlayer.state.equals(FirstClassState.ILLEGALLY) && validatedStation == null) {
-                    fare = EVASION_FINE;
+                boolean isIllegally = firstClassPlayer.state.equals(FirstClassState.ILLEGALLY);
+                if (validatedStation.id == enteredStation.id) {
+                    fare = getFare(railwayData, validatedStation, exitStation, route, player, isIllegally);
                 } else {
-                    if (validatedStation.id == enteredStation.id) {
-                        fare = getFare(railwayData, validatedStation, exitStation, route, player);
-                    } else {
-                        fare = getMTRFare(enteredStation.zone, validatedStation.zone, player) + getFare(railwayData, validatedStation, exitStation, route, player);
-                    }
+                    fare = getMTRFare(enteredStation.zone, validatedStation.zone, player)
+                            + getFare(railwayData, validatedStation, exitStation, route, player, isIllegally);
                 }
                 entryZoneScore.setScore(0);
                 balanceScore.add(-fare);
@@ -193,15 +191,20 @@ public final class FirstClassValidationSystem {
         return player.isCreative();
     }
 
-    private static int getFare(KSDRailwayData railwayData, KSDStation enteredStation, KSDStation exitStation, KSDRoute route, Player player) {
+    private static int getFare(KSDRailwayData railwayData,
+                               KSDStation enteredStation,
+                               KSDStation exitStation,
+                               KSDRoute route,
+                               Player player,
+                               boolean isIllegally) {
         KSDStation interchangeStation;
         final int entryZone = enteredStation.zone;
         final int exitZone = exitStation.zone;
         Map<Long, KSDStation> platformIdToStation = railwayData.dataCache.platformIdToStation;
         if (isInRoute(platformIdToStation, exitStation.id, route)) {
-            return getMTRFare(entryZone, exitZone, player) * 2;
+            return isIllegally ? FC_EVASION_FINE : getMTRFare(entryZone, exitZone, player) * 2;
         } else if ((interchangeStation = getNearestInterchangeStation(railwayData, route, exitStation.id)) != null) {
-            final int fcFare = getMTRFare(entryZone, interchangeStation.zone, player) * 2;
+            final int fcFare = isIllegally ? FC_EVASION_FINE : getMTRFare(entryZone, interchangeStation.zone, player) * 2;
             final int mtrFare = getMTRFare(exitZone, interchangeStation.zone, player);
             return fcFare + mtrFare;
         }
@@ -221,12 +224,12 @@ public final class FirstClassValidationSystem {
         Map<Long, KSDStation> platformIdToStation = railwayData.dataCache.platformIdToStation;
         if (!isInRoute(platformIdToStation, currentStationId, route)) return null;
         Set<Long> interchangeStationIdsInRoute =
-                Utils.getInstance().getFilteredSetFromDataCollection(getStationIdsInRoute(platformIdToStation, route),
+                DataUtilities.getFilteredSetFromDataCollection(getStationIdsInRoute(platformIdToStation, route),
                         id -> railwayData.dataCache.stationIdToRoutes.get(id).size() >= 2);
         interchangeStationIdsInRoute.removeIf(id -> id == currentStationId);
         int currentIndex = getStationIndex(platformIdToStation, route, currentStationId);
         long nearestInterchangeStationId = interchangeStationIdsInRoute.stream().min(Comparator.comparingInt(id -> getStationIndex(platformIdToStation, route, id) - currentIndex)).orElse(0L);
-        return Utils.getInstance().getFilteredValueFromDataSet(railwayData.stations, s -> s.id == nearestInterchangeStationId);
+        return DataUtilities.getStation(railwayData.stations, nearestInterchangeStationId);
     }
 
     private static Set<Long> getStationIdsInRoute(Map<Long, KSDStation> platformIdToStation, KSDRoute route) {

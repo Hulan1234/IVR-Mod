@@ -1,15 +1,23 @@
 package net.hulan.ksd.data;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.renderer.GameRenderer;
+import io.netty.buffer.Unpooled;
+import mtr.Registry;
+import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.hulan.ksd.packet.KSDPacket;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 
-public class Utils_1_18_2 extends Utils {
+public class Utils_1_18_2 extends Utilities {
 
-    public void beginDrawingCircle(BufferBuilder buffer) {
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        buffer.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
+    public void registerCommand() {
+        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> dispatcher.register(Commands.literal("ms").executes(context -> {
+            ServerPlayer player = context.getSource().getPlayerOrException();
+            final FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
+            packet.writeBlockPos(player.blockPosition());
+            Registry.sendToPlayer(player, KSDPacket.KSD_PACKET_OPEN_KCR_TICKET_MACHINE_SCREEN, packet);
+            return 0;
+        })));
     }
 }

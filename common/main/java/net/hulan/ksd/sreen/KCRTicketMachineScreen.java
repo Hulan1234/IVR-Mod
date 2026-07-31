@@ -11,7 +11,7 @@ import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.KSDRailwayData;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
-import net.hulan.ksd.data.Utils;
+import net.hulan.ksd.data.Utilities;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -28,8 +28,8 @@ public class KCRTicketMachineScreen extends ScreenMapper implements IGui {
 
     public KCRTicketMachineScreen(BlockPos machinePos) {
         super(Text.literal(""));
-        classicalButton = UtilitiesClient.newButton(Text.translatable("gui.ksd.classical"), button -> setRouteType(Utils.KCR_CLASSICAL));
-        modernButton = UtilitiesClient.newButton(Text.translatable("gui.ksd.modern"), button -> setRouteType(Utils.KCR_MODERN));
+        classicalButton = UtilitiesClient.newButton(Text.translatable("gui.ksd.classical"), button -> setRouteType(Utilities.KCR_CLASSICAL));
+        modernButton = UtilitiesClient.newButton(Text.translatable("gui.ksd.modern"), button -> setRouteType(Utilities.KCR_MODERN));
         railMap = new KCRTicketMachineRailMap(this::onClickedOnTerminus);
         current = KSDRailwayData.getStation(KSDClientData.STATIONS,  machinePos);
     }
@@ -41,7 +41,7 @@ public class KCRTicketMachineScreen extends ScreenMapper implements IGui {
         addDrawableChild(classicalButton);
         addDrawableChild(modernButton);
         addWidget(railMap);
-        setRouteType(Utils.KCR_CLASSICAL);
+        setRouteType(Utilities.KCR_CLASSICAL);
     }
 
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
@@ -69,7 +69,7 @@ public class KCRTicketMachineScreen extends ScreenMapper implements IGui {
     }
 
     private void toggleButtons() {
-        classicalButton.active = !routeType.equals(Utils.KCR_CLASSICAL);
-        modernButton.active = !routeType.equals(Utils.KCR_MODERN);
+        classicalButton.active = !routeType.equals(Utilities.KCR_CLASSICAL);
+        modernButton.active = !routeType.equals(Utilities.KCR_MODERN);
     }
 }

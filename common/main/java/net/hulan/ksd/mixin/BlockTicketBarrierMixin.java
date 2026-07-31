@@ -3,7 +3,7 @@ package net.hulan.ksd.mixin;
 import mtr.block.BlockTicketBarrier;
 import mtr.mappings.BlockDirectionalMapper;
 import net.hulan.ksd.KSDItems;
-import net.hulan.ksd.data.Utils;
+import net.hulan.ksd.data.Utilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -31,6 +31,6 @@ public class BlockTicketBarrierMixin extends BlockDirectionalMapper {
 
     @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState blockState, Level world, BlockPos blockPos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
-        return Utils.getInstance().checkHoldingItem(world, player, (item) -> System.out.println(1), null, KSDItems.OCTOPUS.get());
+        return Utilities.getInstance().checkHoldingItem(world, player, (item) -> System.out.println(1), null, KSDItems.OCTOPUS.get());
     }
 }

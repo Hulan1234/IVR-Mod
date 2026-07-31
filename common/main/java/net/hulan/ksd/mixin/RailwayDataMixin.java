@@ -6,10 +6,7 @@ import mtr.client.ClientData;
 import mtr.data.*;
 import net.hulan.ksd.KSDMain;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.data.KSDPlatform;
-import net.hulan.ksd.data.KSDRailwayData;
-import net.hulan.ksd.data.KSDStation;
-import net.hulan.ksd.data.Utils;
+import net.hulan.ksd.data.*;
 import net.hulan.ksd.packet.KSDPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -109,7 +106,7 @@ public class RailwayDataMixin {
         if (savedRailBase instanceof Platform) {
             KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
             if (railwayData != null) {
-                KSDPlatform platform = Utils.getInstance().getFilteredValueFromDataSet(railwayData.platforms, p -> p.id == savedRailBase.id);
+                KSDPlatform platform = DataUtilities.getPlatform(railwayData.platforms, savedRailBase.id);
                 if (platform != null) {
                     railwayData.platforms.remove(platform);
                     railwayData.dataCache.sync();

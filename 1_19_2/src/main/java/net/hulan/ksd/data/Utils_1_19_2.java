@@ -1,15 +1,15 @@
 package net.hulan.ksd.data;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.renderer.GameRenderer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 
-public class Utils_1_19_2 extends Utils {
+public class Utils_1_19_2 extends Utilities {
 
-    public void beginDrawingCircle(BufferBuilder buffer) {
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        buffer.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
+    public void registerCommand() {
+        CommandRegistrationCallback.EVENT.register((dispatcher, ct, selection) -> dispatcher.register(Commands.literal("/test").executes(context -> {
+            context.getSource().sendSuccess((Component) Commands.literal("1"), true);
+            return -1;
+        })));
     }
 }

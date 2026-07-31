@@ -15,9 +15,10 @@ import mtr.screen.EditNameColorScreenBase;
 import mtr.screen.WidgetBetterCheckbox;
 import mtr.screen.WidgetBetterTextField;
 import net.hulan.ksd.client.KSDClientData;
+import net.hulan.ksd.data.DataUtilities;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
-import net.hulan.ksd.data.Utils;
+import net.hulan.ksd.data.Utilities;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketClient;
 import net.minecraft.client.gui.components.Button;
@@ -108,7 +109,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
             if (textFieldLightRailRouteNumber.visible) {
                 drawString(matrices, font, lightRailRouteNumberText, SQUARE_SIZE, SQUARE_SIZE * 7 + TEXT_PADDING, ARGB_WHITE);
             }
-            if (routeType.equals(Utils.KCR_CLASSICAL)) {
+            if (routeType.equals(Utilities.KCR_CLASSICAL)) {
                 drawString(matrices, font, fcCarNumberText, width / 2 + SQUARE_SIZE, SQUARE_SIZE * 4 + TEXT_PADDING, ARGB_WHITE);
             }
             super.render(matrices, mouseX, mouseY, delta);
@@ -147,7 +148,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         }
         data.setExtraData(packet -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_ROUTE, packet));
         data.setFirstClassData(packet -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_ROUTE, packet));
-        Utils.getInstance().executeFromDataSet(ClientData.ROUTES, r -> r.id == data.id, mtrRoute -> {
+        DataUtilities.executeFromDataSet(ClientData.ROUTES, r -> r.id == data.id, mtrRoute -> {
             mtrRoute.name = data.name;
             mtrRoute.color = data.color;
             mtrRoute.routeType = data.routeType;
@@ -163,7 +164,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
     private void setRouteTypeText(TransportMode transportMode, RouteType newRouteType) {
         routeType = newRouteType;
         buttonRouteType.setMessage(Text.translatable(String.format("gui.mtr.route_type_%s_%s", transportMode, routeType).toLowerCase(Locale.ENGLISH)));
-        setShowFCService(routeType.equals(Utils.KCR_CLASSICAL));
+        setShowFCService(routeType.equals(Utilities.KCR_CLASSICAL));
     }
 
     private void setIsLightRailRoute(boolean isLightRailRoute) {

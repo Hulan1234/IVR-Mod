@@ -72,7 +72,7 @@ public class DashboardScreenMixin {
         return new DeleteConfirmationScreen(() -> {
             PacketTrainDataGuiClient.sendDeleteData(PACKET_DELETE_STATION, station.id);
             ClientData.STATIONS.remove(station);
-            KSDClientData.STATIONS.remove(editingKSDStation);
+            KSDClientData.STATIONS.removeIf(s -> s.id == station.id);
             KSDPacketClient.sendDeleteData(KSD_PACKET_DELETE_STATION, station.id);
         }, IGui.formatStationName(station.name), (DashboardScreen) (Object) this);
     }
@@ -86,7 +86,7 @@ public class DashboardScreenMixin {
         return new DeleteConfirmationScreen(() -> {
             PacketTrainDataGuiClient.sendDeleteData(PACKET_DELETE_ROUTE, route.id);
             ClientData.ROUTES.remove(route);
-            KSDClientData.ROUTES.remove(editingKSDRoute);
+            KSDClientData.ROUTES.removeIf(r -> r.id == route.id);
             KSDPacketClient.sendDeleteData(KSD_PACKET_DELETE_ROUTE, route.id);
         }, IGui.formatStationName(route.name), (DashboardScreen) (Object) this);
     }

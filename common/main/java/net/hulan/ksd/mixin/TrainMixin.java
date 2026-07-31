@@ -4,9 +4,10 @@ import com.llamalad7.mixinextras.sugar.Local;
 import mtr.data.Train;
 import mtr.path.PathData;
 import net.hulan.ksd.client.KSDClientData;
+import net.hulan.ksd.data.DataUtilities;
 import net.hulan.ksd.data.KSDPlatform;
 import net.hulan.ksd.data.KSDRailwayData;
-import net.hulan.ksd.data.Utils;
+import net.hulan.ksd.data.Utilities;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -127,13 +128,13 @@ public abstract class TrainMixin {
     @Unique
     private KSDPlatform getPlatform(Level world, long platformId) {
         if (world.isClientSide) {
-            return Utils.getInstance().getFilteredValueFromDataSet(KSDClientData.PLATFORMS, p -> p.id == platformId);
+            return DataUtilities.getPlatform(KSDClientData.PLATFORMS, platformId);
         } else {
             KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
             if (railwayData == null) {
                 return null;
             }
-            return Utils.getInstance().getFilteredValueFromDataSet(railwayData.platforms, p -> p.id == platformId);
+            return DataUtilities.getPlatform(railwayData.platforms, platformId);
         }
     }
 }

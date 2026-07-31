@@ -5,7 +5,8 @@ import mtr.screen.DashboardScreen;
 import mtr.screen.EditNameColorScreenBase;
 import mtr.screen.EditRouteScreen;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.data.Utils;
+import net.hulan.ksd.data.DataUtilities;
+import net.hulan.ksd.data.Utilities;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketClient;
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,7 +25,7 @@ public class EditRouteScreenMixin extends EditNameColorScreenBase<Route> {
             at = @At(value = "TAIL"),
             remap = false)
     private  void saveData(CallbackInfo ci) {
-        Utils.getInstance().executeFromDataSet(KSDClientData.ROUTES, r -> r.id == data.id, ksdRoute -> {
+        DataUtilities.executeFromDataSet(KSDClientData.ROUTES, r -> r.id == data.id, ksdRoute -> {
             ksdRoute.name = data.name;
             ksdRoute.color = data.color;
             ksdRoute.routeType = data.routeType;
