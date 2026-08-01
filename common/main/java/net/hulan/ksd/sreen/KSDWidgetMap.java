@@ -6,10 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import mtr.client.ClientData;
 import mtr.client.IDrawing;
-import mtr.data.IGui;
-import mtr.data.RailwayData;
-import mtr.data.SavedRailBase;
-import mtr.data.TransportMode;
+import mtr.data.*;
 import mtr.mappings.SelectableMapper;
 import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
@@ -37,7 +34,8 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventListener, IGui {
-    
+
+    public MapType mapType;
     private int x;
     private int y;
     private int width;
@@ -49,7 +47,6 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
     private Tuple<Integer, Integer> drawArea2;
     private MapState mapState;
     private final TransportMode transportMode;
-    private final MapType mapType;
     private final OnDrawCorners onDrawCorners;
     private final Runnable onDrawCornersMouseRelease;
     private final Consumer<Long> onClickAddPlatformToRoute;
@@ -666,6 +663,10 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
     public enum MapType {
         X_Y,
         X_Z,
-        Z_Y
+        Z_Y;
+
+        public MapType next() {
+            return values()[(ordinal() + 1) % values().length];
+        }
     }
 }

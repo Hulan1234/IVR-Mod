@@ -46,6 +46,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
     private final Button buttonZoomOut;
     private final Button buttonRailActions;
     private final Button buttonOptions;
+    private final Button buttonChangeMapType;
     private final WidgetBetterTextField textFieldName;
     private final WidgetBetterTextField textFieldCustomDestination;
     private final WidgetColorSelector colorSelector;
@@ -56,9 +57,9 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         textFieldName = new WidgetBetterTextField(Text.translatable("gui.mtr.name").getString());
         textFieldCustomDestination = new WidgetBetterTextField(Text.translatable("gui.mtr.custom_destination_suggestion").getString());
         colorSelector = new WidgetColorSelector(this, true, this::toggleButtons);
-        widgetMapXY = new KSDWidgetMap(KSDWidgetMap.MapType.X_Y, transportMode, this::onDrawCornersXY, this::onDrawCornersMouseRelease, this::onClickAddPlatformToRoute, this::onClickEditSavedRail, colorSelector::isMouseOver);
-        widgetMapXZ = new KSDWidgetMap(KSDWidgetMap.MapType.X_Z, transportMode, this::onDrawCornersXZ, this::onDrawCornersMouseRelease, this::onClickAddPlatformToRoute, this::onClickEditSavedRail, colorSelector::isMouseOver);
-        widgetMapZY = new KSDWidgetMap(KSDWidgetMap.MapType.Z_Y, transportMode, this::onDrawCornersZY, this::onDrawCornersMouseRelease, this::onClickAddPlatformToRoute, this::onClickEditSavedRail, colorSelector::isMouseOver);
+        widgetMapXY = new KSDWidgetMap(KSDWidgetMap.MapType.X_Y, transportMode, this::onDrawCornersXY, this::onDrawCornersMouseReleaseXY, this::onClickAddPlatformToRoute, this::onClickEditSavedRail, colorSelector::isMouseOver);
+        widgetMapXZ = new KSDWidgetMap(KSDWidgetMap.MapType.X_Z, transportMode, this::onDrawCornersXZ, this::onDrawCornersMouseReleaseXZ, this::onClickAddPlatformToRoute, this::onClickEditSavedRail, colorSelector::isMouseOver);
+        widgetMapZY = new KSDWidgetMap(KSDWidgetMap.MapType.Z_Y, transportMode, this::onDrawCornersZY, this::onDrawCornersMouseReleaseZY, this::onClickAddPlatformToRoute, this::onClickEditSavedRail, colorSelector::isMouseOver);
         buttonTabStations = UtilitiesClient.newButton(Text.translatable("gui.mtr.stations"), (button) -> onSelectTab(SelectedTab.STATIONS));
         buttonTabRoutes = UtilitiesClient.newButton(Text.translatable("gui.mtr.routes"), button -> onSelectTab(SelectedTab.ROUTES));
         buttonAddStation = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_station"), (button) -> startEditingArea(new KSDStation(), true));
@@ -86,6 +87,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
                 UtilitiesClient.setScreen(minecraft, new ConfigScreen(useTimeAndWindSync));
             }
         });
+        buttonChangeMapType = UtilitiesClient.newButton(Text.translatable("menu.change_map_type"), (button) -> setMapType(widgetMapXZ.mapType.next()));
         dashboardList = new DashboardList(this::onFind, this::onDrawArea, this::onEdit, this::onSort, null, this::onDelete, this::getList, () -> ClientData.DASHBOARD_SEARCH, (text) -> ClientData.DASHBOARD_SEARCH = text);
         onSelectTab(SelectedTab.STATIONS);
     }
@@ -108,6 +110,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         IDrawing.setPositionAndWidth(buttonZoomOut, width - 20, bottomRowY, 20);
         IDrawing.setPositionAndWidth(buttonRailActions, width - 200, bottomRowY, 100);
         IDrawing.setPositionAndWidth(buttonOptions, width - 100, bottomRowY, 60);
+        IDrawing.setPositionAndWidth(buttonOptions, width - 300, bottomRowY, 60);
         IDrawing.setPositionAndWidth(textFieldName, 2, bottomRowY - 20 - 2, 92);
         IDrawing.setPositionAndWidth(textFieldCustomDestination, 2, bottomRowY - 20 - 2, 140);
         IDrawing.setPositionAndWidth(colorSelector, 98, bottomRowY - 20 - 2, 44);
@@ -130,6 +133,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         addDrawableChild(buttonZoomOut);
         addDrawableChild(buttonRailActions);
         addDrawableChild(buttonOptions);
+        addDrawableChild(buttonChangeMapType);
         addDrawableChild(textFieldName);
         addDrawableChild(textFieldCustomDestination);
         addDrawableChild(colorSelector);
@@ -366,8 +370,8 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
     }
 
     private void onDrawCornersXZ(Tuple<Integer, Integer> corner1, Tuple<Integer, Integer> corner2) {
-        editingStation.corner1 = editingStation.corner1 == null ? new Tuples<>(corner1.getA(), 0, corner1.getB()) : new Tuples<>(corner1.getA(), editingStation.corner1.getY(), corner1.getB());
-        editingStation.corner2 = editingStation.corner2 == null ? new Tuples<>(corner2.getA(), 0, corner2.getB()) : new Tuples<>(corner2.getA(), editingStation.corner2.getY(), corner2.getB());
+        editingStation.corner1 = editingStation.corner1 == null ? new Tuples<>(corner1.getA(), -64, corner1.getB()) : new Tuples<>(corner1.getA(), editingStation.corner1.getY(), corner1.getB());
+        editingStation.corner2 = editingStation.corner2 == null ? new Tuples<>(corner2.getA(), 319, corner2.getB()) : new Tuples<>(corner2.getA(), editingStation.corner2.getY(), corner2.getB());
         executeStationUpdate(mtrStation -> {
             mtrStation.corner1 = new Tuple<>(corner1.getA(), corner1.getB());
             mtrStation.corner2 = new Tuple<>(corner2.getA(), corner2.getB());
@@ -385,7 +389,25 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         toggleButtons();
     }
 
-    private void onDrawCornersMouseRelease() {
+    private void onDrawCornersMouseReleaseXY() {
+        editingStation.setCorners((packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_STATION, packet));
+        executeRouteUpdate(mtrRoute -> {
+            mtrRoute.setNameColor(packet -> PacketTrainDataGuiClient.sendUpdate(PACKET_UPDATE_ROUTE, packet));
+        });
+    }
+
+    private void onDrawCornersMouseReleaseXZ() {
+        editingStation.setCorners((packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_STATION, packet));
+        executeRouteUpdate(mtrRoute -> {
+            mtrRoute.setNameColor(packet -> PacketTrainDataGuiClient.sendUpdate(PACKET_UPDATE_ROUTE, packet));
+        });
+    }
+
+    private void onDrawCornersMouseReleaseZY() {
+        editingStation.setCorners((packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_STATION, packet));
+        executeRouteUpdate(mtrRoute -> {
+            mtrRoute.setNameColor(packet -> PacketTrainDataGuiClient.sendUpdate(PACKET_UPDATE_ROUTE, packet));
+        });
     }
 
     private void onClickAddPlatformToRoute(long platformId) {
@@ -411,7 +433,6 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         editingStation.name = IGui.textOrUntitled(textFieldName.getValue());
         editingStation.color = colorSelector.getColor();
         editingStation.setNameColor((packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_STATION, packet));
-        editingStation.setCorners((packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_STATION, packet));
         executeStationUpdate(mtrStation -> {
             mtrStation.name = IGui.textOrUntitled(textFieldName.getValue());
             mtrStation.color = colorSelector.getColor();
@@ -476,6 +497,10 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         textFieldCustomDestination.visible = showRouteDestinationFields;
         colorSelector.visible = showTextFields;
         dashboardList.height = height - SQUARE_SIZE * 2 - (showTextFields || showRouteDestinationFields ? SQUARE_SIZE + TEXT_FIELD_PADDING : 0);
+    }
+
+    private void setMapType(KSDWidgetMap.MapType mapType) {
+        widgetMapXZ.mapType = mapType;
     }
 
     private void executeStationUpdate(Consumer<Station> action) {
