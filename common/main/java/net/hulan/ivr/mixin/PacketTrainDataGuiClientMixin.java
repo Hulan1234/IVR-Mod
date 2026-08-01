@@ -1,6 +1,5 @@
 package net.hulan.ivr.mixin;
 
-import mtr.client.ClientData;
 import mtr.data.NameColorDataBase;
 import mtr.data.TransportMode;
 import mtr.packet.PacketTrainDataGuiClient;

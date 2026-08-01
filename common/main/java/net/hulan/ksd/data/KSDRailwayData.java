@@ -3,7 +3,7 @@ package net.hulan.ksd.data;
 import mtr.data.RailwayData;
 import mtr.mappings.PersistentStateMapper;
 import net.hulan.ksd.packet.KSDPacketServer;
-import net.minecraft.core.BlockPos;
+import net.hulan.ksd.utils.DataUtilities;import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -50,7 +50,11 @@ public class KSDRailwayData extends PersistentStateMapper {
     }
 
     public static KSDRailwayData getInstance(Level world) {
-        return getInstance(world, () -> new KSDRailwayData(world), "ksd_train_data");
+        return getInstance(world, () -> {
+            KSDRailwayData railwayData = new KSDRailwayData(world);
+            railwayData.syncFromMTR();
+            return railwayData;
+        }, "ksd_train_data");
     }
 
     @Override
@@ -110,12 +114,12 @@ public class KSDRailwayData extends PersistentStateMapper {
         }
         railwayDataFileSaveModule.load();
         jsonDataManager.onLoad();
-        dataCache.sync();
         useTimeAndWindSync = compoundTag.getBoolean("use_time_and_wind_sync");
         syncedFromMTR = compoundTag.getBoolean("synced_from_mtr");
         if (!syncedFromMTR) {
             syncFromMTR();
         }
+        dataCache.sync();
     }
 
     public void onPlayerJoin(ServerPlayer serverPlayer) {

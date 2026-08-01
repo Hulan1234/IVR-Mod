@@ -3,7 +3,7 @@ package net.hulan.ksd.mixin;
 import mtr.block.BlockTicketBarrier;
 import mtr.mappings.BlockDirectionalMapper;
 import net.hulan.ksd.KSDItems;
-import net.hulan.ksd.data.Utilities;
+import net.hulan.ksd.utils.Utilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;

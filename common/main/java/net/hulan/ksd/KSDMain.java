@@ -12,11 +12,9 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.hulan.ksd.data.*;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketServer;
-import net.minecraft.commands.Commands;
-import net.minecraft.core.Registry;
+import net.hulan.ksd.utils.Utilities;import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
@@ -112,12 +110,6 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
                         railwayData -> railwayData.dataCache.routeIdMap,
                         null,
                         true));
-        mtr.Registry.registerPlayerJoinEvent((player) -> {
-            KSDRailwayData ksdRailwayData = KSDRailwayData.getInstance(player.getLevel());
-            if (ksdRailwayData != null) {
-                ksdRailwayData.onPlayerJoin(player);
-            }
-        });
         mtr.Registry.registerTickEvent(playerTick -> playerTick.getAllLevels().forEach(level -> {
             KSDRailwayData ksd = KSDRailwayData.getInstance(level);
             RailwayData mtr = RailwayData.getInstance(level);
@@ -125,8 +117,14 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
                 FirstClassValidationSystem.tick(ksd, mtr, level, level.players());
             }
         }));
+        mtr.Registry.registerPlayerJoinEvent((player) -> {
+            KSDRailwayData ksdRailwayData = KSDRailwayData.getInstance(player.getLevel());
+            if (ksdRailwayData != null) {
+                ksdRailwayData.onPlayerJoin(player);
+            }
+        });
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            overworld = server.getLevel(Level.OVERWORLD);
+            overworld = server.overworld();
             the_nether = server.getLevel(Level.NETHER);
             the_end = server.getLevel(Level.END);
         });

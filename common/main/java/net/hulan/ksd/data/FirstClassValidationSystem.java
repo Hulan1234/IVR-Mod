@@ -7,6 +7,7 @@ import net.hulan.ksd.client.KSDClientCache;
 import net.hulan.ksd.mixin.SidingAccessor;
 import net.hulan.ksd.mixin.TrainInvoker;
 import net.hulan.ksd.mixin.TrainServerAccessor;
+import net.hulan.ksd.utils.DataUtilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -25,7 +26,6 @@ public final class FirstClassValidationSystem {
 
     private static final int BASE_FARE = 2;
     private static final int ZONE_FARE = 1;
-    private static final int MTR_EVASION_FINE = 500;
     private static final int FC_EVASION_FINE = 1000;
     private static final String PLAYER_CAR_OBJECTIVE = "player_car";
 

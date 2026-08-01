@@ -1,10 +1,9 @@
-package net.hulan.ksd.client;
+package net.hulan.ksd.utils;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
-import net.hulan.ksd.data.Utilities;
 
 import java.lang.reflect.InvocationTargetException;
 

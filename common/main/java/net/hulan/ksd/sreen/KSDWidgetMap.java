@@ -14,6 +14,7 @@ import mtr.mappings.SelectableMapper;
 import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
 import mtr.mappings.WidgetMapper;
+import mtr.screen.WidgetMap;
 import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.KSDAreaBase;
 import net.hulan.ksd.data.KSDStation;
@@ -193,6 +194,9 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+                if (mapState == MapState.EDITING_AREA && drawArea1 != null && drawArea2 != null) {
+                    drawRectangleFromWorldCords(buffer, drawArea1, drawArea2, Integer.MAX_VALUE);
+                }
                 if (player != null) {
                     drawFromWorldCords(player.getX(), player.getZ(), (x1, y1) -> {
                         drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 3.0F, x1 + (double) 2.0F, y1 + (double) 3.0F, -1);
@@ -266,6 +270,9 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                         drawRectangle(buffer, x1 - (double) 3.0F, y1 - (double) 2.0F, x1 + (double) 3.0F, y1 + (double) 2.0F, -1);
                         drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 2.0F, x1 + (double) 2.0F, y1 + (double) 2.0F, ARGB_BLUE);
                     });
+                }
+                if (mapState == MapState.EDITING_AREA && drawArea1 != null && drawArea2 != null) {
+                    drawRectangleFromWorldCords(buffer, drawArea1, drawArea2, Integer.MAX_VALUE);
                 }
                 tesselator.end();
                 RenderSystem.disableBlend();

@@ -1,6 +1,5 @@
-package net.hulan.ksd.data;
+package net.hulan.ksd.utils;
 
-import com.mojang.blaze3d.vertex.*;
 import mtr.data.EnumHelper;
 import mtr.data.RouteType;
 import net.fabricmc.loader.api.FabricLoader;
@@ -13,7 +12,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
 import java.util.function.Consumer;
 
 public abstract class Utilities {

@@ -4,7 +4,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.hulan.ksd.client.RenderUtilities;
 import net.minecraft.client.renderer.GameRenderer;
 
 public class RenderUtilities_1_19_2 extends RenderUtilities {

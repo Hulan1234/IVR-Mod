@@ -3,7 +3,7 @@ package net.hulan.ksd.mixin;
 import mtr.data.RailwayData;
 import mtr.data.VehicleRidingServer;
 import net.hulan.ksd.data.*;
-import net.minecraft.resources.ResourceLocation;
+import net.hulan.ksd.utils.DataUtilities;import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;

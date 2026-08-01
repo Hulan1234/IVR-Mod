@@ -1,5 +1,9 @@
-package net.hulan.ksd.data;
+package net.hulan.ksd.utils;
 
+import net.hulan.ksd.data.FirstClassPlayer;
+import net.hulan.ksd.data.KSDPlatform;
+import net.hulan.ksd.data.KSDRoute;
+import net.hulan.ksd.data.KSDStation;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.Collection;
