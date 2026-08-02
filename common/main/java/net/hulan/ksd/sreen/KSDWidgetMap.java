@@ -387,7 +387,7 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
     }
 
     public boolean isMouseOver(double mouseX, double mouseY) {
-        return mouseX >= (double)this.x && mouseY >= (double)this.y && mouseX < (double)(this.x + this.width) && mouseY < (double)(this.y + this.height) && (!(mouseX >= (double)(this.x + this.width - 200)) || !(mouseY >= (double)(this.y + this.height - 20))) && !(Boolean)this.isRestrictedMouseArea.apply(mouseX, mouseY);
+        return mouseX >= (double)this.x && mouseY >= (double)this.y && mouseX < (double)(this.x + this.width) && mouseY < (double)(this.y + this.height) && (!(mouseX >= (double)(this.x + this.width - 300)) || !(mouseY >= (double)(this.y + this.height - 20))) && !(Boolean)this.isRestrictedMouseArea.apply(mouseX, mouseY);
     }
 
     //@Override
@@ -439,16 +439,16 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
         mapState = MapState.EDITING_AREA;
         switch (mapType) {
             case X_Y -> {
-                this.drawArea1 = editingArea.corner1 != null ? editingArea.corner1.toTupleWithXY() : null;
-                this.drawArea2 = editingArea.corner2 != null ? editingArea.corner2.toTupleWithXY() : null;
+                drawArea1 = editingArea.corner1 != null ? editingArea.corner1.toTupleWithXY() : null;
+                drawArea2 = editingArea.corner2 != null ? editingArea.corner2.toTupleWithXY() : null;
             }
             case X_Z -> {
-                this.drawArea1 = editingArea.corner1 != null ? editingArea.corner1.toTupleWithXZ() : null;
-                this.drawArea2 = editingArea.corner2 != null ? editingArea.corner2.toTupleWithXZ() : null;
+                drawArea1 = editingArea.corner1 != null ? editingArea.corner1.toTupleWithXZ() : null;
+                drawArea2 = editingArea.corner2 != null ? editingArea.corner2.toTupleWithXZ() : null;
             }
             case Z_Y -> {
-                this.drawArea1 = editingArea.corner1 != null ? editingArea.corner1.toTupleWithZY() : null;
-                this.drawArea2 = editingArea.corner2 != null ? editingArea.corner2.toTupleWithZY() : null;
+                drawArea1 = editingArea.corner1 != null ? editingArea.corner1.toTupleWithZY() : null;
+                drawArea2 = editingArea.corner2 != null ? editingArea.corner2.toTupleWithZY() : null;
             }
         }
     }
@@ -459,6 +459,26 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
 
     public void stopEditing() {
         mapState = MapState.DEFAULT;
+    }
+
+    public void setMapType(MapType mapType, KSDAreaBase editingArea) {
+        this.mapType = mapType;
+        if (mapState.equals(MapState.EDITING_AREA) && editingArea != null) {
+            switch (this.mapType) {
+                case X_Y -> {
+                    drawArea1 = editingArea.corner1 != null ? editingArea.corner1.toTupleWithXY() : null;
+                    drawArea2 = editingArea.corner2 != null ? editingArea.corner2.toTupleWithXY() : null;
+                }
+                case X_Z -> {
+                    drawArea1 = editingArea.corner1 != null ? editingArea.corner1.toTupleWithXZ() : null;
+                    drawArea2 = editingArea.corner2 != null ? editingArea.corner2.toTupleWithXZ() : null;
+                }
+                case Z_Y -> {
+                    drawArea1 = editingArea.corner1 != null ? editingArea.corner1.toTupleWithZY() : null;
+                    drawArea2 = editingArea.corner2 != null ? editingArea.corner2.toTupleWithZY() : null;
+                }
+            }
+        }
     }
 
     private void mouseOnSavedRail(Tuple<Double, Double> mouseWorldPos, MouseOnSavedRailCallback mouseOnSavedRailCallback) {
@@ -634,7 +654,8 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                                         x + x1.intValue(),
                                         y + y1.intValue() - 4,
                                         -1));
-            }}
+            }
+        }
     }
 
     private static int divideColorRGB(int color) {
