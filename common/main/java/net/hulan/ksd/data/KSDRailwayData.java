@@ -116,9 +116,6 @@ public class KSDRailwayData extends PersistentStateMapper {
         jsonDataManager.onLoad();
         useTimeAndWindSync = compoundTag.getBoolean("use_time_and_wind_sync");
         syncedFromMTR = compoundTag.getBoolean("synced_from_mtr");
-        if (!syncedFromMTR) {
-            syncFromMTR();
-        }
         dataCache.sync();
     }
 
