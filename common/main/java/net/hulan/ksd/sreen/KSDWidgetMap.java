@@ -11,7 +11,6 @@ import mtr.mappings.SelectableMapper;
 import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
 import mtr.mappings.WidgetMapper;
-import mtr.screen.WidgetMap;
 import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.KSDAreaBase;
 import net.hulan.ksd.data.KSDStation;
@@ -390,11 +389,9 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
         return mouseX >= (double)this.x && mouseY >= (double)this.y && mouseX < (double)(this.x + this.width) && mouseY < (double)(this.y + this.height) && (!(mouseX >= (double)(this.x + this.width - 300)) || !(mouseY >= (double)(this.y + this.height - 20))) && !(Boolean)this.isRestrictedMouseArea.apply(mouseX, mouseY);
     }
 
-    //@Override
     public void setFocused(boolean focused) {
     }
 
-    //@Override
     public boolean isFocused() {
         return false;
     }
@@ -682,8 +679,8 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
     }
 
     public enum MapType {
-        X_Y,
         X_Z,
+        X_Y,
         Z_Y;
 
         public MapType next() {
