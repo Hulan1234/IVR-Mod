@@ -44,7 +44,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
     private final Button buttonZoomOut;
     private final Button buttonRailActions;
     private final Button buttonOptions;
-    private final Button buttonChangeMapType;
+    private final Button buttonSelectMapType;
     private final WidgetBetterTextField textFieldName;
     private final WidgetBetterTextField textFieldCustomDestination;
     private final WidgetColorSelector colorSelector;
@@ -75,7 +75,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
                 UtilitiesClient.setScreen(minecraft, new ConfigScreen(useTimeAndWindSync));
             }
         });
-        buttonChangeMapType = UtilitiesClient.newButton(Text.translatable("menu.change_map_type"), (button) -> setMapType(widgetMap.mapType.next()));
+        buttonSelectMapType = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_value"), (button) -> selectMapType(widgetMap.mapType.next()));
         dashboardList = new DashboardList(this::onFind, this::onDrawArea, this::onEdit, this::onSort, null, this::onDelete, this::getList, () -> ClientData.DASHBOARD_SEARCH, (text) -> ClientData.DASHBOARD_SEARCH = text);
         onSelectTab(SelectedTab.STATIONS);
     }
@@ -96,7 +96,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         IDrawing.setPositionAndWidth(buttonZoomOut, width - 20, bottomRowY, 20);
         IDrawing.setPositionAndWidth(buttonRailActions, width - 200, bottomRowY, 100);
         IDrawing.setPositionAndWidth(buttonOptions, width - 100, bottomRowY, 60);
-        IDrawing.setPositionAndWidth(buttonChangeMapType, width - 300, bottomRowY, 100);
+        IDrawing.setPositionAndWidth(buttonSelectMapType, width - 300, bottomRowY, 100);
         IDrawing.setPositionAndWidth(textFieldName, 2, bottomRowY - 20 - 2, 92);
         IDrawing.setPositionAndWidth(textFieldCustomDestination, 2, bottomRowY - 20 - 2, 140);
         IDrawing.setPositionAndWidth(colorSelector, 98, bottomRowY - 20 - 2, 44);
@@ -117,10 +117,11 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         addDrawableChild(buttonZoomOut);
         addDrawableChild(buttonRailActions);
         addDrawableChild(buttonOptions);
-        addDrawableChild(buttonChangeMapType);
+        addDrawableChild(buttonSelectMapType);
         addDrawableChild(textFieldName);
         addDrawableChild(textFieldCustomDestination);
         addDrawableChild(colorSelector);
+        selectMapType(KSDWidgetMap.MapType.X_Z);
     }
 
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
@@ -363,9 +364,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
 
     private void onDrawCornersMouseRelease() {
         editingStation.setCorners((packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_STATION, packet));
-        executeRouteUpdate(mtrRoute -> {
-            mtrRoute.setNameColor(packet -> PacketTrainDataGuiClient.sendUpdate(PACKET_UPDATE_ROUTE, packet));
-        });
+        executeRouteUpdate(mtrRoute -> mtrRoute.setNameColor(packet -> PacketTrainDataGuiClient.sendUpdate(PACKET_UPDATE_ROUTE, packet)));
     }
 
     private void onClickAddPlatformToRoute(long platformId) {
@@ -455,8 +454,9 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         dashboardList.height = height - SQUARE_SIZE * 2 - (showTextFields || showRouteDestinationFields ? SQUARE_SIZE + TEXT_FIELD_PADDING : 0);
     }
 
-    private void setMapType(KSDWidgetMap.MapType mapType) {
+    private void selectMapType(KSDWidgetMap.MapType mapType) {
         widgetMap.setMapType(mapType, editingStation);
+        buttonSelectMapType.setMessage(Text.translatable(String.format("gui.ksd.map_type.%s", mapType).toLowerCase()));
     }
 
     private void executeStationUpdate(Consumer<Station> action) {
