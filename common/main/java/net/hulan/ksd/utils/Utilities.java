@@ -18,14 +18,13 @@ public abstract class Utilities {
 
     public static final RouteType KCR_CLASSICAL = EnumHelper.valueOf(RouteType.NORMAL, "KCR_CLASSICAL");
     public static final RouteType KCR_MODERN = EnumHelper.valueOf(RouteType.NORMAL, "KCR_MODERN");
-    public static final RouteType KCR_LIGHT_RAIL = EnumHelper.valueOf(RouteType.NORMAL, "KCR_LIGHT_RAIL");
     private static Utilities instance;
     
     public static Utilities getInstance() {
         if (instance == null) {
             String version = getMinecraftVersion();
-            String className = "Utils_" + version;
-            Utilities tempInstance = new NullUtils();
+            String className = "Utilities_" + version;
+            Utilities tempInstance = new NullUtilities();
             try {
                 Class<?> clazz = Class.forName("net.hulan.ksd.data." + className);
                 tempInstance = (Utilities) clazz.getDeclaredConstructor().newInstance();
@@ -85,7 +84,7 @@ public abstract class Utilities {
 
     public abstract void registerCommand();
 
-    static class NullUtils extends Utilities {
+    private static class NullUtilities extends Utilities {
 
         public void registerCommand() {
         }

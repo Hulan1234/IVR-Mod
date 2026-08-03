@@ -29,8 +29,6 @@ public class RouteTypeMixin {
         values.add(kcrClassical);
         RouteType kcrModern = createInstance("KCR_MODERN", values.size());
         values.add(kcrModern);
-        RouteType kcrLightRail = createInstance("KCR_LIGHT_RAIL", values.size());
-        values.add(kcrLightRail);
         $VALUES = values.toArray(new RouteType[0]);
     }
 

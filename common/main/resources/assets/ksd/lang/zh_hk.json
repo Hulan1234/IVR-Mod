@@ -3,7 +3,7 @@
   "item.ksd.kp_cell_side_is": "假天花（內側）",
   "item.ksd.kp_cell_side_os": "假天花（外側）",
   "item.ksd.kp_cell_side_os_with_light": "假天花（外側，帶燈）",
-  "item.ksd.ksd_dashboard": "KSD 儀表板",
+  "item.ksd.ksd_dashboard": "IVR 儀表板",
   "block.ksd.kp_pole_normal": "支柱（標準）",
   "block.ksd.kp_pole_single_side": "支柱（單邊）",
   "block.ksd.kp_pole_double_side": "支柱（雙邊）",
@@ -18,7 +18,6 @@
   "block.ksd.first_class_processor": "九鐵頭等核准機",
   "gui.mtr.route_type_train_kcr_classical": "類型：九鐵經典",
   "gui.mtr.route_type_train_kcr_modern": "類型：九鐵現代",
-  "gui.mtr.route_type_train_kcr_light_rail": "類型：九廣輕鐵",
   "gui.ksd.first_class_denied": "拒絕",
   "gui.ksd.first_class_illegal": "未核准乘搭頭等",
   "gui.ksd.first_class_denied_no_entry": "拒絕：無入閘紀錄",
@@ -33,5 +32,8 @@
   "gui.ksd.door_opening_side_left": "車門開啟方向：左邊",
   "gui.ksd.door_opening_side_right": "車門開啟方向：右邊",
   "gui.ksd.has_fc_service": "有頭等服務",
-  "gui.ksd.fc_car_number": "頭等車卡編號"
+  "gui.ksd.fc_car_number": "頭等車卡編號",
+  "gui.ksd.map_type.x_z": "當前地圖類型:X-Z",
+  "gui.ksd.map_type.x_y": "當前地圖類型:X-Y",
+  "gui.ksd.map_type.z_y": "當前地圖類型:Z-Y"
 }

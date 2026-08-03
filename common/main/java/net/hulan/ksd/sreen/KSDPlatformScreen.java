@@ -20,8 +20,6 @@ import java.util.Locale;
 
 import static net.hulan.ksd.packet.KSDPacket.KSD_PACKET_UPDATE_PLATFORM;
 
-
-//TODO 西班牙式站台
 public class KSDPlatformScreen extends SavedRailScreenBase<KSDPlatform> {
 
     private KSDPlatform.DoorOpeningSide doorOpeningSide;

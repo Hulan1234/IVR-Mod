@@ -154,7 +154,7 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                     }
                 }
                 immediate.endBatch();
-                String mousePosText = "X_Y" + String.format("(%s, %s)", RailwayData.round(mouseWorldPos.getA(), 1), RailwayData.round(mouseWorldPos.getB(), 1));
+                String mousePosText = "X-Y" + String.format("(%s, %s)", RailwayData.round(mouseWorldPos.getA(), 1), RailwayData.round(mouseWorldPos.getB(), 1));
                 Gui.drawString(matrices, this.textRenderer, mousePosText, this.x + this.width - 6 - this.textRenderer.width(mousePosText), this.y + 6, -1);
             }
             case X_Z -> {
@@ -224,7 +224,7 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                     }
                 }
                 immediate.endBatch();
-                String mousePosText = "X_Z" + String.format("(%s, %s)", RailwayData.round(mouseWorldPos.getA(), 1), RailwayData.round(mouseWorldPos.getB(), 1));
+                String mousePosText = "X-Z" + String.format("(%s, %s)", RailwayData.round(mouseWorldPos.getA(), 1), RailwayData.round(mouseWorldPos.getB(), 1));
                 Gui.drawString(matrices, this.textRenderer, mousePosText, this.x + this.width - 6 - this.textRenderer.width(mousePosText), this.y + 6, -1);
             }
             case Z_Y -> {
@@ -294,7 +294,7 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                     }
                 }
                 immediate.endBatch();
-                String mousePosText = "Z_Y" + String.format("(%s, %s)", RailwayData.round(mouseWorldPos.getA(), 1), RailwayData.round(mouseWorldPos.getB(), 1));
+                String mousePosText = "Z-Y" + String.format("(%s, %s)", RailwayData.round(mouseWorldPos.getA(), 1), RailwayData.round(mouseWorldPos.getB(), 1));
                 Gui.drawString(matrices, textRenderer, mousePosText, x + width - 6 - textRenderer.width(mousePosText), y + 6, -1);
             }
         }

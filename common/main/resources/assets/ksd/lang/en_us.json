@@ -3,7 +3,7 @@
   "item.ksd.kp_cell_side_is": "Cell(Side,Inner)",
   "item.ksd.kp_cell_side_os": "Cell(Side,Outer)",
   "item.ksd.kp_cell_side_os_with_light": "Cell(Side,Outer With Light)",
-  "item.ksd.ksd_dashboard": "KSD Dashboard",
+  "item.ksd.ksd_dashboard": "IVR Dashboard",
   "block.ksd.kp_pole_normal": "Pole(Normal)",
   "block.ksd.kp_pole_single_side": "Pole(Single Side)",
   "block.ksd.kp_pole_double_side": "Pole(Double Side)",
@@ -18,7 +18,6 @@
   "block.ksd.first_class_processor": "KCR FirstClassProcessor",
   "gui.mtr.route_type_train_kcr_classical" : "Type: KCR Classical(East Rail)",
   "gui.mtr.route_type_train_kcr_modern" : "Type: KCR Modern(West Rail & MOS Rail)",
-  "gui.mtr.route_type_train_kcr_light_rail" : "Type: KCR Light Rail",
   "gui.ksd.first_class_denied" : "Denied",
   "gui.ksd.first_class_illegal" : "Illegally Riding",
   "gui.ksd.first_class_denied_no_entry": "Denied:No Entry History",
@@ -33,5 +32,8 @@
   "gui.ksd.door_opening_side_left" : "Door Opening Side:Left",
   "gui.ksd.door_opening_side_right" : "Door Opening Side:Right",
   "gui.ksd.has_fc_service" : "Has First Class Service",
-  "gui.ksd.fc_car_number" : "First Class Car Number"
+  "gui.ksd.fc_car_number" : "First Class Car Number",
+  "gui.ksd.map_type.x_z" : "Current Map Type:X-Z",
+  "gui.ksd.map_type.x_y" : "Current Map Type:X-Y",
+  "gui.ksd.map_type.z_y" : "Current Map Type:Z-Y"
 }

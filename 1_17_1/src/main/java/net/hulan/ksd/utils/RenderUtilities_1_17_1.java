@@ -1,4 +1,4 @@
-package net.hulan.ksd.client;
+package net.hulan.ksd.utils;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -6,7 +6,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.GameRenderer;
 
-public class RenderUtilities_1_19_2 extends RenderUtilities {
+public class RenderUtilities_1_17_1 extends RenderUtilities {
 
     public void beginDrawingCircle(BufferBuilder buffer) {
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
@@ -14,5 +14,6 @@ public class RenderUtilities_1_19_2 extends RenderUtilities {
     }
 
     public void finishDrawingCircle() {
+
     }
 }

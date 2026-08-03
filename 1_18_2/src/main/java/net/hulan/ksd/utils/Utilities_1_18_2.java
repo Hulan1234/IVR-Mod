@@ -1,15 +1,14 @@
-package net.hulan.ksd.data;
+package net.hulan.ksd.utils;
 
 import io.netty.buffer.Unpooled;
 import mtr.Registry;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.hulan.ksd.packet.KSDPacket;
-import net.hulan.ksd.utils.Utilities;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 
-public class Utils_1_18_2 extends Utilities {
+public class Utilities_1_18_2 extends Utilities {
 
     public void registerCommand() {
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> dispatcher.register(Commands.literal("ms").executes(context -> {

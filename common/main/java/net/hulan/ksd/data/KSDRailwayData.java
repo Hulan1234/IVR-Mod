@@ -3,7 +3,9 @@ package net.hulan.ksd.data;
 import mtr.data.RailwayData;
 import mtr.mappings.PersistentStateMapper;
 import net.hulan.ksd.packet.KSDPacketServer;
-import net.hulan.ksd.utils.DataUtilities;import net.minecraft.core.BlockPos;
+import net.hulan.ksd.utils.DataUtilities;
+import net.hulan.ksd.utils.Utilities;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -32,14 +34,14 @@ public class KSDRailwayData extends PersistentStateMapper {
     private final Level world;
     private final KSDRailwayDataFileSaveModule railwayDataFileSaveModule;
     public final KSDRailwayDataLoggingModule railwayDataLoggingModule;
-    private boolean useTimeAndWindSync;
     private boolean syncedFromMTR;
+    private static final String NAME = "ksd_train_data";
     private static final String KEY_STATIONS = "stations";
     private static final String KEY_PLATFORMS = "platforms";
     private static final String KEY_ROUTES = "routes";
 
     public KSDRailwayData(Level world) {
-        super("ksd_train_data");
+        super(NAME);
         this.world = world;
         dataCache = new KSDDataCache(stations, platforms, routes);
         ResourceLocation dimensionLocation = world.dimension().location();
@@ -50,13 +52,7 @@ public class KSDRailwayData extends PersistentStateMapper {
     }
 
     public static KSDRailwayData getInstance(Level world) {
-        return getInstance(world, () -> {
-            KSDRailwayData railwayData = new KSDRailwayData(world);
-            System.out.println("first load");
-            railwayData.syncFromMTR();
-            railwayData.dataCache.sync();
-            return railwayData;
-        }, "ksd_train_data");
+        return getInstance(world, () -> new KSDRailwayData(world), NAME);
     }
 
     @Override
@@ -116,8 +112,8 @@ public class KSDRailwayData extends PersistentStateMapper {
         }
         railwayDataFileSaveModule.load();
         jsonDataManager.onLoad();
-        useTimeAndWindSync = compoundTag.getBoolean("use_time_and_wind_sync");
         syncedFromMTR = compoundTag.getBoolean("synced_from_mtr");
+        syncFromMTR();
         dataCache.sync();
     }
 
@@ -149,12 +145,11 @@ public class KSDRailwayData extends PersistentStateMapper {
 
     @Override
     public @NotNull CompoundTag save(CompoundTag compoundTag) {
-        compoundTag.putBoolean("use_time_and_wind_sync", useTimeAndWindSync);
         compoundTag.putBoolean("synced_from_mtr", syncedFromMTR);
         return compoundTag;
     }
 
-    private void syncFromMTR() {
+    public void syncFromMTR() {
         try {
             if (syncedFromMTR) return;
             RailwayData railwayData = RailwayData.getInstance(world);
@@ -166,12 +161,11 @@ public class KSDRailwayData extends PersistentStateMapper {
                 routes.clear();
                 routes.addAll(KSDRoute.fromMTRRoutes(railwayData.routes));
             }
+            syncedFromMTR = true;
         } catch (Exception e) {
             e.printStackTrace();
             syncedFromMTR = false;
-            return;
         }
-        syncedFromMTR = true;
     }
 
     public static KSDStation getStation(Set<KSDStation> stations, BlockPos pos) {

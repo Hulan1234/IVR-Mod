@@ -26,9 +26,9 @@ public class JSONDataManager {
     private final Path ocPath;
 
     public JSONDataManager(ServerLevel world) {
-        Path savedPath = world.getServer().getWorldPath(LevelResource.ROOT).resolve("JsonData").resolve(world.dimension().location().getPath());
-        fcpPath = savedPath.resolve("FirstClassPlayers");
-        ocPath = savedPath.resolve("Octopus");
+        Path savedPath = world.getServer().getWorldPath(LevelResource.ROOT).resolve("json-data").resolve(world.dimension().location().getPath());
+        fcpPath = savedPath.resolve("first-class-players");
+        ocPath = savedPath.resolve("octopus");
         try {
             Files.createDirectories(fcpPath);
             Files.createDirectories(ocPath);
