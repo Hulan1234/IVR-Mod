@@ -77,6 +77,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
                 if (KSDAreaBase.nonNullCorners(station)) {
                     boolean current = station.inArea(machinePos);
                     BlockPos midPos = station.getCenter();
+                    int color = ARGB_BLACK_TRANSLUCENT + station.color;
                     drawFromWorldCords(
                             midPos.getX(),
                             midPos.getZ(),
@@ -87,7 +88,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
                                     RADIUS,
                                     SEGMENTS,
                                     (float) RADIUS / 5,
-                                    current ? Integer.MAX_VALUE : ARGB_BLACK_TRANSLUCENT + station.color));
+                                    current ? RenderUtilities.getInstance().lightenColor(color) : color));
                 }
             }
         } catch (Exception e) {
@@ -152,7 +153,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
                                 VerticalAlignment.CENTER,
                                 (float) this.x + x1.floatValue() + RADIUS + RADIUS_PADDING,
                                 (float) this.y + y1.floatValue(), -1.0F, -1.0F, 1.5F, -1, true,
-                                MAX_LIGHT_GLOWING, null));
+                                ARGB_WHITE, null));
             }
         }
         immediate.endBatch();

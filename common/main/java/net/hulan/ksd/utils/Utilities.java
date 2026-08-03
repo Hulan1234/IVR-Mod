@@ -26,7 +26,7 @@ public abstract class Utilities {
             String className = "Utilities_" + version;
             Utilities tempInstance = new NullUtilities();
             try {
-                Class<?> clazz = Class.forName("net.hulan.ksd.data." + className);
+                Class<?> clazz = Class.forName("net.hulan.ksd.utils." + className);
                 tempInstance = (Utilities) clazz.getDeclaredConstructor().newInstance();
             } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException |
                      NoSuchMethodException e) {

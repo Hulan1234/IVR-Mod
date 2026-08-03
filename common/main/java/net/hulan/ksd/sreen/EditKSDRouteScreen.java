@@ -109,7 +109,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
             if (textFieldLightRailRouteNumber.visible) {
                 drawString(matrices, font, lightRailRouteNumberText, SQUARE_SIZE, SQUARE_SIZE * 7 + TEXT_PADDING, ARGB_WHITE);
             }
-            if (routeType.equals(Utilities.KCR_CLASSICAL)) {
+            if (routeType.equals(Utilities.KCR_CLASSICAL) && buttonHasFCService.selected()) {
                 drawString(matrices, font, fcCarNumberText, width / 2 + SQUARE_SIZE, SQUARE_SIZE * 4 + TEXT_PADDING, ARGB_WHITE);
             }
             super.render(matrices, mouseX, mouseY, delta);
@@ -196,7 +196,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
 
     private void setShowFCService(boolean show) {
         buttonHasFCService.visible = show;
-        textFieldFCCar.visible = show;
+        textFieldFCCar.visible = show && buttonHasFCService.selected();
     }
 
     private void setHasFCService(boolean hasFCService) {

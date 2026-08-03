@@ -10,14 +10,15 @@ import java.lang.reflect.InvocationTargetException;
 public abstract class RenderUtilities {
 
     private static RenderUtilities instance;
+    private static final float lightFactor = 0.5f;
 
     public static RenderUtilities getInstance() {
-        if (instance == null) {
+        if (instance == null || instance instanceof NullRenderUtilities) {
             String version = Utilities.getMinecraftVersion();
             String className = "RenderUtilities_" + version;
             RenderUtilities tempInstance = new NullRenderUtilities();
             try {
-                Class<?> clazz = Class.forName("net.hulan.ksd.client." + className);
+                Class<?> clazz = Class.forName("net.hulan.ksd.utils." + className);
                 tempInstance = (RenderUtilities) clazz.getDeclaredConstructor().newInstance();
             } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException |
                      NoSuchMethodException e) {
@@ -60,6 +61,16 @@ public abstract class RenderUtilities {
         tesselator.end();
         finishDrawingCircle();
         RenderSystem.disableBlend();
+    }
+
+    public int lightenColor(int color) {
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        r = (int) (r + (255 - r) * lightFactor);
+        g = (int) (g + (255 - g) * lightFactor);
+        b = (int) (b + (255 - b) * lightFactor);
+        return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
     public abstract void beginDrawingCircle(BufferBuilder buffer);

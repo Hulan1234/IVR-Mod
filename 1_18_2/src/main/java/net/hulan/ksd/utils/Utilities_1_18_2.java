@@ -11,7 +11,9 @@ import net.minecraft.server.level.ServerPlayer;
 public class Utilities_1_18_2 extends Utilities {
 
     public void registerCommand() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> dispatcher.register(Commands.literal("ms").executes(context -> {
+        System.out.println(434543634);
+        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> dispatcher.register(Commands.literal("open").executes(context -> {
+
             ServerPlayer player = context.getSource().getPlayerOrException();
             final FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
             packet.writeBlockPos(player.blockPosition());
