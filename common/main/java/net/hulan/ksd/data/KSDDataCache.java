@@ -87,7 +87,7 @@ public class KSDDataCache {
         savedRails.forEach(savedRail -> {
             final BlockPos pos = savedRail.getMidPos();
             for (final V area : areas) {
-                if (area.isTransportMode(savedRail.transportMode) && area.inArea(pos.getX(), pos.getY(), pos.getZ())) {
+                if (area.isTransportMode(savedRail.transportMode) && area.inArea(pos)) {
                     map.put(savedRail.id, area);
                     break;
                 }

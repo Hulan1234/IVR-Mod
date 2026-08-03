@@ -144,6 +144,10 @@ public abstract class KSDAreaBase extends NameColorDataBase {
                 && RailwayData.isBetween(z, corner1.getZ(), corner2.getZ());
     }
 
+    public boolean inArea(BlockPos pos) {
+        return inArea(pos.getX(), pos.getY(), pos.getZ());
+    }
+
     public boolean intersecting(KSDAreaBase areaBase) {
         return nonNullCorners(this) && nonNullCorners(areaBase) && (inThis(areaBase) || areaBase.inThis(this));
     }

@@ -36,7 +36,7 @@ public class DataCacheMixin {
                 if (areas == ClientData.STATIONS) {
                     KSDClientData.STATIONS.forEach(station -> {
                         for(V area : areas) {
-                            if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos.getX(), pos.getY(), pos.getZ())) {
+                            if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos)) {
                                 map.put(savedRail.id, area);
                                 break;
                             }
@@ -47,7 +47,7 @@ public class DataCacheMixin {
                 if (ksdOverworld != null && mtrOverworld != null && areas == mtrOverworld.stations) {
                     ksdOverworld.stations.forEach(station -> {
                         for(V area : areas) {
-                            if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos.getX(), pos.getY(), pos.getZ())) {
+                            if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos)) {
                                 map.put(savedRail.id, area);
                                 break;
                             }
@@ -58,7 +58,7 @@ public class DataCacheMixin {
                 if (ksdTheNether != null && mtrTheNether != null && areas == mtrTheNether.stations) {
                     ksdTheNether.stations.forEach(station -> {
                         for(V area : areas) {
-                            if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos.getX(), pos.getY(), pos.getZ())) {
+                            if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos)) {
                                 map.put(savedRail.id, area);
                                 break;
                             }
@@ -69,7 +69,7 @@ public class DataCacheMixin {
                 if (ksdTheEnd != null && mtrTheEnd != null && areas == mtrTheEnd.stations) {
                     ksdTheEnd.stations.forEach(station -> {
                         for(V area : areas) {
-                            if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos.getX(), pos.getY(), pos.getZ())) {
+                            if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos)) {
                                 map.put(savedRail.id, area);
                                 break;
                             }

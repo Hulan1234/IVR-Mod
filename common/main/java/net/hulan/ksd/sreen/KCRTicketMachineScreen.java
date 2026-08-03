@@ -29,7 +29,7 @@ public class KCRTicketMachineScreen extends ScreenMapper implements IGui {
         super(Text.literal(""));
         classicalButton = UtilitiesClient.newButton(Text.translatable("gui.ksd.classical"), button -> setRouteType(Utilities.KCR_CLASSICAL));
         modernButton = UtilitiesClient.newButton(Text.translatable("gui.ksd.modern"), button -> setRouteType(Utilities.KCR_MODERN));
-        railMap = new KCRTicketMachineRailMap(this::onClickedOnTerminus);
+        railMap = new KCRTicketMachineRailMap(machinePos, this::onClickedOnTerminus);
         current = KSDRailwayData.getStation(KSDClientData.STATIONS,  machinePos);
     }
 

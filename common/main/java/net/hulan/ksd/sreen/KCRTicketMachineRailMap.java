@@ -44,6 +44,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
     private final Set<KSDRoute> routes = new HashSet<>();
     private final ClientLevel world;
     private final LocalPlayer player;
+    private final BlockPos machinePos;
     private final Font textRenderer;
     private final Consumer<KSDStation> onClickedOnTerminus;
     private static final int ARGB_BLUE = -12417548;
@@ -53,7 +54,8 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
     private static final int RADIUS_PADDING = 5;
     private static final int SEGMENTS = 64;
 
-    public KCRTicketMachineRailMap(Consumer<KSDStation> onClickedOnTerminus) {
+    public KCRTicketMachineRailMap(BlockPos machinePos, Consumer<KSDStation> onClickedOnTerminus) {
+        this.machinePos = machinePos;
         this.onClickedOnTerminus = onClickedOnTerminus;
         Minecraft minecraftClient = Minecraft.getInstance();
         world = minecraftClient.level;
@@ -73,6 +75,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
         try {
             for (KSDStation station : stations) {
                 if (KSDAreaBase.nonNullCorners(station)) {
+                    boolean current = station.inArea(machinePos);
                     BlockPos midPos = station.getCenter();
                     drawFromWorldCords(
                             midPos.getX(),
@@ -84,7 +87,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
                                     RADIUS,
                                     SEGMENTS,
                                     (float) RADIUS / 5,
-                                    ARGB_BLACK_TRANSLUCENT + station.color));
+                                    current ? Integer.MAX_VALUE : ARGB_BLACK_TRANSLUCENT + station.color));
                 }
             }
         } catch (Exception e) {

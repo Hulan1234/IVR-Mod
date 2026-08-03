@@ -517,7 +517,7 @@ public class KSDClientCache extends KSDDataCache {
         final Map<Long, V> savedRailMap = new HashMap<>();
         savedRails.forEach(savedRail -> {
             final BlockPos pos = savedRail.getMidPos();
-            if (area.isTransportMode(savedRail.transportMode) && area.inArea(pos.getX(), pos.getY(), pos.getZ())) {
+            if (area.isTransportMode(savedRail.transportMode) && area.inArea(pos)) {
                 savedRailMap.put(savedRail.id, savedRail);
             }
         });

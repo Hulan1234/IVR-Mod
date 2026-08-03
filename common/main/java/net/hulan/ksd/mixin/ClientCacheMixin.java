@@ -38,7 +38,7 @@ public class ClientCacheMixin {
             if (savedRail instanceof Platform) {
                 if (ClientData.STATIONS.contains((Station) area)) {
                     KSDClientData.STATIONS.forEach(station -> {
-                        if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos.getX(), pos.getY(), pos.getZ())) {
+                        if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos)) {
                             savedRailMap.put(savedRail.id, savedRail);
                         }
                     });

@@ -1,20 +1,26 @@
 package net.hulan.ksd.mixin;
 
-import com.llamalad7.mixinextras.sugar.Local;
+import mtr.block.BlockPSDAPGBase;
+import mtr.block.BlockPlatform;
+import mtr.data.Depot;import mtr.data.RailwayData;
 import mtr.data.Train;
+import mtr.data.TrainServer;
 import mtr.path.PathData;
 import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.utils.DataUtilities;
 import net.hulan.ksd.data.KSDPlatform;
 import net.hulan.ksd.data.KSDRailwayData;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import org.spongepowered.asm.mixin.Final;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.phys.Vec3;
+import org.objectweb.asm.Opcodes;import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 
@@ -42,6 +48,9 @@ public abstract class TrainMixin {
     @Shadow(remap = false)
     protected int nextPlatformIndex;
 
+    @Shadow(remap = false)
+    protected boolean doorTarget;
+
     @Redirect(method = "calculateCar", at = @At(value = "INVOKE", target = "Lmtr/data/Train;scanDoors(Lnet/minecraft/world/level/Level;DDDFFDI)Z", ordinal = 0))
     private boolean scanLeftDoor(Train instance,
                                  Level world,
@@ -52,25 +61,35 @@ public abstract class TrainMixin {
                                  float pitch,
                                  double halfSpacing,
                                  int dwellTicks) {
-        TrainInvoker invoker = (TrainInvoker) instance;
-        boolean original = invoker.invokeScanDoors(world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks);
-        float phase = (float) getTotalDwellTicks() / 2;
-        boolean spanishCheck;
-        long platformId = path.get(nextPlatformIndex).savedRailBaseId;
-        KSDPlatform platform = getPlatform(world, platformId);
-        if (platform != null && platform.isSpanishPlatform && !platform.doorOpeningSide.equals(KSDPlatform.DoorOpeningSide.DEFAULT)) {
-            spanishCheck = platform.doorOpeningSide.equals(KSDPlatform.DoorOpeningSide.LEFT);
-            if (phase + DOOR_DELAY <= elapsedDwellTicks && elapsedDwellTicks < phase * 3) {
-                spanishCheck = !spanishCheck;
-            }
-            return original && spanishCheck;
-        } else {
-            return original;
-        }
+        return spanishCheck((TrainInvoker) instance, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks, KSDPlatform.DoorOpeningSide.LEFT);
     }
 
     @Redirect(method = "calculateCar", at = @At(value = "INVOKE", target = "Lmtr/data/Train;scanDoors(Lnet/minecraft/world/level/Level;DDDFFDI)Z", ordinal = 1))
     private boolean scanRightDoor(Train instance,
+                                  Level world,
+                                  double trainX,
+                                  double trainY,
+                                  double trainZ,
+                                  float checkYaw,
+                                  float pitch,
+                                  double halfSpacing,
+                                  int dwellTicks) {
+        return spanishCheck((TrainInvoker) instance, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks, KSDPlatform.DoorOpeningSide.RIGHT);
+    }
+
+    @Inject(method = "simulateTrain",
+            at = @At(value = "FIELD",
+                     target = "Lmtr/data/Train;doorTarget:Z",
+                     shift = At.Shift.AFTER,
+                     ordinal = 1,
+                     opcode = Opcodes.GETFIELD),
+            remap = false)
+    private void tempDoorOpen(Level world, float ticksElapsed, Depot depot, CallbackInfo ci) {
+        doorTarget = openDoors(world, doorTarget);
+    }
+
+    @Unique
+    private boolean spanishCheck(TrainInvoker invoker,
                                  Level world,
                                  double trainX,
                                  double trainY,
@@ -78,27 +97,81 @@ public abstract class TrainMixin {
                                  float checkYaw,
                                  float pitch,
                                  double halfSpacing,
-                                 int dwellTicks) {
-        TrainInvoker invoker = (TrainInvoker) instance;
-        boolean original = invoker.invokeScanDoors(world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks);
+                                 int dwellTicks,
+                                 KSDPlatform.DoorOpeningSide leftOrRight) {
+        boolean original = scanDoors(invoker, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing);
         float phase = (float) getTotalDwellTicks() / 2;
-        boolean spanishCheck;
+        boolean spanishCheck, scanDoor;
         long platformId = path.get(nextPlatformIndex).savedRailBaseId;
         KSDPlatform platform = getPlatform(world, platformId);
         if (platform != null && platform.isSpanishPlatform && !platform.doorOpeningSide.equals(KSDPlatform.DoorOpeningSide.DEFAULT)) {
-            spanishCheck = platform.doorOpeningSide.equals(KSDPlatform.DoorOpeningSide.RIGHT);
+            spanishCheck = platform.doorOpeningSide.equals(leftOrRight);
             if (phase + DOOR_DELAY <= elapsedDwellTicks && elapsedDwellTicks < phase * 2) {
                 spanishCheck = !spanishCheck;
             }
-            return original && spanishCheck;
+            scanDoor = original && spanishCheck;
         } else {
-            return original;
+            scanDoor = original;
+        }
+        if (scanDoor && invoker instanceof TrainServer) {
+            openPSDOrAPG(invoker, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks);
+        }
+        return scanDoor;
+    }
+
+    @Unique
+    private boolean scanDoors(TrainInvoker invoker,
+                              Level world,
+                              double trainX,
+                              double trainY,
+                              double trainZ,
+                              float checkYaw,
+                              float pitch,
+                              double halfSpacing) {
+        if (invoker.invokeSkipScanBlocks(world, trainX, trainY, trainZ)) {
+            return false;
+        } else {
+            boolean hasPlatform = false;
+            Vec3 offsetVec = (new Vec3(1.0F, 0.0F, 0.0F)).yRot(checkYaw).xRot(pitch);
+            Vec3 traverseVec = (new Vec3(0.0F, 0.0F, 1.0F)).yRot(checkYaw).xRot(pitch);
+            for(int checkX = 1; checkX <= 3; ++checkX) {
+                for(int checkY = -2; checkY <= 3; ++checkY) {
+                    for(double checkZ = -halfSpacing; checkZ <= halfSpacing; ++checkZ) {
+                        BlockPos checkPos = RailwayData.newBlockPos(trainX + offsetVec.x * (double)checkX + traverseVec.x * checkZ, trainY + (double)checkY, trainZ + offsetVec.z * (double)checkX + traverseVec.z * checkZ);
+                        Block block = world.getBlockState(checkPos).getBlock();
+                        if (block instanceof BlockPlatform || block instanceof BlockPSDAPGBase) {
+                            hasPlatform = true;
+                        }
+                    }
+                }
+            }
+            return hasPlatform;
         }
     }
 
-    @ModifyVariable(method = "simulateTrain", at = @At(value = "STORE", ordinal = 0), name = "tempDoorOpen")
-    private boolean tempDoorOpen(boolean tempDoorOpen, @Local(name = "world") Level world) {
-        return openDoors(world, tempDoorOpen);
+    @Unique
+    private void openPSDOrAPG(TrainInvoker invoker,
+                              Level world,
+                              double trainX,
+                              double trainY,
+                              double trainZ,
+                              float checkYaw,
+                              float pitch,
+                              double halfSpacing,
+                              int dwellTicks) {
+        Vec3 offsetVec = (new Vec3(1.0F, 0.0F, 0.0F)).yRot(checkYaw).xRot(pitch);
+        Vec3 traverseVec = (new Vec3(0.0F, 0.0F, 1.0F)).yRot(checkYaw).xRot(pitch);
+        for(int checkX = 1; checkX <= 3; ++checkX) {
+            for(int checkY = -2; checkY <= 3; ++checkY) {
+                for(double checkZ = -halfSpacing; checkZ <= halfSpacing; ++checkZ) {
+                    BlockPos checkPos = RailwayData.newBlockPos(trainX + offsetVec.x * (double)checkX + traverseVec.x * checkZ, trainY + (double)checkY, trainZ + offsetVec.z * (double)checkX + traverseVec.z * checkZ);
+                    Block block = world.getBlockState(checkPos).getBlock();
+                    if (block instanceof BlockPlatform || block instanceof BlockPSDAPGBase) {
+                        invoker.invokeOpenDoors(world, block, checkPos, dwellTicks);
+                    }
+                }
+            }
+        }
     }
 
     @Unique

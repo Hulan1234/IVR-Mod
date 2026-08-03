@@ -52,7 +52,9 @@ public class KSDRailwayData extends PersistentStateMapper {
     public static KSDRailwayData getInstance(Level world) {
         return getInstance(world, () -> {
             KSDRailwayData railwayData = new KSDRailwayData(world);
+            System.out.println("first load");
             railwayData.syncFromMTR();
+            railwayData.dataCache.sync();
             return railwayData;
         }, "ksd_train_data");
     }
@@ -154,6 +156,7 @@ public class KSDRailwayData extends PersistentStateMapper {
 
     private void syncFromMTR() {
         try {
+            if (syncedFromMTR) return;
             RailwayData railwayData = RailwayData.getInstance(world);
             if (railwayData != null) {
                 stations.clear();
@@ -173,7 +176,7 @@ public class KSDRailwayData extends PersistentStateMapper {
 
     public static KSDStation getStation(Set<KSDStation> stations, BlockPos pos) {
         try {
-            return DataUtilities.getFilteredValueFromDataSet(stations, station -> station.inArea(pos.getX(), pos.getY(), pos.getZ()));
+            return DataUtilities.getFilteredValueFromDataSet(stations, station -> station.inArea(pos));
         } catch (Exception e) {
             e.printStackTrace();
             return null;
