@@ -131,7 +131,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
             widgetMap.render(matrices, mouseX, mouseY, delta);
             matrices.pushPose();
             matrices.translate(0.0F, 0.0F, 500.0F);
-            Gui.fill(matrices, 0, 0, 144, height, -15592942);
+            Gui.fill(matrices, 0, 0, 144, height, ARGB_BACKGROUND);
             dashboardList.render(matrices, font);
             super.render(matrices, mouseX, mouseY, delta);
             matrices.popPose();
@@ -257,7 +257,11 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
     private void onSort() {
         if (selectedTab == SelectedTab.ROUTES && editingRoute != null) {
             editingRoute.setPlatformIds(packet -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_ROUTE, packet));
-            executeRouteUpdate(mtrRoute -> mtrRoute.setPlatformIds(packet -> PacketTrainDataGuiClient.sendUpdate(PACKET_UPDATE_ROUTE, packet)));
+            executeRouteUpdate(mtrRoute -> {
+                mtrRoute.platformIds.clear();
+                mtrRoute.platformIds.addAll(editingRoute.platformIds);
+                mtrRoute.setPlatformIds(packet -> PacketTrainDataGuiClient.sendUpdate(PACKET_UPDATE_ROUTE, packet));
+            });
         }
     }
 

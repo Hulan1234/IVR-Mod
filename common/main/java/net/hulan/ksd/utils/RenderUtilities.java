@@ -73,6 +73,68 @@ public abstract class RenderUtilities {
         return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
+    public void drawFilledRectangle(PoseStack matrices, float x1, float y1, float x2, float y2, int color) {
+        float r = ((color >> 16) & 0xFF) / 255f;
+        float g = ((color >> 8) & 0xFF) / 255f;
+        float b = (color & 0xFF) / 255f;
+        float a = ((color >> 24) & 0xFF) / 255f;
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder buffer = tesselator.getBuilder();
+        beginDrawingCircle(buffer);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        buffer.vertex(matrices.last().pose(), x1, y1, 0)
+                .color(r, g, b, a)
+                .endVertex();
+        buffer.vertex(matrices.last().pose(), x1, y2, 0)
+                .color(r, g, b, a)
+                .endVertex();
+        buffer.vertex(matrices.last().pose(), x2, y1, 0)
+                .color(r, g, b, a)
+                .endVertex();
+        buffer.vertex(matrices.last().pose(), x2, y2, 0)
+                .color(r, g, b, a)
+                .endVertex();
+        tesselator.end();
+        finishDrawingCircle();
+        RenderSystem.disableBlend();
+    }
+
+    public void drawThickLine(PoseStack matrices, float x1, float y1, float x2, float y2, float thickness, int color) {
+        float r = ((color >> 16) & 0xFF) / 255f;
+        float g = ((color >> 8) & 0xFF) / 255f;
+        float b = (color & 0xFF) / 255f;
+        float a = ((color >> 24) & 0xFF) / 255f;
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float length = (float) Math.sqrt(dx * dx + dy * dy);
+        if (length < 0.001f) {
+            return;
+        }
+        float nx = -dy / length * thickness / 2;
+        float ny = dx / length * thickness / 2;
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder buffer = tesselator.getBuilder();
+        beginDrawingCircle(buffer);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        buffer.vertex(matrices.last().pose(), x1 - nx, y1 - ny, 0)
+                .color(r, g, b, a)
+                .endVertex();
+        buffer.vertex(matrices.last().pose(), x1 + nx, y1 + ny, 0)
+                .color(r, g, b, a)
+                .endVertex();
+        buffer.vertex(matrices.last().pose(), x2 - nx, y2 - ny, 0)
+                .color(r, g, b, a)
+                .endVertex();
+        buffer.vertex(matrices.last().pose(), x2 + nx, y2 + ny, 0)
+                .color(r, g, b, a)
+                .endVertex();
+        tesselator.end();
+        finishDrawingCircle();
+        RenderSystem.disableBlend();
+    }
+
     public abstract void beginDrawingCircle(BufferBuilder buffer);
 
     public abstract void finishDrawingCircle();

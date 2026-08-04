@@ -60,6 +60,8 @@ public class DashboardScreenMixin {
                     shift =  At.Shift.AFTER),
             remap = false)
     private void onSort(CallbackInfo ci) {
+        editingKSDRoute.platformIds.clear();
+        editingKSDRoute.platformIds.addAll(editingRoute.platformIds);
         editingKSDRoute.setPlatformIds((packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_ROUTE, packet));
     }
 
