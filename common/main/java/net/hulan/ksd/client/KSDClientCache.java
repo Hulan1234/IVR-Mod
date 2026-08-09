@@ -205,7 +205,9 @@ public class KSDClientCache extends KSDDataCache {
     }
 
     public DynamicResource getPixelatedText(String text, int textColor, int maxWidth, float cjkSizeRatio, boolean fullPixel) {
-        return getResource(String.format("pixelated_text_%s_%s_%s_%s_%s", text, textColor, maxWidth, cjkSizeRatio, fullPixel), () -> IVRRouteMapGenerator.generatePixelatedText(text, textColor, maxWidth, cjkSizeRatio, fullPixel), DefaultRenderingColor.TRANSPARENT);
+        return getResource(String.format("pixelated_text_%s_%s_%s_%s_%s", text, textColor, maxWidth, cjkSizeRatio, fullPixel),
+                () -> IVRRouteMapGenerator.generatePixelatedText(text, textColor, maxWidth, cjkSizeRatio, fullPixel),
+                DefaultRenderingColor.TRANSPARENT);
     }
 
     public DynamicResource getColorStrip(long platformId) {
@@ -213,33 +215,49 @@ public class KSDClientCache extends KSDDataCache {
     }
 
     public DynamicResource getStationName(String stationName, float aspectRatio) {
-        return getResource(String.format("station_name_%s_%s", stationName, aspectRatio), () -> IVRRouteMapGenerator.generateStationName(stationName, aspectRatio), DefaultRenderingColor.TRANSPARENT);
+        return getResource(
+                String.format("station_name_%s_%s", stationName, aspectRatio),
+                () -> IVRRouteMapGenerator.generateStationName(stationName, aspectRatio),
+                DefaultRenderingColor.TRANSPARENT);
     }
 
     public DynamicResource getStationNameEntrance(int textColor, String stationName, float aspectRatio) {
-        return getResource(String.format("station_name_entrance_%s_%s_%s", textColor, stationName, aspectRatio), () -> IVRRouteMapGenerator.generateStationNameEntrance(textColor, stationName, aspectRatio), DefaultRenderingColor.TRANSPARENT);
+        return getResource(
+                String.format("station_name_entrance_%s_%s_%s", textColor, stationName, aspectRatio),
+                () -> IVRRouteMapGenerator.generateStationNameEntrance(textColor, stationName, aspectRatio),
+                DefaultRenderingColor.TRANSPARENT);
     }
 
     public DynamicResource getSingleRowStationName(long platformId, float aspectRatio) {
-        return getResource(String.format("single_row_station_name_%s_%s", platformId, aspectRatio), () -> IVRRouteMapGenerator.generateSingleRowStationName(platformId, aspectRatio), DefaultRenderingColor.WHITE);
+        return getResource(String.format("single_row_station_name_%s_%s", platformId, aspectRatio),
+                () -> IVRRouteMapGenerator.generateSingleRowStationName(platformId, aspectRatio),
+                DefaultRenderingColor.WHITE);
     }
 
     public DynamicResource getSignText(String text, IGui.HorizontalAlignment horizontalAlignment, float paddingScale, int backgroundColor, int textColor) {
-        return getResource(String.format("sign_text_%s_%s_%s_%s_%s", text, horizontalAlignment, paddingScale, backgroundColor, textColor), () -> IVRRouteMapGenerator.generateSignText(text, horizontalAlignment, paddingScale, backgroundColor, textColor), DefaultRenderingColor.TRANSPARENT);
+        return getResource(
+                String.format("sign_text_%s_%s_%s_%s_%s", text, horizontalAlignment, paddingScale, backgroundColor, textColor),
+                () -> IVRRouteMapGenerator.generateSignText(text, horizontalAlignment, paddingScale, backgroundColor, textColor),
+                DefaultRenderingColor.TRANSPARENT);
     }
 
     public DynamicResource getLiftPanelDisplay(String originalText, int textColor) {
-        return getResource(String.format("lift_panel_display_%s", originalText), () -> IVRRouteMapGenerator.generateLiftPanel(originalText, textColor), DefaultRenderingColor.BLACK);
+        return getResource(
+                String.format("lift_panel_display_%s", originalText),
+                () -> IVRRouteMapGenerator.generateLiftPanel(originalText, textColor),
+                DefaultRenderingColor.BLACK);
     }
 
     public DynamicResource getExitSignLetter(String exitLetter, String exitNumber, int backgroundColor) {
-        return getResource(String.format("exit_sign_letter_%s_%s", exitLetter, exitNumber),
+        return getResource(
+                String.format("exit_sign_letter_%s_%s", exitLetter, exitNumber),
                 () -> IVRRouteMapGenerator.generateExitSignLetter(exitLetter, exitNumber, backgroundColor),
                 DefaultRenderingColor.TRANSPARENT);
     }
 
     public DynamicResource getRouteSquare(int color, String routeName, IGui.HorizontalAlignment horizontalAlignment) {
-        return getResource(String.format("route_square_%s_%s_%s", color, routeName, horizontalAlignment),
+        return getResource(
+                String.format("route_square_%s_%s_%s", color, routeName, horizontalAlignment),
                 () -> IVRRouteMapGenerator.generateRouteSquare(color, routeName, horizontalAlignment),
                 DefaultRenderingColor.TRANSPARENT);
     }
@@ -254,7 +272,9 @@ public class KSDClientCache extends KSDDataCache {
                                                             int backgroundColor,
                                                             int textColor,
                                                             int transparentColor) {
-        return getResource(String.format("direction_arrow_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s",
+        return getResource(
+                String.format(
+                        "direction_arrow_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s",
                         platformId,
                         hasLeft,
                         hasRight,
@@ -265,7 +285,8 @@ public class KSDClientCache extends KSDDataCache {
                         backgroundColor,
                         textColor,
                         transparentColor),
-                () -> IVRRouteMapGenerator.generateDirectionArrow(platformId,
+                () -> IVRRouteMapGenerator.generateDirectionArrow(
+                        platformId,
                         hasLeft,
                         hasRight,
                         horizontalAlignment,
@@ -287,7 +308,9 @@ public class KSDClientCache extends KSDDataCache {
                                                                  int backgroundColor,
                                                                  int textColor,
                                                                  int transparentColor) {
-        return getResource(String.format("direction_arrow_for_rs_%s_%s_%s_%s_%s_%s_%s_%s",
+        return getResource(
+                String.format(
+                        "direction_arrow_for_rs_%s_%s_%s_%s_%s_%s_%s_%s",
                         platformId,
                         hasLeft,
                         hasRight,
@@ -296,7 +319,8 @@ public class KSDClientCache extends KSDDataCache {
                         aspectRatio,
                         textColor,
                         transparentColor),
-                () -> IVRRouteMapGenerator.generateDirectionArrowForRS(platformId,
+                () -> IVRRouteMapGenerator.generateDirectionArrowForRS(
+                        platformId,
                         hasLeft,
                         hasRight,
                         horizontalAlignment,
@@ -311,12 +335,15 @@ public class KSDClientCache extends KSDDataCache {
                                                    boolean flip,
                                                    float aspectRatio,
                                                    boolean transparentWhite) {
-        return getResource(String.format("route_map_for_route_base_%s_%s_%s_%s",
+        return getResource(
+                String.format(
+                        "route_map_for_route_base_%s_%s_%s_%s",
                         platformId,
                         flip,
                         aspectRatio,
                         transparentWhite),
-                () -> IVRRouteMapGenerator.generateRouteMapForRouteBase(platformId,
+                () -> IVRRouteMapGenerator.generateRouteMapForRouteBase(
+                        platformId,
                         flip,
                         aspectRatio,
                         transparentWhite),
@@ -327,12 +354,15 @@ public class KSDClientCache extends KSDDataCache {
                                                    boolean flip,
                                                    float aspectRatio,
                                                    boolean transparentWhite) {
-        return getResource(String.format("route_map_for_route_sign_%s_%s_%s_%s",
+        return getResource(
+                String.format(
+                        "route_map_for_route_sign_%s_%s_%s_%s",
                         platformId,
                         flip,
                         aspectRatio,
                         transparentWhite),
-                () -> IVRRouteMapGenerator.generateRouteMapForRouteSign(platformId,
+                () -> IVRRouteMapGenerator.generateRouteMapForRouteSign(
+                        platformId,
                         flip,
                         aspectRatio,
                         transparentWhite),
@@ -340,7 +370,15 @@ public class KSDClientCache extends KSDDataCache {
     }
 
     public byte[] getTextPixels(String text, int[] dimensions, int fontSizeCjk, int fontSize) {
-        return getTextPixels(text, dimensions, 2147483647, (int)((float)Math.max(fontSizeCjk, fontSize) * 1.25F), fontSizeCjk, fontSize, 0, null);
+        return getTextPixels(
+                text,
+                dimensions,
+                2147483647,
+                (int)((float)Math.max(fontSizeCjk, fontSize) * 1.25F),
+                fontSizeCjk,
+                fontSize,
+                0,
+                null);
     }
 
     public byte[] getTextPixels(String text,
