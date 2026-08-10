@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.resources.ResourceLocation;
 
 public class RenderUtilities_1_18_2 extends RenderUtilities {
 
@@ -13,6 +14,15 @@ public class RenderUtilities_1_18_2 extends RenderUtilities {
         buffer.begin(VertexFormat.Mode.TRIANGLE_STRIP, DefaultVertexFormat.POSITION_COLOR);
     }
 
+    public void beginDrawingTexture(BufferBuilder buffer, ResourceLocation texture) {
+        RenderSystem.setShaderTexture(0, texture);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+    }
+
     public void finishDrawingCircle() {
+    }
+
+    public void finishDrawingTexture() {
     }
 }

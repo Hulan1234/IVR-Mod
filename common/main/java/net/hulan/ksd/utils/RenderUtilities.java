@@ -2,14 +2,10 @@ package net.hulan.ksd.utils;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import mtr.mappings.Text;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
@@ -153,18 +149,17 @@ public abstract class RenderUtilities {
         if (width <= 0 || height <= 0) {
             return;
         }
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShaderTexture(0, resourceLocation);
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
         Tesselator tesselator = Tesselator.getInstance();
         BufferBuilder buffer = tesselator.getBuilder();
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        beginDrawingTexture(buffer, resourceLocation);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         buffer.vertex(matrices.last().pose(), x, y, 0).uv(0, 0).endVertex();
         buffer.vertex(matrices.last().pose(), x, y + height, 0).uv(0, 1).endVertex();
         buffer.vertex(matrices.last().pose(), x + width, y + height, 0).uv(1, 1).endVertex();
         buffer.vertex(matrices.last().pose(), x + width, y, 0).uv(1, 0).endVertex();
         tesselator.end();
+        finishDrawingTexture();
         RenderSystem.disableBlend();
     }
 
@@ -275,7 +270,11 @@ public abstract class RenderUtilities {
 
     public abstract void beginDrawingCircle(BufferBuilder buffer);
 
+    public abstract void beginDrawingTexture(BufferBuilder buffer, ResourceLocation texture);
+
     public abstract void finishDrawingCircle();
+
+    public abstract void finishDrawingTexture();
 
     static class NullRenderUtilities extends RenderUtilities {
 
@@ -285,7 +284,13 @@ public abstract class RenderUtilities {
         public void beginDrawingCircle(BufferBuilder buffer) {
         }
 
+        public void beginDrawingTexture(BufferBuilder buffer, ResourceLocation texture) {
+        }
+
         public void finishDrawingCircle() {
+        }
+
+        public void finishDrawingTexture() {
         }
     }
 }
