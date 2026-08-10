@@ -9,6 +9,8 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import mtr.mappings.Text;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 
@@ -147,38 +149,30 @@ public abstract class RenderUtilities {
         RenderSystem.disableBlend();
     }
 
-    // 绘制材质贴图：以 (x, y) 为左上角绘制宽 width 高 height 的四边形（贴图坐标 0~1）
     public void drawTexture(PoseStack matrices, ResourceLocation resourceLocation, float x, float y, float width, float height) {
-        // 尺寸非法时直接放弃绘制
         if (width <= 0 || height <= 0) {
             return;
         }
-        // 开启混合，让文字透明通道生效
         RenderSystem.enableBlend();
-        // 使用默认混合函数
         RenderSystem.defaultBlendFunc();
-        // 绑定贴图纹理
         RenderSystem.setShaderTexture(0, resourceLocation);
-        // 使用带位置+贴图坐标的着色器
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        // 获取顶点缓冲构造器
         Tesselator tesselator = Tesselator.getInstance();
-        // 取得当前 BufferBuilder
         BufferBuilder buffer = tesselator.getBuilder();
-        // 开始收集四边形顶点（带贴图坐标）
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        // 左上角顶点（贴图坐标 0,0）
         buffer.vertex(matrices.last().pose(), x, y, 0).uv(0, 0).endVertex();
-        // 左下角顶点（贴图坐标 0,1）
         buffer.vertex(matrices.last().pose(), x, y + height, 0).uv(0, 1).endVertex();
-        // 右下角顶点（贴图坐标 1,1）
         buffer.vertex(matrices.last().pose(), x + width, y + height, 0).uv(1, 1).endVertex();
-        // 右上角顶点（贴图坐标 1,0）
         buffer.vertex(matrices.last().pose(), x + width, y, 0).uv(1, 0).endVertex();
-        // 提交顶点数据绘制
         tesselator.end();
-        // 关闭混合
         RenderSystem.disableBlend();
+    }
+
+    public void drawText(PoseStack matrices, MutableComponent component, float x, float y, int color) {
+        if (component == null) {
+            return;
+        }
+        Minecraft.getInstance().font.draw(matrices, component.withStyle(FONT), x, y, color);
     }
 
     public void drawText(PoseStack matrices, String text, float x, float y, float maxWidth, float maxHeight, int color) {
@@ -195,38 +189,30 @@ public abstract class RenderUtilities {
         drawText(matrices, text, x, y + offsetY, scale, color);
     }
 
-    // 用自定义字体直接在屏幕上绘制文字（不生成任何贴图）：以 (x, y) 为左上角、按 scale 缩放绘制，
-    // 逐字符自动选择字体（拉丁用 Noto Sans、中文用 Noto Serif CJK），color 为 ARGB 颜色
     public void drawText(PoseStack matrices, String text, float x, float y, float scale, int color) {
-        // 文本为空时直接跳过
         if (text == null || text.isEmpty()) {
             return;
         }
-        // 压入矩阵，以 (x, y) 为原点缩放
         matrices.pushPose();
-        // 平移到文字左上角
         matrices.translate(x, y, 0);
-        // 按给定倍数缩放
         matrices.scale(scale, scale, 1.0F);
-        // 用带自定义字体样式的文本直接绘制（MTR 字体管线，逐字符解析样式字体）
         Minecraft.getInstance().font.draw(matrices, Text.literal(text).withStyle(FONT), 0, 0, color);
-        // 弹出矩阵恢复原状
         matrices.popPose();
     }
 
-    public float getTextWidth(String text, float scale) {
-        return Minecraft.getInstance().font.width(Text.literal(text).withStyle(FONT)) * scale;
+    public float getTextWidth(MutableComponent component) {
+        return Minecraft.getInstance().font.width(component.withStyle(FONT));
     }
 
-    // 把「中文|English||注释」形式的名称拆成中文与英文两部分：
-    // 单个 | 分隔中文与英文，|| 之后为注释部分（直接丢弃），无分隔符时整段视为中文行
+    public float getTextWidth(String text, float scale) {
+        return getTextWidth(Text.literal(text)) * scale;
+    }
+
     public static String[] splitCjk(String text) {
         if (text == null) {
             return new String[]{""};
         }
-        // 先去掉 || 之后的注释部分
         String main = text.split("\\|\\|")[0];
-        // 再按单个 | 拆分中文与英文
         return main.split("\\|", -1);
     }
 

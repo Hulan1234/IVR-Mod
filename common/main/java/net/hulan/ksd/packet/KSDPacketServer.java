@@ -2,20 +2,30 @@ package net.hulan.ksd.packet;
 
 import io.netty.buffer.Unpooled;
 import mtr.Registry;
-import mtr.data.NameColorDataBase;
-import mtr.data.SerializedDataBase;
-import mtr.data.TicketSystem;
-import mtr.data.TransportMode;
+import mtr.data.*;
+import mtr.mappings.Utilities;
 import mtr.packet.PacketTrainDataBase;
+import net.hulan.ksd.KSDItems;
 import net.hulan.ksd.data.*;
+import net.hulan.ksd.item.ItemTicket;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.scores.Score;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -30,9 +40,10 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         Registry.sendToPlayer(player, KSD_PACKET_OPEN_KSD_DASHBOARD_SCREEN, packet);
     }
 
-    public static void openKCRTicketMachineScreenS2C(ServerPlayer player, BlockPos machinePos) {
+    public static void openKCRTicketMachineScreenS2C(ServerPlayer player, BlockPos machinePos, int balance) {
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
         packet.writeBlockPos(machinePos);
+        packet.writeInt(balance);
         Registry.sendToPlayer(player, KSD_PACKET_OPEN_KCR_TICKET_MACHINE_SCREEN, packet);
     }
 
@@ -103,6 +114,38 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
                 }
             }
         }
+    }
+
+    public static void receiveTicketProcessingData(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
+        Payment payment = EnumHelper.valueOf(Payment.MTR_BALANCE, packet.readUtf());
+        int discount = packet.readInt();
+        int amount = packet.readInt();
+        minecraftServer.execute(() -> {
+            Level world = player.level;
+            long expiredTime = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1);
+            ItemStack ticket = new ItemStack(KSDItems.TICKET.get(), amount);
+            CompoundTag ticketNBT = ticket.getOrCreateTag();
+            ticketNBT.putLong("expired_time", expiredTime);
+            ticketNBT.putInt("fare", discount);
+            BlockPos pos = player.blockPosition();
+            ItemEntity itemEntity = new ItemEntity(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, ticket);
+            itemEntity.setNoPickUpDelay();
+            world.addFreshEntity(itemEntity);
+            switch (payment) {
+                case EMERALDS -> {
+                    ContainerHelper.clearOrCountMatchingItems(Utilities.getInventory(player), (itemStack) -> itemStack.getItem() == Items.EMERALD, discount, false);
+                    world.playSound(null, player.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+                case MTR_BALANCE -> {
+                    TicketSystem.addObjectivesIfMissing(world);
+                    Score balanceScore = TicketSystem.getPlayerScore(world, player, "mtr_balance");
+                    balanceScore.setScore(balanceScore.getScore() - discount);
+                    world.playSound(null, player.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+                case OCTOPUS -> {
+                }
+            }
+        });
     }
 
     private static <T extends SerializedDataBase> void serializeData(FriendlyByteBuf packet, Collection<T> objects) {

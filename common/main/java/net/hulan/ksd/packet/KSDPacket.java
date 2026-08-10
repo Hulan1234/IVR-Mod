@@ -6,6 +6,7 @@ public interface KSDPacket {
 
     ResourceLocation KSD_PACKET_OPEN_KSD_DASHBOARD_SCREEN = new ResourceLocation("ksd", "ksd_packet_open_ksd_dashboard_screen");
     ResourceLocation KSD_PACKET_OPEN_KCR_TICKET_MACHINE_SCREEN = new ResourceLocation("ksd", "ksd_packet_open_kcr_ticket_machine_screen");
+    ResourceLocation KSD_PACKET_TICKET_PROCESSING = new ResourceLocation("ksd", "ksd_packet_ticket_processing");
     ResourceLocation KSD_PACKET_CHUNK_S2C = new ResourceLocation("ksd", "ksd_packet_chunk_s2c");
     ResourceLocation KSD_PACKET_UPDATE_STATION = new ResourceLocation("ksd", "ksd_packet_update_station");
     ResourceLocation KSD_PACKET_DELETE_STATION = new ResourceLocation("ksd", "ksd_packet_delete_station");

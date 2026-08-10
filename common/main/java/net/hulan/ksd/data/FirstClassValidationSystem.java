@@ -175,27 +175,12 @@ public final class FirstClassValidationSystem {
                 || firstClassPlayer.state.equals(FirstClassState.ENABLED_ACCESS_CONCESSIONARY);
     }
 
-    private static Score getPlayerScore(Level world, Player player, String objectiveName) {
-        return world.getScoreboard().getOrCreatePlayerScore(player.getGameProfile().getName(), world.getScoreboard().getObjective(objectiveName));
-    }
-
-    private static void addObjectivesIfMissing(Level world) {
-        try {
-            world.getScoreboard().addObjective(PLAYER_CAR_OBJECTIVE, ObjectiveCriteria.DUMMY, Text.literal("Player Car"), ObjectiveCriteria.RenderType.INTEGER);
-        } catch (Exception ignored) {
-        }
-    }
-
-    private static boolean isConcessionary(Player player) {
-        return player.isCreative();
-    }
-
-    private static int getFare(KSDRailwayData railwayData,
-                               KSDStation enteredStation,
-                               KSDStation exitStation,
-                               KSDRoute route,
-                               Player player,
-                               boolean isIllegally) {
+    public static int getFare(KSDRailwayData railwayData,
+                              KSDStation enteredStation,
+                              KSDStation exitStation,
+                              KSDRoute route,
+                              Player player,
+                              boolean isIllegally) {
         KSDStation interchangeStation;
         final int entryZone = enteredStation.zone;
         final int exitZone = exitStation.zone;
@@ -210,9 +195,24 @@ public final class FirstClassValidationSystem {
         return getMTRFare(entryZone, exitZone, player);
     }
 
-    private static int getMTRFare(int entryZone, int exitZone, Player player) {
+    public static int getMTRFare(int entryZone, int exitZone, Player player) {
         final int fare = BASE_FARE + ZONE_FARE * Math.abs(entryZone - exitZone);
         return (isConcessionary(player) ? (int) Math.ceil(fare / 2F) : fare);
+    }
+
+    private static Score getPlayerScore(Level world, Player player, String objectiveName) {
+        return world.getScoreboard().getOrCreatePlayerScore(player.getGameProfile().getName(), world.getScoreboard().getObjective(objectiveName));
+    }
+
+    private static void addObjectivesIfMissing(Level world) {
+        try {
+            world.getScoreboard().addObjective(PLAYER_CAR_OBJECTIVE, ObjectiveCriteria.DUMMY, Text.literal("Player Car"), ObjectiveCriteria.RenderType.INTEGER);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static boolean isConcessionary(Player player) {
+        return player.isCreative();
     }
 
     private static boolean isInRoute(Map<Long, KSDStation> platformIdToStation, long stationId, KSDRoute route) {

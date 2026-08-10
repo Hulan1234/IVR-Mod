@@ -1,11 +1,10 @@
 package net.hulan.ksd.item;
 
-import mtr.item.ItemWithCreativeTabBase;
-import net.hulan.ksd.KSDCreativeModTabs;
+import net.minecraft.world.item.Item;
 
-public class ItemOctopus extends ItemWithCreativeTabBase {
+public class ItemOctopus extends Item {
 
     public ItemOctopus() {
-        super(KSDCreativeModTabs.KCR_PLATFORM_BLOCKS);
+        super(new Properties());
     }
 }

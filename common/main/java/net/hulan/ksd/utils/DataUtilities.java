@@ -1,10 +1,12 @@
 package net.hulan.ksd.utils;
 
+import mtr.data.NameColorDataBase;
 import net.hulan.ksd.data.FirstClassPlayer;
 import net.hulan.ksd.data.KSDPlatform;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
 import net.minecraft.world.entity.player.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
@@ -31,6 +33,53 @@ public class DataUtilities {
 
     public static FirstClassPlayer getFirstClassPlayer(Set<FirstClassPlayer> fps, Player player) {
         return getFilteredValueFromDataSet(fps, f -> f.uuid.equals(player.getUUID()));
+    }
+
+    public static boolean equalStation(KSDStation station1, KSDStation station2) {
+        if (station1 == null || station2 == null) {
+            return false;
+        }
+        return station1.id == station2.id;
+    }
+
+    public static boolean equalRoute(KSDRoute route1, KSDRoute route2) {
+        if (route1 == null || route2 == null) {
+            return false;
+        }
+        return route1.id == route2.id;
+    }
+
+    public static boolean equalPlatform(KSDPlatform platform1, KSDPlatform platform2) {
+        if (platform1 == null || platform2 == null) {
+            return false;
+        }
+        return platform1.id == platform2.id;
+    }
+
+    public static boolean isSameStation(KSDStation station1, KSDStation station2) {
+        if (station1 == null || station2 == null) {
+            return false;
+        }
+        String mainName1 = getMainName(station1);
+        String mainName2 = getMainName(station2);
+        return mainName1.equals(mainName2) && station1.color == station2.color;
+    }
+
+    public static boolean isSameRoute(KSDRoute route1, KSDRoute route2) {
+        if (route1 == null || route2 == null) {
+            return false;
+        }
+        String mainName1 = getMainName(route1);
+        String mainName2 = getMainName(route2);
+        return mainName1.equals(mainName2) && route1.color == route2.color;
+    }
+
+    public static String getMainName(@NotNull NameColorDataBase data) {
+        return data.name.split("\\|\\|")[0];
+    }
+
+    public static String[] getSplitName(@NotNull NameColorDataBase data) {
+        return getMainName(data).split("\\|");
     }
 
     public static <T> T getFilteredValueFromDataSet(Set<T> dataSet, Predicate<T> filter) {
