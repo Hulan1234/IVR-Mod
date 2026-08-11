@@ -131,7 +131,7 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
             the_nether = server.getLevel(Level.NETHER);
             the_end = server.getLevel(Level.END);
         });
-        //Utilities.getInstance().registerCommand();
+        Utilities.getInstance().registerCommand();
     }
 
     private static void registerItem(String path, RegistryObject<Item> item) {

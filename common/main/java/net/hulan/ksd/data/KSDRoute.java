@@ -22,6 +22,7 @@ public class KSDRoute extends NameColorDataBase implements IGui {
     public final List<Route.RoutePlatform> platformIds;
     public boolean hasFirstClassService;
     public int firstClassCar;
+    public long recommendedInterchangeStationId;
     private static final String KEY_PLATFORM_IDS = "platform_ids";
     private static final String KEY_CUSTOM_DESTINATIONS = "custom_destinations";
     private static final String KEY_ROUTE_TYPE = "route_type";
@@ -32,6 +33,7 @@ public class KSDRoute extends NameColorDataBase implements IGui {
     private static final String KEY_CIRCULAR_STATE = "circular_state";
     private static final String KEY_HAS_FC_SERVICE = "has_fc_service";
     private static final String KEY_FC_CAR = "fc_car";
+    private static final String KEY_RIS_ID = "ris_id";
 
     public static KSDRoute fromMTRRoute(Route route) {
         KSDRoute ksdRoute = new KSDRoute(route.id, route.transportMode);
@@ -69,6 +71,7 @@ public class KSDRoute extends NameColorDataBase implements IGui {
         disableNextStationAnnouncements = false;
         hasFirstClassService = false;
         firstClassCar = -1;
+        recommendedInterchangeStationId = 0;
     }
 
     public KSDRoute(Map<String, Value> map) {
@@ -89,6 +92,7 @@ public class KSDRoute extends NameColorDataBase implements IGui {
         circularState = EnumHelper.valueOf(Route.CircularState.NONE, messagePackHelper.getString(KEY_CIRCULAR_STATE));
         hasFirstClassService = messagePackHelper.getBoolean(KEY_HAS_FC_SERVICE);
         firstClassCar = messagePackHelper.getInt(KEY_FC_CAR);
+        recommendedInterchangeStationId = messagePackHelper.getLong(KEY_RIS_ID);
     }
     
     public KSDRoute(CompoundTag compoundTag) {
@@ -106,6 +110,7 @@ public class KSDRoute extends NameColorDataBase implements IGui {
         circularState = EnumHelper.valueOf(Route.CircularState.NONE, compoundTag.getString(KEY_CIRCULAR_STATE));
         hasFirstClassService = compoundTag.getBoolean(KEY_HAS_FC_SERVICE);
         firstClassCar = compoundTag.getInt(KEY_FC_CAR);
+        recommendedInterchangeStationId = compoundTag.getLong(KEY_RIS_ID);
     }
 
     public KSDRoute(FriendlyByteBuf packet) {
@@ -125,6 +130,7 @@ public class KSDRoute extends NameColorDataBase implements IGui {
         circularState = EnumHelper.valueOf(Route.CircularState.NONE, packet.readUtf(32767));
         hasFirstClassService = packet.readBoolean();
         firstClassCar = packet.readInt();
+        recommendedInterchangeStationId = packet.readLong();
     }
 
     public void toMessagePack(MessagePacker messagePacker) throws IOException {
@@ -145,10 +151,11 @@ public class KSDRoute extends NameColorDataBase implements IGui {
         messagePacker.packString(KEY_CIRCULAR_STATE).packString(circularState.toString());
         messagePacker.packString(KEY_HAS_FC_SERVICE).packBoolean(hasFirstClassService);
         messagePacker.packString(KEY_FC_CAR).packInt(firstClassCar);
+        messagePacker.packString(KEY_RIS_ID).packLong(recommendedInterchangeStationId);
     }
 
     public int messagePackLength() {
-        return super.messagePackLength() + 10;
+        return super.messagePackLength() + 11;
     }
 
     public void writePacket(FriendlyByteBuf packet) {
@@ -166,6 +173,7 @@ public class KSDRoute extends NameColorDataBase implements IGui {
         packet.writeUtf(circularState.toString());
         packet.writeBoolean(hasFirstClassService);
         packet.writeInt(firstClassCar);
+        packet.writeLong(recommendedInterchangeStationId);
     }
 
     public void update(String key, FriendlyByteBuf packet) {
@@ -192,6 +200,7 @@ public class KSDRoute extends NameColorDataBase implements IGui {
             case KEY_HAS_FC_SERVICE -> {
                 hasFirstClassService = packet.readBoolean();
                 firstClassCar = packet.readInt();
+                recommendedInterchangeStationId = packet.readLong();
             }
             default -> super.update(key, packet);
         }
@@ -252,6 +261,7 @@ public class KSDRoute extends NameColorDataBase implements IGui {
         packet.writeUtf(KEY_HAS_FC_SERVICE);
         packet.writeBoolean(hasFirstClassService);
         packet.writeInt(firstClassCar);
+        packet.writeLong(recommendedInterchangeStationId);
         sendPacket.accept(packet);
     }
 

@@ -3,17 +3,12 @@ package net.hulan.ksd.sreen;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.client.ClientData;
 import mtr.client.IDrawing;
-import mtr.data.IGui;
-import mtr.data.Route;
-import mtr.data.RouteType;
-import mtr.data.TransportMode;
+import mtr.data.*;
 import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
 import mtr.packet.IPacket;
 import mtr.packet.PacketTrainDataGuiClient;
-import mtr.screen.EditNameColorScreenBase;
-import mtr.screen.WidgetBetterCheckbox;
-import mtr.screen.WidgetBetterTextField;
+import mtr.screen.*;
 import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.utils.DataUtilities;
 import net.hulan.ksd.data.KSDRoute;
@@ -21,14 +16,19 @@ import net.hulan.ksd.data.KSDStation;
 import net.hulan.ksd.utils.Utilities;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketClient;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implements IGui, IPacket {
 
     private RouteType routeType;
+    private long recommendedInterchangeStationId;
+    private boolean isSelectingRIS;
     private final Component lightRailRouteNumberText = Text.translatable("gui.mtr.light_rail_route_number");
     private final Component fcCarNumberText = Text.translatable("gui.ksd.fc_car_number");
     private final WidgetBetterTextField textFieldLightRailRouteNumber;
@@ -40,6 +40,8 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
     private final WidgetBetterCheckbox buttonIsClockwiseRoute;
     private final WidgetBetterCheckbox buttonIsAntiClockwiseRoute;
     private final WidgetBetterCheckbox buttonHasFCService;
+    private final Button buttonSelectRIS;
+    private final DashboardList stationList;
     private final boolean isCircular;
     private final KSDDashboardScreen dashboardScreen;
     private static final int CHECKBOX_WIDTH = 160;
@@ -56,6 +58,17 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         buttonIsClockwiseRoute = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.mtr.is_clockwise_route"), this::setIsClockwise);
         buttonIsAntiClockwiseRoute = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.mtr.is_anticlockwise_route"), this::setIsAntiClockwise);
         buttonHasFCService = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.has_fc_service"), this::setHasFCService);
+        buttonSelectRIS = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_value"), button -> setIsSelectingRIS(true));
+        stationList = new DashboardList(
+                null,
+                null,
+                null,
+                null,
+                this::onAdd,
+                null,
+                null,
+                () -> ClientData.DASHBOARD_SEARCH,
+                text -> ClientData.DASHBOARD_SEARCH = text);
         if (!route.platformIds.isEmpty()) {
             final KSDStation firstStation = KSDClientData.DATA_CACHE.platformIdToStation.get(route.getFirstPlatformId());
             final KSDStation lastStation = KSDClientData.DATA_CACHE.platformIdToStation.get(route.getLastPlatformId());
@@ -65,7 +78,6 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         }
     }
 
-    @Override
     protected void init() {
         setPositionsAndInit(SQUARE_SIZE, width / 4 * 3 - SQUARE_SIZE, width - SQUARE_SIZE);
         IDrawing.setPositionAndWidth(buttonRouteType, SQUARE_SIZE, SQUARE_SIZE * 3, CHECKBOX_WIDTH);
@@ -79,7 +91,12 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         IDrawing.setPositionAndWidth(buttonIsAntiClockwiseRoute, SQUARE_SIZE, SQUARE_SIZE * 10 + TEXT_FIELD_PADDING, CHECKBOX_WIDTH);
         IDrawing.setPositionAndWidth(buttonHasFCService, width / 2 + SQUARE_SIZE, SQUARE_SIZE * 3 + TEXT_FIELD_PADDING, CHECKBOX_WIDTH);
         IDrawing.setPositionAndWidth(textFieldFCCar, width / 2 + SQUARE_SIZE + TEXT_FIELD_PADDING / 2, SQUARE_SIZE * 5 + TEXT_FIELD_PADDING, CHECKBOX_WIDTH);
+        IDrawing.setPositionAndWidth(buttonSelectRIS, width / 2 + SQUARE_SIZE, SQUARE_SIZE * 7 + TEXT_FIELD_PADDING, 300);
         textFieldFCCar.setValue(String.valueOf(data.firstClassCar + 1));
+        stationList.y = SQUARE_SIZE * 8 + TEXT_FIELD_PADDING;
+        stationList.height = height - SQUARE_SIZE * 8 + TEXT_FIELD_PADDING;
+        stationList.width = width / 2 - SQUARE_SIZE;
+        stationList.init(this::addDrawableChild);
         if (data.transportMode.hasRouteTypeVariation) {
             addDrawableChild(buttonRouteType);
         }
@@ -93,15 +110,24 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         }
         addDrawableChild(buttonHasFCService);
         addDrawableChild(textFieldFCCar);
+        addDrawableChild(buttonSelectRIS);
         setIsLightRailRoute(data.isLightRailRoute);
         setIsRouteHidden(data.isHidden);
         setDisableNextStationAnnouncements(data.disableNextStationAnnouncements);
         setIsClockwise(data.circularState == Route.CircularState.CLOCKWISE);
         setIsAntiClockwise(data.circularState == Route.CircularState.ANTICLOCKWISE);
         setHasFCService(data.hasFirstClassService && data.transportMode.equals(TransportMode.TRAIN));
+        setSelectedRISId(data.recommendedInterchangeStationId);
+        setIsSelectingRIS(false);
     }
 
-    @Override
+    public void tick() {
+        super.tick();
+        stationList.tick();
+        textFieldLightRailRouteNumber.tick();
+        textFieldFCCar.tick();
+    }
+
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
         try {
             renderBackground(matrices);
@@ -112,13 +138,24 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
             if (routeType.equals(Utilities.KCR_CLASSICAL) && buttonHasFCService.selected()) {
                 drawString(matrices, font, fcCarNumberText, width / 2 + SQUARE_SIZE, SQUARE_SIZE * 4 + TEXT_PADDING, ARGB_WHITE);
             }
+            if (isSelectingRIS) {
+                stationList.render(matrices, Minecraft.getInstance().font);
+            }
             super.render(matrices, mouseX, mouseY, delta);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        stationList.mouseMoved(mouseX, mouseY);
+    }
+
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+        stationList.mouseScrolled(mouseX, mouseY, amount);
+        return super.mouseScrolled(mouseX, mouseY, amount);
+    }
+
     public void onClose() {
         if (minecraft != null) {
             minecraft.setScreen(null);
@@ -127,7 +164,6 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         saveData();
     }
 
-    @Override
     protected void saveData() {
         super.saveData();
         data.routeType = routeType;
@@ -146,6 +182,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         } catch (NumberFormatException e) {
             data.firstClassCar = -1;
         }
+        data.recommendedInterchangeStationId = recommendedInterchangeStationId;
         data.setExtraData(packet -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_ROUTE, packet));
         data.setFirstClassData(packet -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_ROUTE, packet));
         DataUtilities.executeFromDataSet(ClientData.ROUTES, r -> r.id == data.id, mtrRoute -> {
@@ -159,6 +196,13 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
             mtrRoute.circularState = data.circularState;
             mtrRoute.setExtraData(packet -> PacketTrainDataGuiClient.sendUpdate(PACKET_UPDATE_ROUTE, packet));
         });
+    }
+
+    private void onAdd(NameColorDataBase data, int index) {
+        if (data instanceof KSDStation) {
+            setSelectedRISId(data.id);
+            setIsSelectingRIS(false);
+        }
     }
 
     private void setRouteTypeText(TransportMode transportMode, RouteType newRouteType) {
@@ -197,10 +241,38 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
     private void setShowFCService(boolean show) {
         buttonHasFCService.visible = show;
         textFieldFCCar.visible = show && buttonHasFCService.selected();
+        buttonSelectRIS.visible = show && buttonHasFCService.selected();
     }
 
     private void setHasFCService(boolean hasFCService) {
         buttonHasFCService.setChecked(hasFCService);
         textFieldFCCar.visible = hasFCService;
+        buttonSelectRIS.visible = hasFCService;
+    }
+
+    private void setSelectedRISId(long risId) {
+        if (risId == 0) {
+            KSDStation firstStation = KSDClientData.DATA_CACHE.platformIdToStation.get(data.getFirstPlatformId());
+            if (firstStation != null) {
+                risId = firstStation.id;
+            }
+        }
+        recommendedInterchangeStationId = risId;
+        KSDStation ris = DataUtilities.getStation(KSDClientData.STATIONS,  recommendedInterchangeStationId);
+        if (recommendedInterchangeStationId != 0 && ris != null) {
+            buttonSelectRIS.setMessage(Text.translatable("gui.ksd.selected_ris", DataUtilities.getMainName(ris)));
+        } else {
+            buttonSelectRIS.setMessage(Text.translatable("gui.ksd.selected_ris", "None"));
+        }
+    }
+
+    private void setIsSelectingRIS(boolean isSelectingRIS) {
+        this.isSelectingRIS =  isSelectingRIS;
+        stationList.x = isSelectingRIS ? width / 2 + SQUARE_SIZE : width;
+        if (isSelectingRIS) {
+            Set<KSDStation> stations = DataUtilities.getMappedAndNonNullSetFromDataCollection(data.platformIds,
+                    rp -> KSDClientData.DATA_CACHE.platformIdToStation.get(rp.platformId));
+            stationList.setData(stations, false, false, false, false, true, false);
+        }
     }
 }

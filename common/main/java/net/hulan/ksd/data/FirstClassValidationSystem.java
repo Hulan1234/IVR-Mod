@@ -7,7 +7,9 @@ import net.hulan.ksd.client.KSDClientCache;
 import net.hulan.ksd.mixin.SidingAccessor;
 import net.hulan.ksd.mixin.TrainInvoker;
 import net.hulan.ksd.mixin.TrainServerAccessor;
-import net.hulan.ksd.utils.DataUtilities;import net.minecraft.core.BlockPos;
+import net.hulan.ksd.utils.DataUtilities;
+import net.hulan.ksd.utils.Utilities;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -56,14 +58,22 @@ public final class FirstClassValidationSystem {
                 if (enteredStation == null) continue;
                 KSDRoute route = DataUtilities.getRoute(ksd.routes, routeId);
                 if (route != null
-                        && route.routeType.name().equals("KCR_CLASSICAL")
+                        && route.routeType.equals(Utilities.KCR_CLASSICAL)
                         && route.hasFirstClassService
                         && newCar == route.firstClassCar) {
-                    KSDStation firstStation;
-                    if (isInRoute(ksd.dataCache.platformIdToStation, firstClassPlayer.enteredStationId, route)) {
-                        firstStation = enteredStation;
-                    } else if ((firstStation = getNearestInterchangeStation(ksd, route,  firstClassPlayer.enteredStationId)) == null){
-                        firstStation = ksd.dataCache.platformIdToStation.get(route.getFirstPlatformId());
+                    KSDStation firstStationInRoute = ksd.dataCache.platformIdToStation.get(route.getFirstPlatformId());
+                    if (route.recommendedInterchangeStationId == 0) {
+                        if (firstStationInRoute != null) {
+                            route.recommendedInterchangeStationId = firstStationInRoute.id;
+                        }
+                    }
+                    KSDStation firstStation = DataUtilities.getStation(ksd.stations, route.recommendedInterchangeStationId);
+                    if (firstStation == null) {
+                        if (isInRoute(ksd.dataCache.platformIdToStation, firstClassPlayer.enteredStationId, route)) {
+                            firstStation = enteredStation;
+                        } else if ((firstStation = getNearestInterchangeStation(ksd, route,  firstClassPlayer.enteredStationId)) == null){
+                            firstStation = ksd.dataCache.platformIdToStation.get(route.getFirstPlatformId());
+                        }
                     }
                     validate(ksd, world, player, player.blockPosition(), firstStation, route);
                 }

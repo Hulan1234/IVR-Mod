@@ -129,7 +129,6 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
             ticketNBT.putInt("fare", discount);
             BlockPos pos = player.blockPosition();
             ItemEntity itemEntity = new ItemEntity(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, ticket);
-            itemEntity.setNoPickUpDelay();
             world.addFreshEntity(itemEntity);
             switch (payment) {
                 case EMERALDS -> {

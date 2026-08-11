@@ -33,6 +33,7 @@
   "gui.ksd.door_opening_side_right" : "Door Opening Side:Right",
   "gui.ksd.has_fc_service" : "Has First Class Service",
   "gui.ksd.fc_car_number" : "First Class Car Number",
+  "gui.ksd.selected_ris" : "Selected Recommended Interchange Station:%s",
   "gui.ksd.map_type.x_z" : "Current Map Type:X-Z",
   "gui.ksd.map_type.x_y" : "Current Map Type:X-Y",
   "gui.ksd.map_type.z_y" : "Current Map Type:Z-Y",

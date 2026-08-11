@@ -118,6 +118,10 @@ public class DataUtilities {
         return getMappedAndFilteredListFromDataCollection(dataCollection, mapper, Objects::nonNull);
     }
 
+    public static <T, R> Set<R> getMappedAndNonNullSetFromDataCollection(Collection<T> dataCollection, Function<T, R> mapper) {
+        return getMappedAndFilteredSetFromDataCollection(dataCollection, mapper, Objects::nonNull);
+    }
+
     public static <T, R> List<R> getMappedAndFilteredListFromDataCollection(Collection<T> dataCollection, Function<T, R> mapper, Predicate<R> filter) {
         return dataCollection.stream().map(mapper).filter(filter).toList();
     }
