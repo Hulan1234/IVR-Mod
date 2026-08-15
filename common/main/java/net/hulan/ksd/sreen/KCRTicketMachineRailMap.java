@@ -8,12 +8,12 @@ import mtr.mappings.SelectableMapper;
 import mtr.mappings.WidgetMapper;
 import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.utils.DataUtilities;
+import net.hulan.ksd.utils.RailDataUtilities;
 import net.hulan.ksd.utils.RenderUtilities;
 import net.hulan.ksd.data.KSDAreaBase;
 import net.hulan.ksd.data.KSDPlatform;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
-import net.hulan.ksd.utils.Utilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.player.LocalPlayer;
@@ -41,11 +41,10 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
     private double scale;
     private double centerX;
     private double centerY;
-    private final Set<KSDStation> stations = new HashSet<>();
-    private final Set<KSDRoute> routes = new HashSet<>();
     private final Set<KSDRoute> lightRails = new HashSet<>();
     private final Set<KSDRoute> mtrRoutes = new HashSet<>();
     private final Consumer<KSDStation> onClickedOnDestination;
+    private final KCRTicketMachineScreen ticketMachineScreen;
     private static final double SCALE_UPPER_LIMIT = 64F;
     private static final double SCALE_LOWER_LIMIT = 0.0078125F;
     private static final float RADIUS = 5F;
@@ -58,16 +57,17 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
     private static final float STATION_NAME_SCALE = 1.2F;
     // 站名英文行缩放倍数（小号，置于中文行下方）
     private static final float STATION_EN_SCALE = 0.7F;
-    private final Map<Long, List<RailMapStation>> metroStopsByRoute = new HashMap<>();
+    private final Map<Long, List<RailMapStation>> layouts = new HashMap<>();
     private final Map<Long, double[]> stationOrigins = new HashMap<>();
     private final List<StationCircle> stationCircles = new ArrayList<>();
     private final List<List<Tuple<Float, Float>>> drawingLines = new ArrayList<>();
     private final List<Integer> drawingLineColors = new ArrayList<>();
     private boolean lastHovering;
-    private static long handCursor;
+    private long handCursor;
 
-    public KCRTicketMachineRailMap(Consumer<KSDStation> onClickedOnDestination) {
+    public KCRTicketMachineRailMap(Consumer<KSDStation> onClickedOnDestination, KCRTicketMachineScreen ticketMachineScreen) {
         this.onClickedOnDestination = onClickedOnDestination;
+        this.ticketMachineScreen = ticketMachineScreen;
         Minecraft minecraftClient = Minecraft.getInstance();
         LocalPlayer player = minecraftClient.player;
         if (player == null) {
@@ -77,7 +77,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
             centerX = player.getX();
             centerY = player.getZ();
         }
-        scale = 1.0F;
+        scale = 0.05F;
     }
 
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
@@ -123,62 +123,61 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
         });
         // 根据悬停状态更新鼠标指针（悬停时显示小手）
         updateCursor(hovered.get());
-        if (scale >= 1.0F) {
-            for (KSDStation station : stations) {
-                if (KSDAreaBase.nonNullCorners(station)) {
-                    BlockPos pos = station.getCenter();
-                    // 取该站的平台中点平均值作为文字锚点（若有）
-                    double[] origin = stationOrigins.get(station.id);
-                    // 无平台数据时退回车站中心 X
-                    double originX = origin != null ? origin[0] : pos.getX();
-                    // 无平台数据时退回车站中心 Z
-                    double originZ = origin != null ? origin[1] : pos.getZ();
-                    // 站名原文（「中文||English」形式）
-                    String name = station.name;
-                    // 测量「中文在上、英文在下」两行站名的整体宽高（供避让计算）
-                    float[] textSize = renderUtilities.getTextSizeCjk(name, STATION_NAME_SCALE, STATION_EN_SCALE);
-                    // 站名标签整体宽度
-                    float textWidth = textSize[0];
-                    // 站名标签整体高度
-                    float textHeight = textSize[1];
-                    // 把世界坐标换算成控件内坐标，若在可见范围内则尝试摆放站名
-                    drawFromWorldCords(
-                            originX,
-                            originZ,
-                            (x1, y1) -> {
-                                // 四个候选方位：右、左、下、上（相对车站圆心的偏移方向）
-                                float[][] sides = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-                                // 已记录的最优重叠得分（越小越干净）
-                                float bestScore = Float.MAX_VALUE;
-                                // 最优方位序号
-                                int bestSide = 0;
-                                // 依次评估每个方位
-                                for (int i = 0; i < sides.length; i++) {
-                                    // 候选位置 X：圆心沿该方位偏移 半径+留白
-                                    float labelX = x1.floatValue() + sides[i][0] * (RADIUS + RADIUS_PADDING);
-                                    // 候选位置 Y：圆心沿该方位偏移 半径+留白
-                                    float labelY = y1.floatValue() + sides[i][1] * (RADIUS + RADIUS_PADDING);
-                                    // 计算该位置与所有线路线段的重叠总长度
-                                    float score = labelOverlapScore(labelX, labelY, textWidth, textHeight);
-                                    // 无任何重叠时直接选中该方位并结束评估
-                                    if (score == 0) {
-                                        bestSide = i;
-                                        break;
-                                    }
-                                    // 有重叠时记录重叠最少的方位
-                                    if (score < bestScore) {
-                                        bestScore = score;
-                                        bestSide = i;
-                                    }
+
+        for (KSDStation station : ticketMachineScreen.stations) {
+            if (KSDAreaBase.nonNullCorners(station)) {
+                BlockPos pos = station.getCenter();
+                // 取该站的平台中点平均值作为文字锚点（若有）
+                double[] origin = stationOrigins.get(station.id);
+                // 无平台数据时退回车站中心 X
+                double originX = origin != null ? origin[0] : pos.getX();
+                // 无平台数据时退回车站中心 Z
+                double originZ = origin != null ? origin[1] : pos.getZ();
+                // 站名原文（「中文||English」形式）
+                String name = station.name;
+                // 测量「中文在上、英文在下」两行站名的整体宽高（供避让计算）
+                float[] textSize = renderUtilities.getTextSizeCjk(name, STATION_NAME_SCALE, STATION_EN_SCALE);
+                // 站名标签整体宽度
+                float textWidth = textSize[0];
+                // 站名标签整体高度
+                float textHeight = textSize[1];
+                // 把世界坐标换算成控件内坐标，若在可见范围内则尝试摆放站名
+                drawFromWorldCords(
+                        originX,
+                        originZ,
+                        (x1, y1) -> {
+                            // 四个候选方位：右、左、下、上（相对车站圆心的偏移方向）
+                            float[][] sides = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+                            // 已记录的最优重叠得分（越小越干净）
+                            float bestScore = Float.MAX_VALUE;
+                            // 最优方位序号
+                            int bestSide = 0;
+                            // 依次评估每个方位
+                            for (int i = 0; i < sides.length; i++) {
+                                // 候选位置 X：圆心沿该方位偏移 半径+留白
+                                float labelX = x1.floatValue() + sides[i][0] * (RADIUS + RADIUS_PADDING);
+                                // 候选位置 Y：圆心沿该方位偏移 半径+留白
+                                float labelY = y1.floatValue() + sides[i][1] * (RADIUS + RADIUS_PADDING);
+                                // 计算该位置与所有线路线段的重叠总长度
+                                float score = labelOverlapScore(labelX, labelY, textWidth, textHeight);
+                                // 无任何重叠时直接选中该方位并结束评估
+                                if (score == 0) {
+                                    bestSide = i;
+                                    break;
                                 }
-                                // 站名始终绘制：优先无重叠方位，全部重叠时选重叠最少的方位
-                                // （y 为两行文字整体的垂直中心，中文在上英文在下）
-                                renderUtilities.drawTextCjk(matrices, name,
-                                        (float) this.x + x1.floatValue() + sides[bestSide][0] * (RADIUS + RADIUS_PADDING),
-                                        (float) this.y + y1.floatValue() + sides[bestSide][1] * (RADIUS + RADIUS_PADDING),
-                                        STATION_NAME_SCALE, STATION_EN_SCALE, ARGB_BLACK);
-                            });
-                }
+                                // 有重叠时记录重叠最少的方位
+                                if (score < bestScore) {
+                                    bestScore = score;
+                                    bestSide = i;
+                                }
+                            }
+                            // 站名始终绘制：优先无重叠方位，全部重叠时选重叠最少的方位
+                            // （y 为两行文字整体的垂直中心，中文在上英文在下）
+                            renderUtilities.drawTextCjk(matrices, name,
+                                    (float) this.x + x1.floatValue() + sides[bestSide][0] * (RADIUS + RADIUS_PADDING),
+                                    (float) this.y + y1.floatValue() + sides[bestSide][1] * (RADIUS + RADIUS_PADDING),
+                                    STATION_NAME_SCALE, STATION_EN_SCALE, ARGB_BLACK);
+                        });
             }
         }
     }
@@ -264,6 +263,52 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
         return (float) Math.hypot(dx * (t1 - t0), dy * (t1 - t0));
     }
 
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        centerX -= deltaX / scale;
+        centerY -= deltaY / scale;
+        return true;
+    }
+
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (this.isMouseOver(mouseX, mouseY)) {
+            mouseOnStation(stationCircles, new Tuple<>((float) mouseX - x, (float) mouseY - y), s -> {
+                updateCursor(false);
+                onClickedOnDestination.accept(s);
+            });
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+        double oldScale = this.scale;
+        if (oldScale > SCALE_LOWER_LIMIT && amount < (double) 0.0F) {
+            this.centerX -= (mouseX - (double) this.x - (double) this.width / (double) 2.0F) / this.scale;
+            this.centerY -= (mouseY - (double) this.y - (double) this.height / (double) 2.0F) / this.scale;
+        }
+        this.scale(amount);
+        if (oldScale < SCALE_UPPER_LIMIT && amount > (double) 0.0F) {
+            this.centerX += (mouseX - (double) this.x - (double) this.width / (double) 2.0F) / this.scale;
+            this.centerY += (mouseY - (double) this.y - (double) this.height / (double) 2.0F) / this.scale;
+        }
+        return true;
+    }
+
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        return mouseX >= (double) this.x
+                && mouseY >= (double) this.y
+                && mouseX < (double) (this.x + this.width)
+                && mouseY < (double) (this.y + this.height);
+    }
+
+    public void setFocused(boolean focused) {
+    }
+
+    public boolean isFocused() {
+        return false;
+    }
+
     // 重建线路图布局数据：计算各站在屏幕上的圆位置、每条线路的折线顶点列表
     private void buildRenderData() {
         // 清空上一帧的车站圆列表
@@ -279,9 +324,9 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
         // 记录每个车站每条线路(routeId)对应的候选序号
         Map<Long, Map<Long, Integer>> stationRouteIndex = new HashMap<>();
         // 遍历所有线路
-        for (KSDRoute route : routes) {
+        for (KSDRoute route : ticketMachineScreen.routes) {
             // 取该线路的站点列表
-            List<RailMapStation> railMapStations = metroStopsByRoute.get(route.id);
+            List<RailMapStation> railMapStations = layouts.get(route.id);
             // 无站点数据时跳过
             if (railMapStations == null) {
                 continue;
@@ -369,9 +414,9 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
         // 每条线路的端点路径（依次经过各站）
         Map<Long, List<Tuple<Float, Float>>> pathByRoute = new HashMap<>();
         // 遍历所有线路
-        for (KSDRoute route : routes) {
+        for (KSDRoute route : ticketMachineScreen.routes) {
             // 取该线路站点列表
-            List<RailMapStation> railMapStations = metroStopsByRoute.get(route.id);
+            List<RailMapStation> railMapStations = layouts.get(route.id);
             // 站点不足两个时无法成线
             if (railMapStations == null || railMapStations.size() < 2) {
                 continue;
@@ -409,14 +454,14 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
         // 记录已绘制过的"线路:站点对"，避免同一线路对同一站对重复画线
         Set<String> drawnPairs = new HashSet<>();
         // 遍历所有线路生成折线
-        for (KSDRoute route : routes) {
+        for (KSDRoute route : ticketMachineScreen.routes) {
             // 取该线路路径
             List<Tuple<Float, Float>> path = pathByRoute.get(route.id);
             if (path == null) {
                 continue;
             }
             // 取该线路站点列表
-            List<RailMapStation> railMapStations = metroStopsByRoute.get(route.id);
+            List<RailMapStation> railMapStations = layouts.get(route.id);
             // 线路标识
             String lineKey = getLineKey(route);
             // 逐段连接相邻站点：每对站点单独画直线，
@@ -452,52 +497,6 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
         }
     }
 
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        centerX -= deltaX / scale;
-        centerY -= deltaY / scale;
-        return true;
-    }
-
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (this.isMouseOver(mouseX, mouseY)) {
-            mouseOnStation(stationCircles, new Tuple<>((float) mouseX - x, (float) mouseY - y), s -> {
-                updateCursor(false);
-                onClickedOnDestination.accept(s);
-            });
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
-        double oldScale = this.scale;
-        if (oldScale > SCALE_LOWER_LIMIT && amount < (double) 0.0F) {
-            this.centerX -= (mouseX - (double) this.x - (double) this.width / (double) 2.0F) / this.scale;
-            this.centerY -= (mouseY - (double) this.y - (double) this.height / (double) 2.0F) / this.scale;
-        }
-        this.scale(amount);
-        if (oldScale < SCALE_UPPER_LIMIT && amount > (double) 0.0F) {
-            this.centerX += (mouseX - (double) this.x - (double) this.width / (double) 2.0F) / this.scale;
-            this.centerY += (mouseY - (double) this.y - (double) this.height / (double) 2.0F) / this.scale;
-        }
-        return true;
-    }
-
-    public boolean isMouseOver(double mouseX, double mouseY) {
-        return mouseX >= (double) this.x
-                && mouseY >= (double) this.y
-                && mouseX < (double) (this.x + this.width)
-                && mouseY < (double) (this.y + this.height);
-    }
-
-    public void setFocused(boolean focused) {
-    }
-
-    public boolean isFocused() {
-        return false;
-    }
-
     public void setPositionAndSize(int x, int y, int width, int height) {
         this.x = x;
         this.y = y;
@@ -513,7 +512,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
     private void mouseOnStation(List<StationCircle> circles, Tuple<Float, Float> mouseCord, MouseOnStationCallback callback) {
         for (StationCircle circle : circles) {
             if (dist(new Tuple<>((float) circle.centerX, (float) circle.centerY), mouseCord) <= RADIUS) {
-                for (KSDStation station : stations) {
+                for (KSDStation station : ticketMachineScreen.stations) {
                     if (station.id == circle.stationId) {
                         callback.mouseOnStation(station);
                         break;
@@ -546,44 +545,14 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
         lastHovering = hovering;
     }
 
-    // 加载全部数据：站点、线路与线路图布局
     public void load() {
-        // 加载站点集合
-        loadStations();
-        // 加载线路集合
-        loadRoutes();
-        // 加载并计算线路图布局（站点方向、偏移等）
         loadLayout();
-    }
-
-    private void loadStations() {
-        stations.clear();
-        KSDClientData.STATIONS.forEach(s -> {
-            Set<KSDRoute> rs = KSDClientData.DATA_CACHE.stationIdToRoutes.get(s.id);
-            if (rs != null) {
-                for (KSDRoute r : rs) {
-                    if (r.routeType.equals(Utilities.KCR_CLASSICAL) || r.routeType.equals(Utilities.KCR_MODERN)) {
-                        stations.add(s);
-                        break;
-                    }
-                }
-            }
-        });
-    }
-
-    private void loadRoutes() {
-        routes.clear();
-        for (KSDRoute r : KSDClientData.ROUTES) {
-            if ((r.routeType.equals(Utilities.KCR_CLASSICAL) || r.routeType.equals(Utilities.KCR_MODERN)) && !r.isHidden) {
-                routes.add(r);
-            }
-        }
     }
 
     // 计算线路图布局：每条线路的站点顺序、平台方向、站内分流序号与偏移
     private void loadLayout() {
         // 清空旧布局
-        metroStopsByRoute.clear();
+        layouts.clear();
         // 清空站点锚点
         stationOrigins.clear();
         // 每条线路的 RailMapStation 列表
@@ -595,7 +564,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
         // 站点 id → 平台中点坐标映射（取均值作锚点）
         Map<Long, Map<String, double[]>> platformMidsByStation = new HashMap<>();
         // 遍历所有线路
-        for (KSDRoute route : routes) {
+        for (KSDRoute route : ticketMachineScreen.routes) {
             // 本线路去重后的站点列表
             List<KSDStation> stationList = new ArrayList<>();
             // 各站点对应平台中点（可能为空）
@@ -606,7 +575,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
                 KSDStation station = KSDClientData.DATA_CACHE.platformIdToStation.get(routePlatform.platformId);
                 if (KSDAreaBase.nonNullCorners(station)) {
                     // 连续相同车站跳过（站内多站台或同名同色车站）
-                    if (!stationList.isEmpty() && DataUtilities.isSameStation(stationList.get(stationList.size() - 1), station)) {
+                    if (!stationList.isEmpty() && RailDataUtilities.isSameStation(stationList.get(stationList.size() - 1), station)) {
                         continue;
                     }
                     // 加入去重站点列表
@@ -698,7 +667,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
             }
         }
         // 写入布局结果供渲染使用
-        metroStopsByRoute.putAll(railMapStationsByRoute);
+        layouts.putAll(railMapStationsByRoute);
     }
 
     private Tuple<Double, Double> worldPosToCords(double worldX, double worldZ) {
@@ -852,7 +821,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
     // 生成线路标识：颜色+线路主名（用于区分同名的不同线路）
     private static String getLineKey(KSDRoute route) {
         // 返回 "颜色:中文线路名"
-        return route.color + ":" + DataUtilities.getMainName(route);
+        return route.color + ":" + RailDataUtilities.getMainName(route);
     }
 
     private static double dist(Tuple<Float, Float> corner1, Tuple<Float, Float> corner2) {

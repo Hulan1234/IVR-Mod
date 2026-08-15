@@ -178,4 +178,16 @@ public abstract class KSDAreaBase extends NameColorDataBase {
     public static boolean nonNullCorners(KSDAreaBase station) {
         return station != null && station.corner1 != null && station.corner2 != null;
     }
+
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        if (obj instanceof KSDAreaBase ab) {
+            return id == ab.id;
+        }
+        return false;
+    }
+
+    public int hashCode() {
+        return Long.hashCode(id);
+    }
 }

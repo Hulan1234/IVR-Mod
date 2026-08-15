@@ -7,16 +7,25 @@ import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
 import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.KSDRailwayData;
+import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
+import net.hulan.ksd.utils.DataUtilities;
+import net.hulan.ksd.utils.RailDataUtilities;
 import net.hulan.ksd.utils.RenderUtilities;
+import net.hulan.ksd.utils.Utilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 
+import java.util.HashSet;
+import java.util.Set;
+
 
 public class KCRTicketMachineScreen extends ScreenMapper implements IGui {
 
+    final Set<KSDRoute> routes = new HashSet<>();
+    final Set<KSDStation> stations = new HashSet<>();
     private final int balance;
     private final KSDStation current;
     private final KCRTicketMachineRailMap railMap;
@@ -36,7 +45,7 @@ public class KCRTicketMachineScreen extends ScreenMapper implements IGui {
         super(Text.literal(""));
         this.balance = balance;
         current = KSDRailwayData.getStation(KSDClientData.STATIONS,  machinePos);
-        railMap = new KCRTicketMachineRailMap(this::onClickedOnDestination);
+        railMap = new KCRTicketMachineRailMap(this::onClickedOnDestination, this);
         legend = new KCRTicketMachineLegend();
         if (current == null) {
             onClose();
@@ -44,12 +53,14 @@ public class KCRTicketMachineScreen extends ScreenMapper implements IGui {
     }
 
     protected void init() {
+        loadRoutes();
+        loadStations();
         int componentHeight = height - RMH_HEADER_HEIGHT;
         legend.setPositionAndSize(0, RMH_HEADER_HEIGHT, LEGEND_WIDTH, componentHeight);
         railMap.setPositionAndSize(LEGEND_WIDTH, RMH_HEADER_HEIGHT, width - LEGEND_WIDTH, componentHeight);
         addWidget(legend);
         addWidget(railMap);
-        legend.load(componentHeight);
+        legend.load(componentHeight, routes);
         railMap.load();
     }
 
@@ -66,6 +77,23 @@ public class KCRTicketMachineScreen extends ScreenMapper implements IGui {
     public void onClickedOnDestination(KSDStation destination) {
         if (minecraft != null) {
             UtilitiesClient.setScreen(minecraft, new TicketProcessingScreen(current, destination, balance, this));
+        }
+    }
+
+    private void loadRoutes() {
+        routes.clear();
+        Set<KSDRoute> routeInCurrent = DataUtilities.getNonNullSetFromDataCollection(KSDClientData.DATA_CACHE.stationIdToRoutes.get(current.id));
+        routes.addAll(routeInCurrent);
+        Set<KSDRoute> routeInSameRailNet = new HashSet<>();
+        routeInCurrent.forEach(r -> routeInSameRailNet.addAll(RailDataUtilities.getRoutesInSameRailNet(KSDClientData.DATA_CACHE, r)));
+        routes.addAll(routeInSameRailNet);
+        routes.removeIf(r -> r.isHidden || (!r.routeType.equals(Utilities.KCR_CLASSICAL) && !r.routeType.equals(Utilities.KCR_MODERN)));
+    }
+
+    private void loadStations() {
+        stations.clear();
+        for (KSDRoute route : routes) {
+            stations.addAll(RailDataUtilities.getStationsInRoute(KSDClientData.DATA_CACHE, route));
         }
     }
 

@@ -4,17 +4,16 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.data.IGui;
 import mtr.mappings.SelectableMapper;
 import mtr.mappings.WidgetMapper;
-import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.KSDRoute;
-import net.hulan.ksd.utils.DataUtilities;
+import net.hulan.ksd.utils.RailDataUtilities;
 import net.hulan.ksd.utils.RenderUtilities;
-import net.hulan.ksd.utils.Utilities;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 public class KCRTicketMachineLegend implements WidgetMapper, SelectableMapper, GuiEventListener, IGui {
 
@@ -70,28 +69,16 @@ public class KCRTicketMachineLegend implements WidgetMapper, SelectableMapper, G
         }
     }
 
-    // 加载图例数据：面板宽度由 setPositionAndSize 直接指定（内容靠左），高度按内容自适应（封顶 maxHeight）
-    public void load(int maxHeight) {
-        // 清空旧行
+    public void load(int maxHeight, Set<KSDRoute> routes) {
         rows.clear();
-        // 收集与铁路图过滤条件一致的线路
-        List<KSDRoute> routeList = new ArrayList<>();
-        for (KSDRoute r : KSDClientData.ROUTES) {
-            if ((r.routeType.equals(Utilities.KCR_CLASSICAL) || r.routeType.equals(Utilities.KCR_MODERN)) && !r.isHidden) {
-                routeList.add(r);
-            }
-        }
-        // 按线路主名（中文名）排序，保证顺序稳定
-        routeList.sort(Comparator.comparing(DataUtilities::getMainName));
-        // 逐条线路生成图例行（主名与颜色相同者视为同一条线路，只保留第一条）
+        List<KSDRoute> routeList = new ArrayList<>(routes.stream().toList());
+        routeList.sort(Comparator.comparing(RailDataUtilities::getMainName));
         for (KSDRoute r : routeList) {
-            // 用 DataUtilities.isSameRoute 判定是否与已登记线路相同
-            if (rows.stream().anyMatch(row -> DataUtilities.isSameRoute(row.route, r))) {
+            if (rows.stream().anyMatch(row -> RailDataUtilities.isSameRoute(row.route, r))) {
                 continue;
             }
             rows.add(new LegendRow(argb(r.color), r.name, r));
         }
-        // 面板高度：内容高（含内边距）封顶 maxHeight；宽度保持不变，由 setPositionAndSize 指定
         height = Math.min(rows.size() * ROW_HEIGHT, maxHeight) + PADDING * 2;
     }
 
@@ -147,32 +134,30 @@ public class KCRTicketMachineLegend implements WidgetMapper, SelectableMapper, G
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // 不在图例内时不处理
-        if (!isMouseOver(mouseX, mouseY)) {
-            return false;
+        if (isMouseOver(mouseX, mouseY)) {
+            // 命中滑块则进入拖动态并记录抓取点相对滑块顶边的偏移
+            if (maxScrollOffset() > 0 && mouseX >= trackX() && mouseX <= trackX() + TRACK_WIDTH
+                    && mouseY >= thumbY() && mouseY <= thumbY() + thumbHeight()) {
+                dragging = true;
+                dragGrabOffsetY = (float) mouseY - thumbY();
+            }
+            return true;
         }
-        // 命中滑块则进入拖动态并记录抓取点相对滑块顶边的偏移
-        if (maxScrollOffset() > 0 && mouseX >= trackX() && mouseX <= trackX() + TRACK_WIDTH
-                && mouseY >= thumbY() && mouseY <= thumbY() + thumbHeight()) {
-            dragging = true;
-            dragGrabOffsetY = (float) mouseY - thumbY();
-        }
-        // 落在图例内一律吞掉事件，避免穿透到铁路图
-        return true;
+        return false;
     }
 
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         // 只有拖动滑块时才处理滚动
-        if (!dragging) {
-            return false;
+        if (dragging) {
+            if (maxScrollOffset() > 0) {
+                // 滑块顶边相对轨道顶部的比例换算成滚动偏移
+                float thumbTop = (float) mouseY - dragGrabOffsetY - y - PADDING;
+                float ratio = thumbTop / (visibleHeight() - thumbHeight());
+                scrollOffset = Mth.clamp(ratio * maxScrollOffset(), 0, maxScrollOffset());
+            }
+            return true;
         }
-        if (maxScrollOffset() > 0) {
-            // 滑块顶边相对轨道顶部的比例换算成滚动偏移
-            float thumbTop = (float) mouseY - dragGrabOffsetY - y - PADDING;
-            float ratio = thumbTop / (visibleHeight() - thumbHeight());
-            scrollOffset = Mth.clamp(ratio * maxScrollOffset(), 0, maxScrollOffset());
-        }
-        return true;
+        return false;
     }
 
     public boolean mouseReleased(double mouseX, double mouseY, int button) {

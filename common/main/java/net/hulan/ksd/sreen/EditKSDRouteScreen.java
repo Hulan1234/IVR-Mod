@@ -13,6 +13,7 @@ import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.utils.DataUtilities;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
+import net.hulan.ksd.utils.RailDataUtilities;
 import net.hulan.ksd.utils.Utilities;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketClient;
@@ -209,6 +210,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         routeType = newRouteType;
         buttonRouteType.setMessage(Text.translatable(String.format("gui.mtr.route_type_%s_%s", transportMode, routeType).toLowerCase(Locale.ENGLISH)));
         setShowFCService(routeType.equals(Utilities.KCR_CLASSICAL));
+        System.out.println(routeType.equals(Utilities.KCR_CLASSICAL));
     }
 
     private void setIsLightRailRoute(boolean isLightRailRoute) {
@@ -260,7 +262,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         recommendedInterchangeStationId = risId;
         KSDStation ris = DataUtilities.getStation(KSDClientData.STATIONS,  recommendedInterchangeStationId);
         if (recommendedInterchangeStationId != 0 && ris != null) {
-            buttonSelectRIS.setMessage(Text.translatable("gui.ksd.selected_ris", DataUtilities.getMainName(ris)));
+            buttonSelectRIS.setMessage(Text.translatable("gui.ksd.selected_ris", RailDataUtilities.getMainName(ris)));
         } else {
             buttonSelectRIS.setMessage(Text.translatable("gui.ksd.selected_ris", "None"));
         }

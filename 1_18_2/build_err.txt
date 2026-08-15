@@ -1,0 +1,89 @@
+﻿
+> Configure project :1_16_5
+Fabric Loom: 1.6.12
+Not publishing sources jar as it was not found. Use java.withSourcesJar() to fix.
+
+> Configure project :1_17_1
+Fabric Loom: 1.6.12
+Not publishing sources jar as it was not found. Use java.withSourcesJar() to fix.
+
+> Configure project :1_18_2
+Fabric Loom: 1.6.12
+Not publishing sources jar as it was not found. Use java.withSourcesJar() to fix.
+
+> Configure project :1_19_2
+Fabric Loom: 1.6.12
+Not publishing sources jar as it was not found. Use java.withSourcesJar() to fix.
+
+> Configure project :1_19_4
+Fabric Loom: 1.6.12
+Not publishing sources jar as it was not found. Use java.withSourcesJar() to fix.
+
+> Task :1_18_2:compileJava
+gradlew.bat : G:\MinecraftMods\IVR\common\main\java\net\hulan\ivr\mixin\LiftRenderOptimizeMixin.java:33: 警告: Cannot fin
+d target for @Shadow field in mtr.data.LiftClient
+所在位置 行:1 字符: 1
++ & "G:\MinecraftMods\IVR\gradlew.bat" -p "G:\MinecraftMods\IVR\1_18_2" ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (G:\MinecraftMod...data.LiftClient:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    @Shadow(remap = false)
+    ^
+G:\MinecraftMods\IVR\common\main\java\net\hulan\ivr\mixin\LiftRenderOptimizeMixin.java:37: 警告: Cannot find target for @
+Shadow field in mtr.data.LiftClient
+    @Shadow(remap = false)
+    ^
+G:\MinecraftMods\IVR\common\main\java\net\hulan\ivr\mixin\LiftRenderOptimizeMixin.java:41: 警告: Cannot find target for @
+Shadow field in mtr.data.LiftClient
+    @Shadow(remap = false)
+    ^
+G:\MinecraftMods\IVR\common\main\java\net\hulan\ivr\mixin\TrainRenderOptimizeMixin.java:41: 警告: Cannot find target for 
+@Shadow field in mtr.render.JonModelTrainRenderer
+    @Shadow(remap = false)
+    ^
+G:\MinecraftMods\IVR\common\main\java\net\hulan\ivr\mixin\TrainSimulateOptimizeMixin.java:41: 警告: Cannot find target fo
+r @Shadow field in mtr.data.TrainClient
+    @Shadow(remap = false)
+    ^
+G:\MinecraftMods\IVR\common\main\java\net\hulan\ksd\mixin\RouteTypeMixin.java:20: 警告: Cannot find target for @Shadow fi
+eld in mtr.data.RouteType
+    @Shadow(remap = false)
+    ^
+G:\MinecraftMods\IVR\common\main\java\net\hulan\ivr\mixin\DynamicResourceRemoveMixin.java:45: 警告: @Overwrite is missing
+ an @author tag
+    private void remove() {
+                 ^
+G:\MinecraftMods\IVR\common\main\java\net\hulan\ivr\mixin\DynamicResourceRemoveMixin.java:45: 警告: @Overwrite is missing
+ an @reason tag
+    private void remove() {
+                 ^
+注: 某些输入文件使用或覆盖了已过时的 API。
+注: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+注: G:\MinecraftMods\IVR\common\main\java\net\hulan\ksd\data\KSDRailwayDataLoggingModule.java使用了未经检查或不安全的操作。
+注: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+8 个警告
+
+> Task :1_18_2:processResources
+> Task :1_18_2:classes
+> Task :1_18_2:jar
+> Task :1_18_2:remapSourcesJar SKIPPED
+> Task :1_18_2:compileTestJava NO-SOURCE
+> Task :1_18_2:processTestResources NO-SOURCE
+> Task :1_18_2:testClasses UP-TO-DATE
+> Task :1_18_2:test NO-SOURCE
+> Task :1_18_2:validateAccessWidener NO-SOURCE
+> Task :1_18_2:check UP-TO-DATE
+> Task :1_18_2:remapJar
+> Task :1_18_2:assemble
+> Task :1_18_2:copyJar
+> Task :1_18_2:build
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.6/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 24s
+5 actionable tasks: 5 executed

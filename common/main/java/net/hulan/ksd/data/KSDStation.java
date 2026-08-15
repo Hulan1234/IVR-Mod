@@ -262,4 +262,12 @@ public class KSDStation extends KSDAreaBase {
     private boolean parentExists(String parent) {
         return parent != null && exits.containsKey(parent);
     }
+
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        if (obj instanceof KSDStation s) {
+            return id == s.id;
+        }
+        return false;
+    }
 }

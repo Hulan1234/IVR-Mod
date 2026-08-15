@@ -144,4 +144,16 @@ public class KSDPlatform extends SavedRailBase {
             return values()[(ordinal() + 1) % values().length];
         }
     }
+
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        if (obj instanceof KSDPlatform p) {
+            return id == p.id;
+        }
+        return false;
+    }
+
+    public int hashCode() {
+        return Long.hashCode(id);
+    }
 }

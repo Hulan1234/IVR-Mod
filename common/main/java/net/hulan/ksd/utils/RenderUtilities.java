@@ -163,13 +163,6 @@ public abstract class RenderUtilities {
         RenderSystem.disableBlend();
     }
 
-    public void drawText(PoseStack matrices, MutableComponent component, float x, float y, int color) {
-        if (component == null) {
-            return;
-        }
-        Minecraft.getInstance().font.draw(matrices, component.withStyle(FONT), x, y, color);
-    }
-
     public void drawText(PoseStack matrices, String text, float x, float y, float maxWidth, float maxHeight, int color) {
         if (text == null || text.isEmpty() || maxWidth <= 0 || maxHeight <= 0) {
             return;
@@ -254,9 +247,8 @@ public abstract class RenderUtilities {
             return;
         }
         // 整体高度换算成顶边
-        float topY = y - getTextSizeCjk(text, cnScale, enScale)[1] / 2;
         // 当前行顶边游标
-        float yCursor = topY;
+        float yCursor = y - getTextSizeCjk(text, cnScale, enScale)[1] / 2;
         // 有中文行时绘制并下移一行
         if (!cn.isEmpty()) {
             drawText(matrices, cn, x, yCursor, cnScale, color);

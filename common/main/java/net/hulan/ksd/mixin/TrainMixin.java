@@ -5,7 +5,6 @@ import mtr.block.BlockPlatform;
 import mtr.data.Depot;
 import mtr.data.RailwayData;
 import mtr.data.Train;
-import mtr.data.TrainServer;
 import mtr.path.PathData;
 import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.utils.DataUtilities;
@@ -101,24 +100,24 @@ public abstract class TrainMixin {
                                  double halfSpacing,
                                  int dwellTicks,
                                  KSDPlatform.DoorOpeningSide leftOrRight) {
-        boolean original = scanDoors(invoker, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing);
+        boolean scanDoor;
         float phase = (float) getTotalDwellTicks() / 2;
-        boolean spanishCheck, scanDoor;
         long platformId = path.get(nextPlatformIndex).savedRailBaseId;
         KSDPlatform platform = getPlatform(world, platformId);
         if (platform != null && platform.isSpanishPlatform && !platform.doorOpeningSide.equals(KSDPlatform.DoorOpeningSide.DEFAULT)) {
+            boolean spanishCheck, original = scanDoors(invoker, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing);
             spanishCheck = platform.doorOpeningSide.equals(leftOrRight);
             if (phase + DOOR_DELAY <= elapsedDwellTicks && elapsedDwellTicks < phase * 2) {
                 spanishCheck = !spanishCheck;
             }
             scanDoor = original && spanishCheck;
+            if (scanDoor) {
+                openPSDOrAPG(invoker, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks);
+            }
+            return scanDoor;
         } else {
-            scanDoor = original;
+            return invoker.invokeScanDoors(world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks);
         }
-        if (scanDoor && invoker instanceof TrainServer) {
-            openPSDOrAPG(invoker, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks);
-        }
-        return scanDoor;
     }
 
     @Unique

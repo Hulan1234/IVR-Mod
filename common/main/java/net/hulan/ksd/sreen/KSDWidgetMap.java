@@ -386,7 +386,12 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
     }
 
     public boolean isMouseOver(double mouseX, double mouseY) {
-        return mouseX >= (double)this.x && mouseY >= (double)this.y && mouseX < (double)(this.x + this.width) && mouseY < (double)(this.y + this.height) && (!(mouseX >= (double)(this.x + this.width - 300)) || !(mouseY >= (double)(this.y + this.height - 20))) && !(Boolean)this.isRestrictedMouseArea.apply(mouseX, mouseY);
+        return mouseX >= (double)this.x
+                && mouseY >= (double)this.y
+                && mouseX < (double)(this.x + this.width)
+                && mouseY < (double)(this.y + this.height)
+                && (!(mouseX >= (double)(this.x + this.width - 300)) || !(mouseY >= (double)(this.y + this.height - 20)))
+                && !(Boolean)this.isRestrictedMouseArea.apply(mouseX, mouseY);
     }
 
     public void setFocused(boolean focused) {
@@ -460,6 +465,13 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
 
     public void setMapType(MapType mapType, KSDAreaBase editingArea) {
         this.mapType = mapType;
+        if (player == null) {
+            centerX = 0.0F;
+            centerY = 0.0F;
+        } else {
+            centerX = mapType != MapType.Z_Y ? player.getX() : player.getZ();
+            centerY = mapType != MapType.X_Z ? player.getY() : player.getZ();
+        }
         if (mapState.equals(MapState.EDITING_AREA) && editingArea != null) {
             switch (this.mapType) {
                 case X_Y -> {

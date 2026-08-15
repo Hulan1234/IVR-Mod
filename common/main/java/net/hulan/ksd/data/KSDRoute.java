@@ -302,4 +302,16 @@ public class KSDRoute extends NameColorDataBase implements IGui {
     public static boolean destinationIsReset(String destination) {
         return destination.equals("\\r") || destination.equals("\\reset");
     }
+
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        if (obj instanceof KSDRoute r) {
+            return id == r.id;
+        }
+        return false;
+    }
+
+    public int hashCode() {
+        return Long.hashCode(id);
+    }
 }

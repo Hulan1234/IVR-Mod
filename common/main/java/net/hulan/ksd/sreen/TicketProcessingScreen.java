@@ -12,6 +12,7 @@ import net.hulan.ksd.data.KSDStation;
 import net.hulan.ksd.data.Payment;
 import net.hulan.ksd.packet.KSDPacketClient;
 import net.hulan.ksd.utils.DataUtilities;
+import net.hulan.ksd.utils.RailDataUtilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.MutableComponent;
@@ -112,13 +113,13 @@ public class TicketProcessingScreen extends ScreenMapper implements IGui {
     }
 
     private MutableComponent getCurrentText() {
-        String[] currentMain = DataUtilities.getSplitName(current);
-        return Text.translatable("gui.ksd.current", isEnglish() ? currentMain[1] : currentMain[0]);
+        String[] currentMain = RailDataUtilities.getSplitName(current);
+        return Text.translatable("gui.ksd.current", isEnglish() && currentMain.length >= 2 ? currentMain[1] : currentMain[0]);
     }
 
     private MutableComponent getDestinationText() {
-        String[] destinationMain = DataUtilities.getSplitName(destination);
-        return Text.translatable("gui.ksd.destination", isEnglish() ? destinationMain[1] : destinationMain[0]);
+        String[] destinationMain = RailDataUtilities.getSplitName(destination);
+        return Text.translatable("gui.ksd.destination", isEnglish() && destinationMain.length >= 2 ? destinationMain[1] : destinationMain[0]);
     }
 
     private MutableComponent getFareText() {

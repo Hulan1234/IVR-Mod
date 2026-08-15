@@ -159,14 +159,17 @@ public final class FirstClassValidationSystem {
             KSDStation enteredStation = DataUtilities.getStation(railwayData.stations, firstClassPlayer.enteredStationId);
             KSDStation validatedStation = DataUtilities.getStation(railwayData.stations, firstClassPlayer.validatedStationId);
             KSDRoute route = DataUtilities.getRoute(railwayData.routes, firstClassPlayer.routeId);
-            if (!firstClassPlayer.state.equals(FirstClassState.MTR) && enteredStation != null && validatedStation != null) {
+            if (!firstClassPlayer.state.equals(FirstClassState.MTR) && enteredStation != null) {
                 final int fare;
-                boolean isIllegally = firstClassPlayer.state.equals(FirstClassState.ILLEGALLY);
-                if (validatedStation.id == enteredStation.id) {
-                    fare = getFare(railwayData, validatedStation, exitStation, route, player, isIllegally);
+                if (validatedStation != null && !firstClassPlayer.state.equals(FirstClassState.ILLEGALLY)) {
+                    if (validatedStation.id == enteredStation.id) {
+                        fare = getFare(railwayData, validatedStation, exitStation, route, player);
+                    } else {
+                        fare = getMTRFare(enteredStation.zone, validatedStation.zone, player)
+                                + getFare(railwayData, validatedStation, exitStation, route, player);
+                    }
                 } else {
-                    fare = getMTRFare(enteredStation.zone, validatedStation.zone, player)
-                            + getFare(railwayData, validatedStation, exitStation, route, player, isIllegally);
+                    fare = FC_EVASION_FINE + getMTRFare(enteredStation.zone, exitStation.zone, player);
                 }
                 entryZoneScore.setScore(0);
                 balanceScore.add(-fare);
@@ -189,16 +192,15 @@ public final class FirstClassValidationSystem {
                               KSDStation enteredStation,
                               KSDStation exitStation,
                               KSDRoute route,
-                              Player player,
-                              boolean isIllegally) {
+                              Player player) {
         KSDStation interchangeStation;
         final int entryZone = enteredStation.zone;
         final int exitZone = exitStation.zone;
         Map<Long, KSDStation> platformIdToStation = railwayData.dataCache.platformIdToStation;
         if (isInRoute(platformIdToStation, exitStation.id, route)) {
-            return isIllegally ? FC_EVASION_FINE : getMTRFare(entryZone, exitZone, player) * 2;
+            return getMTRFare(entryZone, exitZone, player) * 2;
         } else if ((interchangeStation = getNearestInterchangeStation(railwayData, route, exitStation.id)) != null) {
-            final int fcFare = isIllegally ? FC_EVASION_FINE : getMTRFare(entryZone, interchangeStation.zone, player) * 2;
+            final int fcFare = getMTRFare(entryZone, interchangeStation.zone, player) * 2;
             final int mtrFare = getMTRFare(exitZone, interchangeStation.zone, player);
             return fcFare + mtrFare;
         }
