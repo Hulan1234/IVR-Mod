@@ -4,28 +4,33 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonWriter;
 import mtr.data.EnumHelper;
+import mtr.mappings.Text;
 import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class Octopus extends JSONData {
+public class Octopus extends JSONData implements PrintableData {
 
-    public final long cardId;
+    public final long id;
     public int balance;
     public List<History> histories;
     private static final String KEY_BALANCE = "balance";
     private static final String KEY_HISTORY = "histories";
 
     public Octopus(String id) {
-        cardId = parseId(id, Long::parseLong, () -> new Random().nextLong());
+        this.id = parseId(id, Long::parseLong, () -> new Random().nextLong());
     }
 
     public Octopus() {
-        cardId = new Random().nextLong();
+        id = new Random().nextLong();
         histories = new ArrayList<>(20);
     }
 
@@ -56,7 +61,31 @@ public class Octopus extends JSONData {
 
     @Override
     public String getId() {
-        return String.valueOf(cardId);
+        return String.valueOf(id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(id);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Octopus octopus) {
+            return octopus.id == id;
+        }
+        return false;
+    }
+
+    @Override
+    public String getPrintedData() {
+        StringBuilder printed = new StringBuilder();
+        printed.append(Text.translatable("gui.ksd.balance", balance)).append("\n");
+        printed.append(Text.translatable("gui.ksd.histories")).append("\n");
+        for (History history : histories) {
+            printed.append("\t").append(history.getPrintedData());
+        }
+        return printed.toString();
     }
 
     public void addBalance(int balance) {
@@ -67,13 +96,12 @@ public class Octopus extends JSONData {
         this.balance -= balance;
     }
 
-    public static class History extends JSONData {
+    public static class History extends JSONData implements PrintableData {
 
         public final long cardId;
         public long time;
-        public long amount;
-        public long balance;
         public TransactionType transactionType;
+        public long count;
         private static final String KEY_TIME = "time";
         private static final String KEY_AMOUNT = "amount";
         private static final String KEY_BALANCE = "balance";
@@ -83,33 +111,52 @@ public class Octopus extends JSONData {
             this.cardId = parseId(cardId, Long::parseLong, () -> new Random().nextLong());
         }
 
-        public History(long carId, long amount, long balance, TransactionType transactionType) {
+        public History(long carId, long count, TransactionType transactionType) {
             this.cardId = carId;
             time = System.currentTimeMillis();
-            this.amount = amount;
-            this.balance = balance;
+            this.count = count;
             this.transactionType = transactionType;
         }
 
         @Override
         public void readFromJson(JsonObject json) throws JsonSyntaxException {
             time = json.get(KEY_TIME).getAsLong();
-            amount = json.get(KEY_AMOUNT).getAsLong();
-            balance = json.get(KEY_BALANCE).getAsLong();
             transactionType = EnumHelper.valueOf(TransactionType.NONE, json.get(KEY_TRANSACTION_TYPE).getAsString());
+            count = json.get(KEY_AMOUNT).getAsLong();
         }
 
         @Override
         public void writeToJson(JsonWriter writer) throws IOException {
             writer.name(KEY_TIME).value(time);
-            writer.name(KEY_AMOUNT).value(amount);
-            writer.name(KEY_BALANCE).value(balance);
             writer.name(KEY_TRANSACTION_TYPE).value(transactionType.name());
+            writer.name(KEY_AMOUNT).value(count);
         }
 
         @Override
         public String getId() {
             return String.valueOf(cardId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Long.hashCode(cardId);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof History history) {
+                return history.cardId == cardId;
+            }
+            return false;
+        }
+
+        @Override
+        public String getPrintedData() {
+            return Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofLocalizedTime(FormatStyle.FULL)) +
+                    " " +
+                    transactionType.getSerializedName() +
+                    " " +
+                    count;
         }
 
         public enum TransactionType implements StringRepresentable {

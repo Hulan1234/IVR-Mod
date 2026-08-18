@@ -21,7 +21,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -210,7 +209,6 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         routeType = newRouteType;
         buttonRouteType.setMessage(Text.translatable(String.format("gui.mtr.route_type_%s_%s", transportMode, routeType).toLowerCase(Locale.ENGLISH)));
         setShowFCService(routeType.equals(Utilities.KCR_CLASSICAL));
-        System.out.println(routeType.equals(Utilities.KCR_CLASSICAL));
     }
 
     private void setIsLightRailRoute(boolean isLightRailRoute) {
@@ -264,7 +262,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         if (recommendedInterchangeStationId != 0 && ris != null) {
             buttonSelectRIS.setMessage(Text.translatable("gui.ksd.selected_ris", RailDataUtilities.getMainName(ris)));
         } else {
-            buttonSelectRIS.setMessage(Text.translatable("gui.ksd.selected_ris", "None"));
+            buttonSelectRIS.setMessage(Text.translatable("gui.ksd.selected_ris", Text.translatable("gui.ksd.none")));
         }
     }
 

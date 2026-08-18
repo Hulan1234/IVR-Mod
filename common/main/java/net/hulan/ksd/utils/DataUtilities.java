@@ -29,10 +29,6 @@ public class DataUtilities {
         return getFilteredValueFromDataSet(platforms, p -> p.id == platformId);
     }
 
-    public static FirstClassPlayer getFirstClassPlayer(Set<FirstClassPlayer> fps, Player player) {
-        return getFilteredValueFromDataSet(fps, f -> f.uuid.equals(player.getUUID()));
-    }
-
     public static <T> T getFilteredValueFromDataSet(Set<T> dataSet, Predicate<T> filter) {
         return getFilteredValueFromDataSetWithDefaultValue(dataSet, filter, null);
     }

@@ -2,9 +2,9 @@ package net.hulan.ksd.item;
 
 import net.minecraft.world.item.Item;
 
-public class ItemTicket extends Item {
+public class ItemSingleTicket extends Item {
 
-    public ItemTicket() {
+    public ItemSingleTicket() {
         super(new Item.Properties());
     }
 }

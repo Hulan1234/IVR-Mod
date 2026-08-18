@@ -10,7 +10,7 @@ import mtr.mappings.UtilitiesClient;
 import mtr.packet.PacketTrainDataBase;
 import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.Payment;
-import net.hulan.ksd.sreen.KCRTicketMachineScreen;
+import net.hulan.ksd.sreen.KCRSingleTicketMachineScreen;
 import net.hulan.ksd.sreen.KSDDashboardScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -38,12 +38,12 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
         });
     }
 
-    public static void openKCRTicketMachineScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
+    public static void openKCRSingleTicketMachineScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
         BlockPos blockPos = packet.readBlockPos();
         int balance = packet.readInt();
         minecraftClient.execute(() -> {
-            if (!(minecraftClient.screen instanceof KCRTicketMachineScreen)) {
-                UtilitiesClient.setScreen(minecraftClient, new KCRTicketMachineScreen(blockPos, balance));
+            if (!(minecraftClient.screen instanceof KCRSingleTicketMachineScreen)) {
+                UtilitiesClient.setScreen(minecraftClient, new KCRSingleTicketMachineScreen(blockPos, balance));
             }
         });
     }
@@ -95,11 +95,13 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
         sendUpdate(packetId, packet);
     }
 
-    public static void sendTicketProcessingDataC2S(Payment payment, int discount, int amount) {
+    public static void sendTicketProcessingDataC2S(Payment payment, int discount, int amount, boolean isConcessionary, boolean firstClassAvailable) {
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
         packet.writeUtf(payment.name());
         packet.writeInt(discount);
         packet.writeInt(amount);
-        RegistryClient.sendToServer(KSD_PACKET_TICKET_PROCESSING, packet);
+        packet.writeBoolean(isConcessionary);
+        packet.writeBoolean(firstClassAvailable);
+        RegistryClient.sendToServer(KSD_PACKET_SINGLE_TICKET_PROCESSING, packet);
     }
 }

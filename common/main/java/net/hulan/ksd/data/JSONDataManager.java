@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import net.hulan.ksd.utils.DataUtilities;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.LevelResource;
 
@@ -14,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -21,7 +23,7 @@ import java.util.stream.Stream;
 public class JSONDataManager {
 
     public final Set<FirstClassPlayer> fps = new HashSet<>();
-    public final Set<Octopus> octopusCards = new HashSet<>();
+    public final Set<Octopus> octopuses = new HashSet<>();
     private final Path fcpPath;
     private final Path ocPath;
 
@@ -39,13 +41,22 @@ public class JSONDataManager {
 
     public void onLoad() {
         fps.clear();
+        octopuses.clear();
         loadData(fcpPath, FirstClassPlayer::new, fps::add);
-        loadData(ocPath, Octopus::new, octopusCards::add);
+        loadData(ocPath, Octopus::new, octopuses::add);
     }
 
     public void onSave() {
         saveData(fcpPath, fps);
-        saveData(ocPath, octopusCards);
+        saveData(ocPath, octopuses);
+    }
+
+    public FirstClassPlayer getFirstClassPlayer(UUID uuid) {
+        return DataUtilities.getFilteredValueFromDataSet(fps, f -> f.uuid.equals(uuid));
+    }
+
+    public Octopus getOctopus(long octopusId) {
+        return DataUtilities.getFilteredValueFromDataSet(octopuses, o -> o.id == octopusId);
     }
 
     private <T extends JSONData> void loadData(Path path, Function<String, T> instance, Consumer<T> storeData) {
@@ -60,11 +71,11 @@ public class JSONDataManager {
                     data.readFromJson(jsonObject.getAsJsonObject(id));
                     storeData.accept(data);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    e.printStackTrace();
                 }
             });
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
@@ -80,7 +91,7 @@ public class JSONDataManager {
                 writer.endObject();
                 writer.endObject();
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
         });
     }

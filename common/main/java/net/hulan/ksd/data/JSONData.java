@@ -16,6 +16,10 @@ public abstract class JSONData {
 
     public abstract String getId();
 
+    public abstract int hashCode();
+
+    public abstract boolean equals(Object obj);
+
     protected static <T> T parseId(String id, Function<String, T> supplier, Supplier<T> supplierWhenException) {
         try {
             return supplier.apply(id);

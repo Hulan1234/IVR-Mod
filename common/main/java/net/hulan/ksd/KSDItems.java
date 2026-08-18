@@ -12,6 +12,6 @@ public interface KSDItems {
     RegistryObject<Item> KP_CELL_SIDE_OS_WITH_LIGHT = new RegistryObject<>(ItemKCRPlatformCellSideOSWithLight::new);
     RegistryObject<Item> KSD_DASHBOARD = new RegistryObject<>(() -> new ItemKSDDashBoard(TransportMode.TRAIN));
     RegistryObject<Item> OCTOPUS = new RegistryObject<>(ItemOctopus::new);
-    RegistryObject<Item> TICKET = new RegistryObject<>(ItemTicket::new);
+    RegistryObject<Item> SINGLE_TICKET = new RegistryObject<>(ItemSingleTicket::new);
 }
 

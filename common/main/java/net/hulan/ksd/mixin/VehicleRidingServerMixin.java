@@ -52,7 +52,7 @@ public class VehicleRidingServerMixin {
                     if (ksd != null) {
                         KSDRoute route = DataUtilities.getRoute(ksd.routes, routeId);
                         if (route != null && route.hasFirstClassService) {
-                            FirstClassPlayer fcPlayer = DataUtilities.getFirstClassPlayer(ksd.jsonDataManager.fps, player);
+                            FirstClassPlayer fcPlayer = ksd.jsonDataManager.getFirstClassPlayer(player.getUUID());
                             if (fcPlayer != null && route.firstClassCar == percentageOffset && (fcPlayer.state.equals(FirstClassValidationSystem.FirstClassState.MTR) || fcPlayer.state.equals(FirstClassValidationSystem.FirstClassState.DENIED))) {
                                 FirstClassValidationSystem.illegallyEntered(world, ksd.dataCache, fcPlayer, percentageOffset);
                             }

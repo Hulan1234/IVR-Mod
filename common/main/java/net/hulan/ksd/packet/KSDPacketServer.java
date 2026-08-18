@@ -7,7 +7,6 @@ import mtr.mappings.Utilities;
 import mtr.packet.PacketTrainDataBase;
 import net.hulan.ksd.KSDItems;
 import net.hulan.ksd.data.*;
-import net.hulan.ksd.item.ItemTicket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -18,7 +17,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -44,7 +42,7 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
         packet.writeBlockPos(machinePos);
         packet.writeInt(balance);
-        Registry.sendToPlayer(player, KSD_PACKET_OPEN_KCR_TICKET_MACHINE_SCREEN, packet);
+        Registry.sendToPlayer(player, KSD_PACKET_OPEN_KCR_SINGLE_TICKET_MACHINE_SCREEN, packet);
     }
 
     public static void sendAllInChunks(ServerPlayer player, Set<KSDStation> stations, Set<KSDPlatform> platforms, Set<KSDRoute> routes) {
@@ -116,23 +114,31 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         }
     }
 
-    public static void receiveTicketProcessingData(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
+    public static void receiveSingleTicketProcessingData(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
         Payment payment = EnumHelper.valueOf(Payment.MTR_BALANCE, packet.readUtf());
         int discount = packet.readInt();
         int amount = packet.readInt();
+        boolean isConcessionary = packet.readBoolean();
+        boolean firstClassAvailable = packet.readBoolean();
         minecraftServer.execute(() -> {
             Level world = player.level;
             long expiredTime = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1);
-            ItemStack ticket = new ItemStack(KSDItems.TICKET.get(), amount);
-            CompoundTag ticketNBT = ticket.getOrCreateTag();
-            ticketNBT.putLong("expired_time", expiredTime);
-            ticketNBT.putInt("fare", discount);
-            BlockPos pos = player.blockPosition();
-            ItemEntity itemEntity = new ItemEntity(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, ticket);
-            world.addFreshEntity(itemEntity);
+            int fare = discount / amount;
+            for (int i = 1; i <= amount; i++) {
+                ItemStack singleTicketItem = new ItemStack(KSDItems.SINGLE_TICKET.get());
+                CompoundTag singleTicketNBT = singleTicketItem.getOrCreateTag();
+                singleTicketNBT.putLong("id", new Random().nextLong());
+                singleTicketNBT.putInt("fare", fare);
+                singleTicketNBT.putLong("expired_time", expiredTime);
+                singleTicketNBT.putBoolean("is_concessionary", isConcessionary);
+                singleTicketNBT.putBoolean("first_class_available", firstClassAvailable);
+                BlockPos pos = player.blockPosition();
+                ItemEntity itemEntity = new ItemEntity(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, singleTicketItem);
+                world.addFreshEntity(itemEntity);
+            }
             switch (payment) {
                 case EMERALDS -> {
-                    ContainerHelper.clearOrCountMatchingItems(Utilities.getInventory(player), (itemStack) -> itemStack.getItem() == Items.EMERALD, discount, false);
+                    ContainerHelper.clearOrCountMatchingItems(Utilities.getInventory(player), (itemStack) -> itemStack.getItem() == Items.EMERALD, (int) Math.ceil((double) discount / 16), false);
                     world.playSound(null, player.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1.0F, 1.0F);
                 }
                 case MTR_BALANCE -> {

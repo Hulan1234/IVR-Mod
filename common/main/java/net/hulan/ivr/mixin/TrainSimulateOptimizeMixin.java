@@ -37,10 +37,6 @@ public abstract class TrainSimulateOptimizeMixin {
     @Shadow(remap = false)
     public abstract Vec3 getViewOffset();
 
-    /** 列车路径列表（继承自父类 Train 的 public final 字段），@Shadow 映射该字段。 */
-    @Shadow(remap = false)
-    protected List<PathData> path;
-
     /**
      * 注入到 TrainClient.simulateTrain 开头。
      * 在 MTR 全量模拟之前，先做距离判断，远车直接跳过。
@@ -60,7 +56,8 @@ public abstract class TrainSimulateOptimizeMixin {
         if (getViewOffset() != null) {
             return;
         }
-        // 用路径首节点作为列车粗略位置
+        // 用反射读取父类 Train 的 path 字段（父类字段无法直接 @Shadow）
+        List<PathData> path = TrainRenderOptimize.getTrainPath((TrainClient) (Object) this);
         if (path == null || path.isEmpty()) {
             return;
         }

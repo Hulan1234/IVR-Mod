@@ -4,7 +4,10 @@ import mtr.data.RailwayData;
 import mtr.data.Station;
 import mtr.data.TicketSystem;
 import net.hulan.ksd.data.FirstClassValidationSystem;
+import net.hulan.ksd.data.KCRTicketSystem;
 import net.hulan.ksd.data.KSDRailwayData;
+import net.hulan.ksd.data.KSDStation;
+import net.hulan.ksd.utils.DataUtilities;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.scores.Score;
@@ -21,13 +24,11 @@ public class TicketSystemMixin {
         if (balanceScore.getScore() < 0 || (entryZoneScore.getScore() != 0 && remindIfNoRecord)) return;
         Level world = player.level;
         KSDRailwayData ksdRailwayData = KSDRailwayData.getInstance(world);
-        RailwayData railwayData = RailwayData.getInstance(world);
-        if (ksdRailwayData != null && railwayData != null) {
-            ksdRailwayData.stations.forEach(ksdStation -> {
-                if (ksdStation.id == station.id) {
-                    FirstClassValidationSystem.onEnterStation(ksdRailwayData, player, ksdStation);
-                }
-            });
+        if (ksdRailwayData != null) {
+            KSDStation enteredStation = DataUtilities.getStation(ksdRailwayData.stations, station.id);
+            if (enteredStation != null) {
+                FirstClassValidationSystem.onEnterStation(ksdRailwayData, player, enteredStation);
+            }
         }
     }
 

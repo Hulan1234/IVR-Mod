@@ -51,7 +51,7 @@ public final class FirstClassValidationSystem {
                 int oldCar = carScore.getScore() - 1;
                 if (oldCar == newCar) return;
                 carScore.setScore(newCar + 1);
-                FirstClassPlayer firstClassPlayer = DataUtilities.getFirstClassPlayer(ksd.jsonDataManager.fps, player);
+                FirstClassPlayer firstClassPlayer = ksd.jsonDataManager.getFirstClassPlayer(player.getUUID());
                 if (firstClassPlayer == null || oldCar == -1) continue;
                 long routeId = ((TrainServerAccessor) playerTrain).getRouteId();
                 KSDStation enteredStation = DataUtilities.getStation(ksd.stations, firstClassPlayer.enteredStationId);
@@ -124,7 +124,7 @@ public final class FirstClassValidationSystem {
     private static FirstClassState validate(KSDRailwayData ksd, Level world, Player player, BlockPos pos, KSDStation validateStation, KSDRoute route) {
         Score balance = getPlayerScore(world, player, TicketSystem.BALANCE_OBJECTIVE);
         Score entryZone = getPlayerScore(world, player, "mtr_entry_zone");
-        FirstClassPlayer firstClassPlayer = DataUtilities.getFirstClassPlayer(ksd.jsonDataManager.fps, player);
+        FirstClassPlayer firstClassPlayer = ksd.jsonDataManager.getFirstClassPlayer(player.getUUID());
         if (entryZone.getScore() == 0 || firstClassPlayer == null) {
             playSoundAndSendMessage(world, pos, player, "gui.ksd.first_class_denied_no_entry");
             return FirstClassState.DENIED;
@@ -153,7 +153,7 @@ public final class FirstClassValidationSystem {
     }
 
     public static FirstClassState onExitStation(Level world, KSDRailwayData railwayData, KSDStation exitStation, Player player, Score balanceScore, Score entryZoneScore) {
-        FirstClassPlayer firstClassPlayer = DataUtilities.getFirstClassPlayer(railwayData.jsonDataManager.fps, player);
+        FirstClassPlayer firstClassPlayer = railwayData.jsonDataManager.getFirstClassPlayer(player.getUUID());
         if (firstClassPlayer != null) {
             Score playerCarScore = getPlayerScore(world, player, PLAYER_CAR_OBJECTIVE);
             KSDStation enteredStation = DataUtilities.getStation(railwayData.stations, firstClassPlayer.enteredStationId);
@@ -175,8 +175,7 @@ public final class FirstClassValidationSystem {
                 balanceScore.add(-fare);
                 player.displayClientMessage(Text.translatable("gui.mtr.exit_barrier", String.format("%s (%s)", exitStation.name.replace('|', ' '), enteredStation.zone), fare, balanceScore.getScore()), true);
                 playerCarScore.setScore(0);
-                railwayData.jsonDataManager.fps.removeIf(fcPlayer -> fcPlayer.uuid.equals(player.getUUID()));
-                railwayData.dataCache.sync();
+                railwayData.jsonDataManager.fps.remove(firstClassPlayer);
                 return firstClassPlayer.state;
             }
         }

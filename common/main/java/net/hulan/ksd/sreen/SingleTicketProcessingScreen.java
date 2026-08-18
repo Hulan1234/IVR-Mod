@@ -7,24 +7,23 @@ import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
 import mtr.mappings.Utilities;
 import mtr.mappings.UtilitiesClient;
-import net.hulan.ksd.data.FirstClassValidationSystem;
+import mtr.screen.WidgetBetterCheckbox;
+import net.hulan.ksd.data.KCRTicketSystem;
 import net.hulan.ksd.data.KSDStation;
 import net.hulan.ksd.data.Payment;
 import net.hulan.ksd.packet.KSDPacketClient;
-import net.hulan.ksd.utils.DataUtilities;
 import net.hulan.ksd.utils.RailDataUtilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class TicketProcessingScreen extends ScreenMapper implements IGui {
+public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
 
     private Payment payment;
     private int totalFare;
@@ -35,33 +34,35 @@ public class TicketProcessingScreen extends ScreenMapper implements IGui {
     private final int mtrBalance;
     private final KSDStation current;
     private final KSDStation destination;
-    private final KCRTicketMachineScreen ticketMachineScreen;
+    private final KCRSingleTicketMachineScreen ticketMachineScreen;
     private final Button buttonPayment;
+    private final WidgetBetterCheckbox buttonIsConcessionary;
     private final Button buttonConfirm;
     private final Button buttonCancel;
     private final List<Button> amountButtons = new ArrayList<>(10);
     private static final int PADDING = 50;
     private static final int RGB_RED = 0xFF0000;
 
-    protected TicketProcessingScreen(@NotNull KSDStation current, @NotNull KSDStation destination, int mtrBalance, KCRTicketMachineScreen ticketMachineScreen) {
+    protected SingleTicketProcessingScreen(@NotNull KSDStation current, @NotNull KSDStation destination, int mtrBalance, KCRSingleTicketMachineScreen ticketMachineScreen) {
         super(Text.literal(""));
         this.current = current;
         this.destination = destination;
         this.ticketMachineScreen = ticketMachineScreen;
-        Player player = Minecraft.getInstance().player;
         buttonPayment = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_value"), button -> setPayment(payment.next()));
+        buttonIsConcessionary = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.is_concessionary"), this::setIsConcessionary);
         buttonConfirm = UtilitiesClient.newButton(Text.translatable("gui.ksd.confirm"), button -> process(true));
         buttonCancel = UtilitiesClient.newButton(Text.translatable("gui.ksd.cancel"), button -> process(false));
         for (int i = 0; i < 10; i++) {
             final int amount = i + 1;
             amountButtons.add(UtilitiesClient.newButton(Text.literal(String.valueOf(amount)), button -> setAmount(amount)));
         }
-        fare = FirstClassValidationSystem.getMTRFare(current.zone, destination.zone, player);
+        fare = KCRTicketSystem.getMTRFare(current.zone, destination.zone, false);
         this.mtrBalance = mtrBalance;
     }
 
     protected void init() {
         IDrawing.setPositionAndWidth(buttonPayment,width / 2 - 100, height / 2 + 20, 200);
+        IDrawing.setPositionAndWidth(buttonIsConcessionary,width / 2 - 200, height / 2 - 40, 200);
         IDrawing.setPositionAndWidth(buttonConfirm, width / 2 - PADDING - 100, height / 2 + 100, 100);
         IDrawing.setPositionAndWidth(buttonCancel, width / 2 + PADDING, height / 2 + 100, 100);
         for (int i = 0; i < 10; i++) {
@@ -70,10 +71,12 @@ public class TicketProcessingScreen extends ScreenMapper implements IGui {
             addDrawableChild(button);
         }
         addDrawableChild(buttonPayment);
+        addDrawableChild(buttonIsConcessionary);
         addDrawableChild(buttonConfirm);
         addDrawableChild(buttonCancel);
         setAmount(1);
         setPayment(Payment.EMERALDS);
+        setIsConcessionary(false);
     }
 
     public void tick() {
@@ -108,7 +111,16 @@ public class TicketProcessingScreen extends ScreenMapper implements IGui {
 
     private void setAmount(int amount) {
         this.amount = Mth.clamp(amount, 1, 10);
-        totalFare = fare * this.amount;
+        calculateFare();
+    }
+
+    private void setIsConcessionary(boolean isConcessionary) {
+        buttonIsConcessionary.setChecked(isConcessionary);
+        calculateFare();
+    }
+
+    private void calculateFare() {
+        totalFare = fare / (buttonIsConcessionary.selected() ? 2 : 1) * amount;
         failed = false;
     }
 
@@ -150,9 +162,7 @@ public class TicketProcessingScreen extends ScreenMapper implements IGui {
             int payCount = totalFare;
             switch (payment) {
                 case EMERALDS -> {
-                    int emeraldCount = getEmeraldCount();
-                    payCount = (int) Math.ceil((double) totalFare / 16);
-                    if (emeraldCount < payCount) {
+                    if (getEmeraldCount() < (int) Math.ceil((double) totalFare / 16)) {
                         failed = true;
                         failedMessage = Text.translatable("gui.ksd.insufficient_emeralds");
                     } else {
@@ -173,7 +183,7 @@ public class TicketProcessingScreen extends ScreenMapper implements IGui {
                 }
             }
             if (!failed) {
-                KSDPacketClient.sendTicketProcessingDataC2S(payment, payCount, amount);
+                KSDPacketClient.sendTicketProcessingDataC2S(payment, payCount, amount, buttonIsConcessionary.selected(), false);
                 if (minecraft != null) {
                     UtilitiesClient.setScreen(minecraft, null);
                 }

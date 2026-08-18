@@ -2,6 +2,7 @@ package net.hulan.ivr.util;
 
 import mtr.client.ClientData;
 import mtr.client.Config;
+import mtr.data.TrainClient;
 import mtr.mappings.UtilitiesClient;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
@@ -16,6 +17,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * 渲染优化工具类（客户端）。
@@ -70,17 +72,17 @@ public final class TrainRenderOptimize {
 
     /* -------------------- 车厢包围盒尺寸（用于 AABB 视锥判定） -------------------- */
 
-    /** 车厢包围盒的半长（格），沿列车前进方向。 */
-    private static final double CAR_HALF_LENGTH = 10.5D;
+    /** 车厢包围盒的半长（格），沿列车前进方向。车厢总长 25 格。 */
+    private static final double CAR_HALF_LENGTH = 12.5D;
 
-    /** 车厢包围盒的半宽（格），垂直于列车前进方向。 */
-    private static final double CAR_HALF_WIDTH = 1.4D;
+    /** 车厢包围盒的半宽（格），垂直于列车前进方向。车厢总宽 3 格。 */
+    private static final double CAR_HALF_WIDTH = 1.5D;
 
     /** 车厢包围盒的 Y 最小值（相对车厢中心，格）。 */
-    private static final double CAR_Y_MIN = -1.1D;
+    private static final double CAR_Y_MIN = -1.5D;
 
-    /** 车厢包围盒的 Y 最大值（相对车厢中心，格）。 */
-    private static final double CAR_Y_MAX = 2.1D;
+    /** 车厢包围盒的 Y 最大值（相对车厢中心，格）。车厢总高 3 格。 */
+    private static final double CAR_Y_MAX = 1.5D;
 
     /** 遮挡剔除启用时的最近距离（格），近处（16 格内）不做遮挡判定——近景列车应始终渲染。 */
     private static final double OCCLUSION_MIN_DISTANCE = 16.0D;
@@ -119,6 +121,60 @@ public final class TrainRenderOptimize {
      */
     public static double getTranslucentRenderDistance() {
         return TRANSLUCENT_RENDER_DISTANCE;
+    }
+
+    /**
+     * 读取 MTR TrainRendererBase.isTranslucentBatch（static 字段）。
+     * 用反射读取，避免 @Shadow 父类字段在运行时定位失败（父类字段无法直接 @Shadow）。
+     * 该字段由 RenderTrains.setBatch 控制，表示当前是否处于半透明渲染批次。
+     *
+     * @return true 表示当前是半透明批次
+     */
+    public static boolean getTranslucentBatch() {
+        try {
+            Field field = mtr.render.TrainRendererBase.class.getDeclaredField("isTranslucentBatch");
+            field.setAccessible(true);
+            return field.getBoolean(null);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 反射读取 Train（父类）的 path 字段。
+     * 父类字段无法通过 @Shadow 在 TrainClient 目标上可靠定位，改用反射。
+     *
+     * @param trainClient 列车实例（TrainClient 继承 Train）
+     * @return 列车路径列表；失败时返回 null
+     */
+    @SuppressWarnings("unchecked")
+    public static List<mtr.path.PathData> getTrainPath(TrainClient trainClient) {
+        try {
+            Field field = TrainClient.class.getSuperclass().getDeclaredField("path");
+            field.setAccessible(true);
+            return (List<mtr.path.PathData>) field.get(trainClient);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * 反射读取 Lift（父类）的 currentPositionX/Y/Z 字段。
+     * 父类字段无法通过 @Shadow 在 LiftClient 目标上可靠定位，改用反射。
+     *
+     * @param liftClient 电梯实例（LiftClient 继承 Lift）
+     * @return [x, y, z]；失败时返回 null
+     */
+    public static double[] getLiftPosition(mtr.data.LiftClient liftClient) {
+        try {
+            Class<?> clazz = liftClient.getClass().getSuperclass();
+            double x = clazz.getDeclaredField("currentPositionX").getDouble(liftClient);
+            double y = clazz.getDeclaredField("currentPositionY").getDouble(liftClient);
+            double z = clazz.getDeclaredField("currentPositionZ").getDouble(liftClient);
+            return new double[]{x, y, z};
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /** 触发方块遮挡剔除的列车数量阈值。列车数超过此值才启用遮挡射线检测（节省低负载时的开销）。 */
@@ -224,11 +280,13 @@ public final class TrainRenderOptimize {
 
     /**
      * 判断整节车厢是否完全在视锥之外（AABB 级视锥剔除）。
-     * 车厢用一个长方体（长 CAR_HALF_LENGTH、宽 CAR_HALF_WIDTH、高 CAR_Y_MIN~CAR_Y_MAX）
-     * 近似，绕 Y 轴旋转 yaw 后取 8 个角点的相机相对坐标。
-     * 只要**任一**角点在视锥内（或视锥与包围盒相交），就返回 false（应渲染）；
-     * 只有 8 个角点**全部**在视锥外才返回 true（可剔除）。
-     * 相比按中心点判定，不会误剔"中心在屏幕外但车厢边缘可见"的情况。
+     * 车厢用一个长方体（长 25、宽 3、高 3，见 CAR_HALF_LENGTH/CAR_HALF_WIDTH/CAR_Y_MIN/CAR_Y_MAX）
+     * 近似，绕 Y 轴旋转 yaw 后与世界视锥做相交测试。
+     * 采用标准 AABB-frustum 判定：对每个视锥平面，取车厢包围盒中沿该平面法线方向
+     * 投影最远（dot 最大）的角点；若该最远角点仍在平面外侧，则整个车厢都在该平面外
+     * → 车厢与视锥完全不相交，应剔除。
+     * 只有存在一个平面能把整个车厢推到视锥外时才剔除，避免"中心在屏幕外但车厢边缘可见"
+     * 的误剔。
      *
      * @param rel 车厢中心相对相机的坐标
      * @param yaw 车厢朝向（弧度）
@@ -261,29 +319,30 @@ public final class TrainRenderOptimize {
         double[] constants = {0.0D, 0.0D, 0.0D, 0.0D, NEAR_PLANE};
         double cosYaw = Math.cos(yaw);
         double sinYaw = Math.sin(yaw);
-        double[] corners = {
-                -CAR_HALF_LENGTH, -CAR_HALF_WIDTH, CAR_HALF_LENGTH, CAR_HALF_WIDTH
-        };
-        // 遍历 8 个角点，只要任一角点不在任意平面外（即在视锥内）就视为可见
-        for (int i = 0; i < 8; i++) {
-            double lx = (i & 1) == 0 ? corners[0] : corners[2];
-            double lz = (i & 2) == 0 ? corners[1] : corners[3];
-            double ly = (i & 4) == 0 ? CAR_Y_MIN : CAR_Y_MAX;
-            double x = lx * cosYaw + lz * sinYaw;
-            double z = -lx * sinYaw + lz * cosYaw;
-            Vec3 corner = new Vec3(rel.x + x, rel.y + ly, rel.z + z);
-            boolean insideAll = true;
-            for (int p = 0; p < planes.length; p++) {
-                if (planes[p].dot(corner) - constants[p] < 0.0D) {
-                    insideAll = false;
+        // 对每个平面：取车厢 8 个角点中沿法线投影最远的那个
+        for (int p = 0; p < planes.length; p++) {
+            Vec3 n = planes[p];
+            double c = constants[p];
+            boolean anyInside = false;
+            for (int i = 0; i < 8; i++) {
+                double lx = (i & 1) == 0 ? -CAR_HALF_LENGTH : CAR_HALF_LENGTH;
+                double lz = (i & 2) == 0 ? -CAR_HALF_WIDTH : CAR_HALF_WIDTH;
+                double ly = (i & 4) == 0 ? CAR_Y_MIN : CAR_Y_MAX;
+                double x = lx * cosYaw + lz * sinYaw;
+                double z = -lx * sinYaw + lz * cosYaw;
+                Vec3 corner = new Vec3(rel.x + x, rel.y + ly, rel.z + z);
+                // 若该角点在平面内侧（在视锥内一侧），则车厢未被此平面完全分离
+                if (n.dot(corner) - c >= 0.0D) {
+                    anyInside = true;
                     break;
                 }
             }
-            if (insideAll) {
-                return false;
+            // 若车厢所有角点都在该平面外侧 → 整个车厢在该平面外 → 完全不可见
+            if (!anyInside) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     /**

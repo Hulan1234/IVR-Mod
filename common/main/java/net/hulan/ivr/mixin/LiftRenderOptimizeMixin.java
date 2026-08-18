@@ -5,7 +5,6 @@ import net.hulan.ivr.util.TrainRenderOptimize;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -18,28 +17,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 远处/屏幕外的电梯同样全量提交，增加渲染线程顶点生成负担。
  *
  * 做法：拦截 LiftClient.tickClient，在 renderLift（电梯绘制回调）调用之前，
- * 判断电梯当前位置（currentPositionX/Y/Z）到相机的距离：
+ * 用反射读取电梯当前位置（父类 Lift 的 currentPositionX/Y/Z），判断到相机距离：
  *   - 距离 ≤ TRAIN_RENDER_DISTANCE（300 格）：正常渲染；
  *   - 距离 > 300 格：cancel() 跳过电梯绘制（tick 电梯逻辑已在前面执行，电梯仍正常移动）。
  * 只做距离剔除，不做半透明批次（电梯渲染不走列车批次）。
  *
  * 注：LiftClient.tickClient 的 tick()（电梯移动/开门逻辑）在渲染之前执行，
  * 因此 cancel() 只会跳过绘制，不影响电梯行为。
+ * currentPositionX/Y/Z 是父类 Lift 的 protected 字段，无法直接 @Shadow（父类字段运行时定位失败），
+ * 故用反射读取。
  */
 @Mixin(LiftClient.class)
 public abstract class LiftRenderOptimizeMixin {
-
-    /** 电梯当前位置 X（继承自父类 Lift，protected 字段）。 */
-    @Shadow(remap = false)
-    private double currentPositionX;
-
-    /** 电梯当前位置 Y（继承自父类 Lift，protected 字段）。 */
-    @Shadow(remap = false)
-    private double currentPositionY;
-
-    /** 电梯当前位置 Z（继承自父类 Lift，protected 字段）。 */
-    @Shadow(remap = false)
-    private double currentPositionZ;
 
     /**
      * 注入到 LiftClient.tickClient 中 renderLift 调用之前。
@@ -57,8 +46,13 @@ public abstract class LiftRenderOptimizeMixin {
                     shift = At.Shift.BEFORE),
             cancellable = true, remap = false)
     private void ivr$cullLift(Level world, LiftClient.RenderLift renderLift, float tickDelta, CallbackInfo ci) {
+        // 用反射读取父类 Lift 的 currentPositionX/Y/Z（父类字段无法直接 @Shadow）
+        double[] pos = TrainRenderOptimize.getLiftPosition((LiftClient) (Object) this);
+        if (pos == null) {
+            return;
+        }
         // 电梯中心相对相机的坐标
-        Vec3 rel = TrainRenderOptimize.toCameraRelative(currentPositionX, currentPositionY, currentPositionZ, false);
+        Vec3 rel = TrainRenderOptimize.toCameraRelative(pos[0], pos[1], pos[2], false);
         if (rel == null) {
             return;
         }

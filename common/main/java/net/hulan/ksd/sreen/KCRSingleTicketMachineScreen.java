@@ -21,15 +21,14 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.HashSet;
 import java.util.Set;
 
-
-public class KCRTicketMachineScreen extends ScreenMapper implements IGui {
+public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
 
     final Set<KSDRoute> routes = new HashSet<>();
     final Set<KSDStation> stations = new HashSet<>();
     private final int balance;
     private final KSDStation current;
-    private final KCRTicketMachineRailMap railMap;
-    private final KCRTicketMachineLegend legend;
+    private final KCRSingleTicketMachineRailMap railMap;
+    private final KCRSingleTicketMachineLegend legend;
     private static final String RMH_CHI = "路線圖";
     private static final String RMH_ENG = "System Map";
     private static final int RMH_HEADER_HEIGHT = 50;
@@ -41,12 +40,12 @@ public class KCRTicketMachineScreen extends ScreenMapper implements IGui {
     private static final int RGB_HEADER_BLUE = 0x004684;
     private static final int LEGEND_WIDTH = 100;
 
-    public KCRTicketMachineScreen(BlockPos machinePos, int balance) {
+    public KCRSingleTicketMachineScreen(BlockPos machinePos, int balance) {
         super(Text.literal(""));
         this.balance = balance;
-        current = KSDRailwayData.getStation(KSDClientData.STATIONS,  machinePos);
-        railMap = new KCRTicketMachineRailMap(this::onClickedOnDestination, this);
-        legend = new KCRTicketMachineLegend();
+        current = KSDRailwayData.getStation(KSDClientData.STATIONS, machinePos);
+        railMap = new KCRSingleTicketMachineRailMap(this::onClickedOnDestination, this);
+        legend = new KCRSingleTicketMachineLegend();
         if (current == null) {
             onClose();
         }
@@ -76,7 +75,7 @@ public class KCRTicketMachineScreen extends ScreenMapper implements IGui {
 
     public void onClickedOnDestination(KSDStation destination) {
         if (minecraft != null) {
-            UtilitiesClient.setScreen(minecraft, new TicketProcessingScreen(current, destination, balance, this));
+            UtilitiesClient.setScreen(minecraft, new SingleTicketProcessingScreen(current, destination, balance, this));
         }
     }
 

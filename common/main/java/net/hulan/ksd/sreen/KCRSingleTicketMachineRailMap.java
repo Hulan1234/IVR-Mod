@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, GuiEventListener, IGui {
+public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMapper, GuiEventListener, IGui {
 
     private int x;
     private int y;
@@ -44,7 +44,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
     private final Set<KSDRoute> lightRails = new HashSet<>();
     private final Set<KSDRoute> mtrRoutes = new HashSet<>();
     private final Consumer<KSDStation> onClickedOnDestination;
-    private final KCRTicketMachineScreen ticketMachineScreen;
+    private final KCRSingleTicketMachineScreen ticketMachineScreen;
     private static final double SCALE_UPPER_LIMIT = 64F;
     private static final double SCALE_LOWER_LIMIT = 0.0078125F;
     private static final float RADIUS = 5F;
@@ -65,7 +65,7 @@ public class KCRTicketMachineRailMap implements WidgetMapper, SelectableMapper, 
     private boolean lastHovering;
     private long handCursor;
 
-    public KCRTicketMachineRailMap(Consumer<KSDStation> onClickedOnDestination, KCRTicketMachineScreen ticketMachineScreen) {
+    public KCRSingleTicketMachineRailMap(Consumer<KSDStation> onClickedOnDestination, KCRSingleTicketMachineScreen ticketMachineScreen) {
         this.onClickedOnDestination = onClickedOnDestination;
         this.ticketMachineScreen = ticketMachineScreen;
         Minecraft minecraftClient = Minecraft.getInstance();

@@ -4,6 +4,7 @@
   "package": "net.hulan.ksd.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "BlockTicketBarrierMixin",
     "ClientCacheMixin",
     "DataCacheMixin",
     "RailwayDataMixin",

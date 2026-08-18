@@ -2,7 +2,6 @@ package net.hulan.ivr.mixin;
 
 import mtr.data.TrainClient;
 import mtr.render.JonModelTrainRenderer;
-import mtr.render.TrainRendererBase;
 import net.hulan.ivr.util.TrainRenderOptimize;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
@@ -23,10 +22,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *      车厢完整渲染（MTR 原模型，含内饰）；>300 格直接不渲染。
  *   2. 整车厢 AABB 视锥剔除：只有整节车厢（8 个角点）全部在视锥外才不渲染——
  *      判定标准不是几何中心，而是整个车厢。车厢部分在屏幕内就渲染，避免误剔。
- *   3. 方块遮挡剔除：从相机到车厢中心射线采样，被不透明方块完全遮挡则跳过渲染。
+ *   3. 方块遮挡剔除：从相机到车厢中心 DDA 采样，被实心方块遮挡则跳过渲染。
  *   4. 半透明批次削减（减少单线程顶点生成）：MTR 每帧对每节车厢渲染两次——
  *      不透明批次（车身主体）+ 半透明批次（车窗/灯光等）。半透明批次下距离
- *      > TRANSLUCENT_RENDER_DISTANCE 的车厢直接取消，跳过第二次顶点生成（省约一半顶点）。
+ *      > TRANSLUCENT_RENDER_DISTANCE 的车厢直接取消，跳过第二次顶点生成。
  *   5. renderConnection / renderBarrier：车钩/屏蔽门等辅助部件做距离 + 视锥 + 遮挡剔除。
  */
 @Mixin(value = JonModelTrainRenderer.class)
@@ -37,23 +36,18 @@ public abstract class TrainRenderOptimizeMixin {
     @Final
     private TrainClient train;
 
-    /** 当前渲染批次是否为半透明批次（继承自 TrainRendererBase，由 RenderTrains.setBatch 控制）。 */
-    @Shadow(remap = false)
-    private static boolean isTranslucentBatch;
+    /**
+     * 当前渲染批次是否为半透明批次（继承自 TrainRendererBase 的 static 字段）。
+     * 用反射读取（见 TrainRenderOptimize.getTranslucentBatch），
+     * 避免 @Shadow 父类字段在运行时定位失败。
+     */
+    private static boolean isTranslucentBatch() {
+        return TrainRenderOptimize.getTranslucentBatch();
+    }
 
     /**
      * 注入到 renderCar（每节车厢渲染）开头。
-     * 在 MTR 完整模型渲染之前，先做距离 / 视锥 / 批次判定，能省则省。
-     *
-     * @param index       车厢序号
-     * @param x           车厢世界 X 坐标
-     * @param y           车厢世界 Y 坐标
-     * @param z           车厢世界 Z 坐标
-     * @param yaw         车厢朝向
-     * @param pitch       车厢俯仰
-     * @param backIsFront 是否为反向编组
-     * @param isLastCar   是否最后一节车厢
-     * @param ci          回调，可 cancel() 取消 MTR 原渲染
+     * 在 MTR 完整模型渲染之前，先做距离 / 视锥 / 遮挡 / 批次判定，能省则省。
      */
     @Inject(method = "renderCar", at = @At("HEAD"), cancellable = true, remap = false)
     private void ivr$optimizeRenderCar(int index, double x, double y, double z, float yaw, float pitch, boolean backIsFront, boolean isLastCar, CallbackInfo ci) {
@@ -70,21 +64,21 @@ public abstract class TrainRenderOptimizeMixin {
             ci.cancel();
             return;
         }
-        // 方块遮挡剔除：被不透明方块完全遮挡的车厢不渲染。
-        // 仅在列车数量较多（> 阈值）时启用，避免低列车量下白跑射线开销。
+        // 方块遮挡剔除：被实心方块完全遮挡的车厢不渲染。
+        // 仅在列车数量较多（> 阈值）时启用，避免低负载时白跑射线开销。
         if (TrainRenderOptimize.shouldUseOcclusion() && TrainRenderOptimize.isCarOccluded(Minecraft.getInstance().level, new Vec3(x, y, z))) {
             ci.cancel();
             return;
         }
         // 半透明批次削减：半透明批次（车窗/灯光）下，距离超过阈值 → 跳过第二次顶点生成
-        if (isTranslucentBatch && rel.length() > TrainRenderOptimize.getTranslucentRenderDistance()) {
+        if (isTranslucentBatch() && rel.length() > TrainRenderOptimize.getTranslucentRenderDistance()) {
             ci.cancel();
         }
     }
 
     /**
      * 注入到 renderConnection（车厢连接件渲染）开头。
-     * 连接件较小，仅做距离 / 视锥剔除。
+     * 连接件较小，仅做距离 / 视锥 / 遮挡剔除。
      */
     @Inject(method = "renderConnection", at = @At("HEAD"), cancellable = true, remap = false)
     private void ivr$optimizeRenderConnection(Vec3 corner1, Vec3 corner2, Vec3 corner3, Vec3 corner4, Vec3 corner5, Vec3 corner6, Vec3 corner7, Vec3 corner8, double d1, double d2, double d3, float yaw, float pitch, CallbackInfo ci) {
@@ -114,7 +108,7 @@ public abstract class TrainRenderOptimizeMixin {
             ci.cancel();
             return;
         }
-        // 部件较小，用 AABB 视锥（以 corner 为参考点 + 小半径）与遮挡剔除
+        // 部件较小，用视锥（以 corner 为参考点 + 小半径）与遮挡剔除
         if (TrainRenderOptimize.isOutsideFrustum(rel, TrainRenderOptimize.CONNECTION_RADIUS)) {
             ci.cancel();
             return;
@@ -123,7 +117,7 @@ public abstract class TrainRenderOptimizeMixin {
             ci.cancel();
             return;
         }
-        if (isTranslucentBatch && rel.length() > TrainRenderOptimize.getTranslucentRenderDistance()) {
+        if (isTranslucentBatch() && rel.length() > TrainRenderOptimize.getTranslucentRenderDistance()) {
             ci.cancel();
         }
     }

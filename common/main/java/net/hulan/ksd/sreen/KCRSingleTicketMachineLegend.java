@@ -15,7 +15,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
-public class KCRTicketMachineLegend implements WidgetMapper, SelectableMapper, GuiEventListener, IGui {
+public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMapper, GuiEventListener, IGui {
 
     private int x;
     private int y;

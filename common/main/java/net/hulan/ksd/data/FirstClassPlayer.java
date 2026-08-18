@@ -50,4 +50,17 @@ public final class FirstClassPlayer extends JSONData {
     public String getId() {
         return uuid.toString();
     }
+
+    @Override
+    public int hashCode() {
+        return uuid.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof FirstClassPlayer data) {
+            return data.uuid.equals(uuid);
+        }
+        return false;
+    }
 }
