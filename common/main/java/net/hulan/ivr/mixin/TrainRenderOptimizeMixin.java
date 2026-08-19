@@ -51,9 +51,13 @@ public abstract class TrainRenderOptimizeMixin {
      */
     @Inject(method = "renderCar", at = @At("HEAD"), cancellable = true, remap = false)
     private void ivr$optimizeRenderCar(int index, double x, double y, double z, float yaw, float pitch, boolean backIsFront, boolean isLastCar, CallbackInfo ci) {
-        // 玩家坐在列车上时坐标已是相对相机，无需再减相机位置
+        // 玩家乘坐的列车：整列完全渲染，不做任何剔除
+        // （用玩家 UUID 是否在列车乘客中判断，可靠覆盖整列所有车厢）
+        if (TrainRenderOptimize.isPlayerOnTrain(this.train)) {
+            return;
+        }
+        // 玩家坐在列车上时坐标已是相对相机（作为后备判断）
         boolean relative = this.train.getViewOffset() != null;
-        // 玩家所在列车：完全渲染（不做任何剔除）
         if (relative) {
             return;
         }
@@ -107,6 +111,10 @@ public abstract class TrainRenderOptimizeMixin {
      * corner 取部件的第一个角点作为代表位置。
      */
     private void ivr$cullAuxiliary(Vec3 corner, CallbackInfo ci) {
+        // 玩家乘坐的列车：连接件/屏障整列完全渲染，不做剔除
+        if (TrainRenderOptimize.isPlayerOnTrain(this.train)) {
+            return;
+        }
         boolean relative = this.train.getViewOffset() != null;
         Vec3 rel = TrainRenderOptimize.toCameraRelative(corner, relative);
         if (TrainRenderOptimize.isTooFar(rel) || rel.length() > TrainRenderOptimize.getTrainRenderDistance()) {

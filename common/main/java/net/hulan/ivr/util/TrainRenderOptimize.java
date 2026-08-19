@@ -18,6 +18,7 @@ import net.minecraft.world.phys.Vec3;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 渲染优化工具类（客户端）。
@@ -177,6 +178,30 @@ public final class TrainRenderOptimize {
             return new double[]{x, y, z};
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    /**
+     * 判断玩家是否乘坐在这列列车上（玩家的 UUID 是否在 Train.ridingEntities 乘客集合中）。
+     * 通过反射读取父类 Train 的 protected 字段 ridingEntities。
+     * 用于"玩家所乘坐的列车全列都渲染"的判断——比 getViewOffset 更明确地识别玩家所在列车。
+     *
+     * @param trainClient 列车实例（TrainClient 继承 Train）
+     * @return true 表示玩家正在乘坐这列列车（应整列完全渲染）
+     */
+    @SuppressWarnings("unchecked")
+    public static boolean isPlayerOnTrain(TrainClient trainClient) {
+        try {
+            if (trainClient == null) {
+                return false;
+            }
+            java.util.UUID playerUuid = Minecraft.getInstance().player.getUUID();
+            Field field = TrainClient.class.getSuperclass().getDeclaredField("ridingEntities");
+            field.setAccessible(true);
+            Set<java.util.UUID> riding = (Set<java.util.UUID>) field.get(trainClient);
+            return riding != null && riding.contains(playerUuid);
+        } catch (Exception e) {
+            return false;
         }
     }
 

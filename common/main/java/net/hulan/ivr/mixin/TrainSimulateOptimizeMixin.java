@@ -7,7 +7,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -25,17 +24,13 @@ import java.util.List;
  * 作为列车粗略位置，判断到相机的距离：
  *   - 距离 ≤ TRAIN_RENDER_DISTANCE（300）+ TRAIN_SIMULATE_BUFFER（64）= 364 格：正常模拟+渲染；
  *   - 距离 > 364 格：ci.cancel() 完全跳过模拟与渲染（零开销）。
- * 玩家乘坐的列车（getViewOffset() != null）永不跳过，保证玩家始终看到自己乘坐的车。
+ * 玩家乘坐的列车（玩家 UUID 在 Train.ridingEntities 中）永不跳过，保证玩家始终看到自己乘坐的车。
  *
  * 注：跳过 simulateTrain 会连带跳过 renderCar（渲染在 simulateCar 内），
  * 因此远车既不模拟也不渲染，显著降低多列车场景的 CPU 负载。
  */
 @Mixin(TrainClient.class)
 public abstract class TrainSimulateOptimizeMixin {
-
-    /** 列车视角偏移（玩家乘坐时非 null），@Shadow 映射 TrainClient.getViewOffset()。 */
-    @Shadow(remap = false)
-    public abstract Vec3 getViewOffset();
 
     /**
      * 注入到 TrainClient.simulateTrain 开头。
@@ -52,8 +47,8 @@ public abstract class TrainSimulateOptimizeMixin {
             at = @At("HEAD"),
             cancellable = true, remap = false)
     private void ivr$cullTrain(Level world, float tickDelta, TrainClient.SpeedCallback speedCallback, TrainClient.AnnouncementCallback announcementCallback, TrainClient.AnnouncementCallback lightRailAnnouncementCallback, CallbackInfo ci) {
-        // 玩家乘坐的列车永不跳过（玩家在车上必须模拟+渲染）
-        if (getViewOffset() != null) {
+        // 玩家乘坐的列车永不跳过（玩家在车上必须模拟+渲染整列）
+        if (TrainRenderOptimize.isPlayerOnTrain((TrainClient) (Object) this)) {
             return;
         }
         // 用反射读取父类 Train 的 path 字段（父类字段无法直接 @Shadow）
