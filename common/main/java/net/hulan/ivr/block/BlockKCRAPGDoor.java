@@ -1,6 +1,6 @@
 package net.hulan.ivr.block;
 
-import mtr.block.BlockPSDAPGDoorBase;
+import mtr.block.BlockAPGDoor;
 import mtr.mappings.BlockEntityMapper;
 import net.hulan.ivr.IVRBlockEntityTypes;
 import net.hulan.ivr.IVRItems;
@@ -9,7 +9,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
-public class BlockKCRAPGDoor extends BlockPSDAPGDoorBase {
+public class BlockKCRAPGDoor extends BlockAPGDoor {
 
     public BlockKCRAPGDoor() {
     }

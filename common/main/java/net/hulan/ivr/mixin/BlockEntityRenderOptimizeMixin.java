@@ -23,9 +23,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 做法：拦截统一的块实体渲染入口 BlockEntityRenderDispatcher.render，
  * 在其 HEAD 处对 MTR 生态的块实体（BlockEntityMapper 子类）做剔除：
  *   - 距离 > BLOCK_ENTITY_RENDER_DISTANCE（50 格）：ci.cancel() 完全不渲染；
- *   - 在玩家身后（rel·forward < 0）：ci.cancel() 不渲染。
- * 无中间档、无隔帧（隔帧会导致闪烁），简单且无视觉副作用。
- * 左右/上下视野边缘的块实体仍正常渲染（只剔除真正在正后方的）。
+ *   - 完全在视锥外（含玩家身后，用包围球判定）：ci.cancel() 不渲染。
+ * 采用包围球视锥判定：方块任何部分在屏幕内（含边缘）就渲染，
+ * 只有整个方块完全在屏幕外/身后才剔除，避免屏幕边缘方块消失。
  *
  * 注：BlockEntityRenderDispatcher.render 是 LevelRenderer 渲染所有块实体的统一入口，
  * 在此拦截即可覆盖 MTR 原版 + IVR/KSD 的全部块实体（它们都继承 BlockEntityMapper），
@@ -55,10 +55,10 @@ public abstract class BlockEntityRenderOptimizeMixin {
             }
             // 距离平方，与阈值平方比较（避免开方）
             final double distanceSquared = rel.lengthSqr();
-            // 纯距离剔除：> 50 格完全不渲染，< 50 格完全渲染（无中间档、无隔帧）
+            // 距离太远 或 完全在视锥外（含身后）→ 不渲染。
+            // 用包围球视锥判定：方块任何部分在屏幕内（含边缘）就渲染，避免边缘闪烁/消失。
             final double thresholdSquared = TrainRenderOptimize.BLOCK_ENTITY_RENDER_DISTANCE * TrainRenderOptimize.BLOCK_ENTITY_RENDER_DISTANCE;
-            // 距离太远 或 在玩家身后 → 不渲染
-            if (distanceSquared > thresholdSquared || TrainRenderOptimize.isBehindCamera(rel)) {
+            if (distanceSquared > thresholdSquared || TrainRenderOptimize.isOutsideFrustum(rel, TrainRenderOptimize.BLOCK_ENTITY_RADIUS)) {
                 ci.cancel();
             }
         }

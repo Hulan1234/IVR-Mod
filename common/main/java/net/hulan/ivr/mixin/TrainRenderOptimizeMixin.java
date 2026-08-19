@@ -53,13 +53,18 @@ public abstract class TrainRenderOptimizeMixin {
     private void ivr$optimizeRenderCar(int index, double x, double y, double z, float yaw, float pitch, boolean backIsFront, boolean isLastCar, CallbackInfo ci) {
         // 玩家坐在列车上时坐标已是相对相机，无需再减相机位置
         boolean relative = this.train.getViewOffset() != null;
-        Vec3 rel = TrainRenderOptimize.toCameraRelative(x, y, z, relative);
+        // 玩家所在列车：完全渲染（不做任何剔除）
+        if (relative) {
+            return;
+        }
+        Vec3 rel = TrainRenderOptimize.toCameraRelative(x, y, z, false);
         // 超出渲染距离或距离 > 300 格 → 整节车厢不渲染
         if (TrainRenderOptimize.isTooFar(rel) || rel.length() > TrainRenderOptimize.getTrainRenderDistance()) {
             ci.cancel();
             return;
         }
-        // 整车厢 AABB 视锥剔除：只有整节车厢（8 个角点）全部在视锥外才剔除
+        // 其他列车：标准视锥剔除——整节车厢（8 个角点）全部在视锥外才不渲染，
+        // 只要车厢任何部分在屏幕内（含屏幕边缘）就渲染，避免边缘整节消失
         if (TrainRenderOptimize.isCarOutsideFrustum(rel, yaw)) {
             ci.cancel();
             return;
@@ -106,6 +111,10 @@ public abstract class TrainRenderOptimizeMixin {
         Vec3 rel = TrainRenderOptimize.toCameraRelative(corner, relative);
         if (TrainRenderOptimize.isTooFar(rel) || rel.length() > TrainRenderOptimize.getTrainRenderDistance()) {
             ci.cancel();
+            return;
+        }
+        // 车内视角：连接件/屏障就在相机附近，坐标是相对相机的，跳过视锥/遮挡判定避免误剔
+        if (relative) {
             return;
         }
         // 部件较小，用视锥（以 corner 为参考点 + 小半径）与遮挡剔除

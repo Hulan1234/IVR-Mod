@@ -1,15 +1,16 @@
 package net.hulan.ivr.block;
 
-import mtr.block.BlockPSDAPGGlassEndBase;
+import mtr.block.BlockPSDGlassEnd;
 import net.hulan.ivr.IVRItems;
 import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.NotNull;
 
-public class BlockKCRPSDGlassEnd extends BlockPSDAPGGlassEndBase {
+public class BlockKCRPSDGlassEnd extends BlockPSDGlassEnd {
 
     private final int style;
 
     public BlockKCRPSDGlassEnd(int style) {
+        super(style);
         this.style = style;
     }
 

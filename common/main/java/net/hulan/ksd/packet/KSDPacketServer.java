@@ -38,9 +38,10 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         Registry.sendToPlayer(player, KSD_PACKET_OPEN_KSD_DASHBOARD_SCREEN, packet);
     }
 
-    public static void openKCRTicketMachineScreenS2C(ServerPlayer player, BlockPos machinePos, int balance) {
+    public static void openKCRTicketMachineScreenS2C(ServerPlayer player, BlockPos pos) {
+        int balance = TicketSystem.getPlayerScore(player.getLevel(), player, "mtr_balance").getScore();
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
-        packet.writeBlockPos(machinePos);
+        packet.writeBlockPos(pos);
         packet.writeInt(balance);
         Registry.sendToPlayer(player, KSD_PACKET_OPEN_KCR_SINGLE_TICKET_MACHINE_SCREEN, packet);
     }

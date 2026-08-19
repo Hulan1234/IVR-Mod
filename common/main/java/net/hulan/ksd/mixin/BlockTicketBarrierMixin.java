@@ -1,11 +1,11 @@
 package net.hulan.ksd.mixin;
 
 import mtr.block.BlockTicketBarrier;
+import mtr.block.IBlock;
 import mtr.data.TicketSystem;
 import mtr.mappings.BlockDirectionalMapper;
 import net.hulan.ksd.KSDItems;
 import net.hulan.ksd.data.KCRTicketSystem;
-import net.hulan.ksd.utils.Utilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -13,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -39,8 +40,8 @@ public class BlockTicketBarrierMixin extends BlockDirectionalMapper {
     }
 
     @SuppressWarnings("deprecation")
-    public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
-        return Utilities.getInstance().checkHoldingItem(world, player,  item -> {
+    public @NotNull InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
+        return IBlock.checkHoldingItem(world, player, item -> {
             if (!world.isClientSide) {
                 TicketSystem.EnumTicketBarrierOpen canOpen = KCRTicketSystem.singleTicketCheck(world, player, pos, player.getItemInHand(interactionHand), isEntrance);
                 world.setBlockAndUpdate(pos, state.setValue(OPEN, canOpen));

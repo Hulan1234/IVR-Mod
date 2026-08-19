@@ -19,37 +19,43 @@ public class KSDClientMain implements ClientModInitializer, KSDPacket {
         RegistryClient.registerNetworkReceiver(KSD_PACKET_OPEN_KSD_DASHBOARD_SCREEN, (packet) -> KSDPacketClient.openKSDDashboardScreenS2C(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(KSD_PACKET_OPEN_KCR_SINGLE_TICKET_MACHINE_SCREEN, (packet) -> KSDPacketClient.openKCRSingleTicketMachineScreenS2C(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(KSD_PACKET_CHUNK_S2C, (packet) -> KSDPacketClient.receiveChunk(Minecraft.getInstance(), packet));
-        RegistryClient.registerNetworkReceiver(KSD_PACKET_UPDATE_STATION, (packet) -> KSDPacketClient.receiveUpdateOrDeleteS2C(Minecraft.getInstance(),
+        RegistryClient.registerNetworkReceiver(KSD_PACKET_UPDATE_STATION, (packet) -> KSDPacketClient.receiveUpdateOrDeleteS2C(
+                Minecraft.getInstance(),
                 packet,
                 KSDClientData.STATIONS,
                 KSDClientData.DATA_CACHE.stationIdMap,
                 KSDStation::new,
                 false));
-        RegistryClient.registerNetworkReceiver(KSD_PACKET_UPDATE_PLATFORM, packet -> KSDPacketClient.receiveUpdateOrDeleteS2C(Minecraft.getInstance(),
+        RegistryClient.registerNetworkReceiver(KSD_PACKET_UPDATE_PLATFORM, packet -> KSDPacketClient.receiveUpdateOrDeleteS2C(
+                Minecraft.getInstance(),
                 packet,
                 KSDClientData.PLATFORMS,
                 KSDClientData.DATA_CACHE.platformIdMap,
                 null,
                 false));
-        RegistryClient.registerNetworkReceiver(KSD_PACKET_UPDATE_ROUTE, packet -> KSDPacketClient.receiveUpdateOrDeleteS2C(Minecraft.getInstance(),
+        RegistryClient.registerNetworkReceiver(KSD_PACKET_UPDATE_ROUTE, packet -> KSDPacketClient.receiveUpdateOrDeleteS2C(
+                Minecraft.getInstance(),
                 packet,
                 KSDClientData.ROUTES,
                 KSDClientData.DATA_CACHE.routeIdMap,
                 KSDRoute::new,
                 false));
-        RegistryClient.registerNetworkReceiver(KSD_PACKET_DELETE_STATION, (packet) -> KSDPacketClient.receiveUpdateOrDeleteS2C(Minecraft.getInstance(),
+        RegistryClient.registerNetworkReceiver(KSD_PACKET_DELETE_STATION, (packet) -> KSDPacketClient.receiveUpdateOrDeleteS2C(
+                Minecraft.getInstance(),
                 packet,
                 KSDClientData.STATIONS,
                 KSDClientData.DATA_CACHE.stationIdMap,
                 KSDStation::new,
                 true));
-        RegistryClient.registerNetworkReceiver(KSD_PACKET_DELETE_PLATFORM, packet -> KSDPacketClient.receiveUpdateOrDeleteS2C(Minecraft.getInstance(),
+        RegistryClient.registerNetworkReceiver(KSD_PACKET_DELETE_PLATFORM, packet -> KSDPacketClient.receiveUpdateOrDeleteS2C(
+                Minecraft.getInstance(),
                 packet,
                 KSDClientData.PLATFORMS,
                 KSDClientData.DATA_CACHE.platformIdMap,
                 null,
                 true));
-        RegistryClient.registerNetworkReceiver(KSD_PACKET_DELETE_ROUTE, packet -> KSDPacketClient.receiveUpdateOrDeleteS2C(Minecraft.getInstance(),
+        RegistryClient.registerNetworkReceiver(KSD_PACKET_DELETE_ROUTE, packet -> KSDPacketClient.receiveUpdateOrDeleteS2C(
+                Minecraft.getInstance(),
                 packet,
                 KSDClientData.ROUTES,
                 KSDClientData.DATA_CACHE.routeIdMap,

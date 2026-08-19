@@ -62,7 +62,7 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
 
     protected void init() {
         IDrawing.setPositionAndWidth(buttonPayment,width / 2 - 100, height / 2 + 20, 200);
-        IDrawing.setPositionAndWidth(buttonIsConcessionary,width / 2 - 200, height / 2 - 40, 200);
+        IDrawing.setPositionAndWidth(buttonIsConcessionary,width / 2 - 100, height / 2 - 40, 100);
         IDrawing.setPositionAndWidth(buttonConfirm, width / 2 - PADDING - 100, height / 2 + 100, 100);
         IDrawing.setPositionAndWidth(buttonCancel, width / 2 + PADDING, height / 2 + 100, 100);
         for (int i = 0; i < 10; i++) {

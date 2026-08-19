@@ -60,7 +60,8 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
         registerBlockItem.accept("first_class_processor", FIRST_CLASS_PROCESSOR, KCR_PLATFORM_BLOCKS);
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_SINGLE_TICKET_PROCESSING, KSDPacketServer::receiveSingleTicketProcessingData);
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_UPDATE_STATION,
-                (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(minecraftServer,
+                (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(
+                        minecraftServer,
                         player,
                         packet,
                         KSD_PACKET_UPDATE_STATION,
@@ -69,7 +70,8 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
                         KSDStation::new,
                         false));
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_UPDATE_PLATFORM,
-                (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(minecraftServer,
+                (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(
+                        minecraftServer,
                         player,
                         packet,
                         KSD_PACKET_UPDATE_PLATFORM,
@@ -78,7 +80,8 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
                         null,
                         false));
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_UPDATE_ROUTE,
-                (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(minecraftServer,
+                (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(
+                        minecraftServer,
                         player,
                         packet,
                         KSD_PACKET_UPDATE_ROUTE,
@@ -87,7 +90,8 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
                         KSDRoute::new,
                         false));
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_DELETE_STATION,
-                (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(minecraftServer,
+                (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(
+                        minecraftServer,
                         player,
                         packet,
                         KSD_PACKET_DELETE_STATION,
@@ -96,7 +100,8 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
                         null,
                         true));
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_DELETE_PLATFORM,
-                (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(minecraftServer,
+                (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(
+                        minecraftServer,
                         player,
                         packet,
                         KSD_PACKET_DELETE_PLATFORM,
@@ -105,7 +110,8 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
                         null,
                         true));
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_DELETE_ROUTE,
-                (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(minecraftServer,
+                (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(
+                        minecraftServer,
                         player,
                         packet,
                         KSD_PACKET_DELETE_ROUTE,

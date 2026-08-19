@@ -1,6 +1,6 @@
 package net.hulan.ivr.block;
 
-import mtr.block.BlockPSDAPGGlassBase;
+import mtr.block.BlockAPGGlass;
 import mtr.block.IBlock;
 import mtr.mappings.BlockEntityMapper;
 import mtr.mappings.EntityBlockMapper;
@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 
-public class BlockKCRAPGGlass extends BlockPSDAPGGlassBase implements EntityBlockMapper {
+public class BlockKCRAPGGlass extends BlockAPGGlass implements EntityBlockMapper {
 
     public static final IntegerProperty ARROW_DIRECTION = IntegerProperty.create("propagate_property", 0, 3);
 

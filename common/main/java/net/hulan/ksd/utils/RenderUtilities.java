@@ -24,7 +24,7 @@ public abstract class RenderUtilities {
 
     public static RenderUtilities getInstance() {
         if (instance == null || instance instanceof NullRenderUtilities) {
-            String version = Utilities.getMinecraftVersion();
+            String version = Utilities.getIVRMinecraftVersion();
             String className = "RenderUtilities_" + version;
             RenderUtilities tempInstance = new NullRenderUtilities();
             try {

@@ -96,6 +96,9 @@ public final class TrainRenderOptimize {
      */
     public static final double BLOCK_ENTITY_RENDER_DISTANCE = 50.0D;
 
+    /** 方块实体视锥剔除用的包围球半径（格）。方块较小，用较小半径保证边缘不误剔。 */
+    public static final double BLOCK_ENTITY_RADIUS = 1.5D;
+
     /* -------------------- 内部常量（私有） -------------------- */
 
     /** 视锥近裁剪面距离（格），用于把相机正后方的物体剔除。 */

@@ -4,6 +4,7 @@
   "item.ksd.kp_cell_side_os": "Cell(Side,Outer)",
   "item.ksd.kp_cell_side_os_with_light": "Cell(Side,Outer With Light)",
   "item.ksd.ksd_dashboard": "IVR Dashboard",
+  "item.ksd.single_ticket": "Single Ticket",
   "block.ksd.kp_pole_normal": "Pole(Normal)",
   "block.ksd.kp_pole_single_side": "Pole(Single Side)",
   "block.ksd.kp_pole_double_side": "Pole(Double Side)",

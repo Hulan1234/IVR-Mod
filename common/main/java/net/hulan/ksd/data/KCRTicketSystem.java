@@ -4,13 +4,12 @@ import mtr.SoundEvents;
 import mtr.data.TicketSystem;
 import mtr.mappings.Text;
 import mtr.mappings.Utilities;
-import net.hulan.ksd.KSDItems;
+import net.hulan.ksd.item.ItemOctopus;
 import net.hulan.ksd.item.ItemSingleTicket;
 import net.hulan.ksd.utils.DataUtilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -23,20 +22,35 @@ public class KCRTicketSystem {
     public static TicketSystem.EnumTicketBarrierOpen singleTicketCheck(Level world, Player player, BlockPos pos, ItemStack singleTicketStack, boolean isEntrance) {
         KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
         if (railwayData != null && singleTicketStack.getItem() instanceof ItemSingleTicket) {
-            CompoundTag singleTicketTag = singleTicketStack.getOrCreateTag();
             KSDStation currentStation = KSDRailwayData.getStation(railwayData.stations, pos);
             if (currentStation != null) {
                 if (isEntrance) {
-                    return singleTicketEnter(world, player, currentStation, singleTicketTag);
+                    return singleTicketEnter(world, player, currentStation, singleTicketStack);
                 } else {
-                    return singleTicketExit(world, railwayData, currentStation, player, singleTicketTag);
+                    return singleTicketExit(world, railwayData, currentStation, player, singleTicketStack);
                 }
             }
         }
         return TicketSystem.EnumTicketBarrierOpen.CLOSED;
     }
 
-    private static TicketSystem.EnumTicketBarrierOpen singleTicketEnter(Level world, Player player, KSDStation enteredStation, CompoundTag singleTicketTag) {
+    private static TicketSystem.EnumTicketBarrierOpen octopusCheck(Level world, Player player, BlockPos pos, ItemStack octopusStack, boolean isEntrance) {
+        KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
+        if (railwayData != null && octopusStack.getItem() instanceof ItemOctopus) {
+            CompoundTag octopusTag = octopusStack.getOrCreateTag();
+            KSDStation currentStation = KSDRailwayData.getStation(railwayData.stations, pos);
+            if (currentStation != null) {
+                if (isEntrance) {
+
+                } else {
+                }
+            }
+        }
+        return TicketSystem.EnumTicketBarrierOpen.CLOSED;
+    }
+
+    private static TicketSystem.EnumTicketBarrierOpen singleTicketEnter(Level world, Player player, KSDStation enteredStation, ItemStack singleTicketStack) {
+        CompoundTag singleTicketTag = singleTicketStack.getOrCreateTag();
         if (singleTicketTag.getLong("entered_station_id") != 0L) {
             playSoundAndSendMessage(world, player.blockPosition(), player, "4");
             return TicketSystem.EnumTicketBarrierOpen.CLOSED;
@@ -46,7 +60,8 @@ public class KCRTicketSystem {
         return TicketSystem.EnumTicketBarrierOpen.OPEN;
     }
 
-    private static TicketSystem.EnumTicketBarrierOpen singleTicketExit(Level world, KSDRailwayData railwayData, KSDStation exitStation, Player player, CompoundTag singleTicketTag) {
+    private static TicketSystem.EnumTicketBarrierOpen singleTicketExit(Level world, KSDRailwayData railwayData, KSDStation exitStation, Player player, ItemStack singleTicketStack) {
+        CompoundTag singleTicketTag = singleTicketStack.getOrCreateTag();
         long enteredStationId = singleTicketTag.getLong("entered_station_id");
         KSDStation enteredStation = DataUtilities.getStation(railwayData.stations, enteredStationId);
         if (enteredStation != null) {
@@ -61,7 +76,7 @@ public class KCRTicketSystem {
                 playSoundAndSendMessage(world, player.blockPosition(), player, "2");
                 return TicketSystem.EnumTicketBarrierOpen.CLOSED;
             } else {
-                ContainerHelper.clearOrCountMatchingItems(Utilities.getInventory(player), (itemStack) -> itemStack.getItem() == KSDItems.SINGLE_TICKET.get(), 1, false);
+                Utilities.getInventory(player).removeItem(singleTicketStack);
                 playSoundAndSendMessage(world, player.blockPosition(), player, "1");
                 return TicketSystem.EnumTicketBarrierOpen.OPEN;
             }

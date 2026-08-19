@@ -1,11 +1,11 @@
 package net.hulan.ivr.block;
 
-import mtr.block.BlockPSDAPGGlassEndBase;
+import mtr.block.BlockAPGGlassEnd;
 import net.hulan.ivr.IVRItems;
 import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.NotNull;
 
-public class BlockKCRAPGGlassEnd extends BlockPSDAPGGlassEndBase {
+public class BlockKCRAPGGlassEnd extends BlockAPGGlassEnd {
 
     public BlockKCRAPGGlassEnd() {
     }
