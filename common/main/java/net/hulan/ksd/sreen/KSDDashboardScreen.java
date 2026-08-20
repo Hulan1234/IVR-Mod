@@ -271,22 +271,22 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
                 switch (selectedTab) {
                     case STATIONS -> {
                         KSDStation station = (KSDStation) data;
-                        UtilitiesClient.setScreen(minecraft, new KSDDeleteConfirmationScreen(() -> {
+                        UtilitiesClient.setScreen(minecraft, new ConfirmationScreen(() -> {
                             KSDPacketClient.sendDeleteData(KSDPacket.KSD_PACKET_DELETE_STATION, station.id);
                             KSDClientData.STATIONS.remove(station);
                             PacketTrainDataGuiClient.sendDeleteData(PACKET_DELETE_STATION, station.id);
                             ClientData.STATIONS.removeIf(mtrStation -> mtrStation.id == station.id);
-                        }, IGui.formatStationName(station.name), this));
+                        }, Text.translatable("gui.mtr.delete_confirmation", IGui.formatStationName(station.name)), this));
                     }
                     case ROUTES -> {
                         if (editingRoute == null) {
                             if (data instanceof KSDRoute route) {
-                                UtilitiesClient.setScreen(minecraft, new KSDDeleteConfirmationScreen(() -> {
+                                UtilitiesClient.setScreen(minecraft, new ConfirmationScreen(() -> {
                                     KSDPacketClient.sendDeleteData(KSDPacket.KSD_PACKET_DELETE_ROUTE, route.id);
                                     KSDClientData.ROUTES.remove(route);
                                     PacketTrainDataGuiClient.sendDeleteData(PACKET_DELETE_ROUTE, route.id);
                                     ClientData.ROUTES.removeIf(mtrRoute -> mtrRoute.id == route.id);
-                                }, IGui.formatStationName(route.name), this));
+                                }, Text.translatable("gui.mtr.delete_confirmation", IGui.formatStationName(route.name)), this));
                             }
                         } else {
                             editingRoute.platformIds.remove(index);

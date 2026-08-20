@@ -16,10 +16,11 @@ public class KSDDataCache {
     public final Map<Long, KSDStation> stationIdMap = new HashMap<>();
     public final Map<Long, KSDPlatform> platformIdMap = new HashMap<>();
     public final Map<Long, KSDRoute> routeIdMap = new HashMap<>();
-    public final Map<Long, Set<KSDRoute>> stationIdToRoutes = new HashMap<>();
     public final Map<Long, KSDStation> platformIdToStation = new HashMap<>();
+    public final Map<Long, Set<KSDPlatform>> stationIdToPlatforms = new HashMap<>();
+    public final Map<Long, Map<KSDStation, Integer>> routeIdToStationsWithIndex = new HashMap<>();
+    public final Map<Long, Set<KSDRoute>> stationIdToRoutes = new HashMap<>();
     public final Map<KSDStation, Set<KSDStation>> stationIdToConnectingStations = new HashMap<>();
-    public final Map<BlockPos, KSDStation> blockPosToStation = new HashMap<>();
     public final Long2LongOpenHashMap blockPosToPlatformId = new Long2LongOpenHashMap();
     protected final Set<KSDStation> stations;
     protected final Set<KSDPlatform> platforms;
@@ -47,6 +48,19 @@ public class KSDDataCache {
                 });
             });
             mapSavedRailIdToStation(platformIdToStation, platforms, stations);
+            mapAreaIdToSavedRails(stationIdToPlatforms, stations, platforms);
+            routeIdToStationsWithIndex.clear();
+            stations.forEach(s -> {
+                final Set<KSDPlatform> platforms = stationIdToPlatforms.get(s.id);
+                platforms.forEach(p -> routes.forEach(r -> {
+                    if (r.containsPlatformId(p.id)) {
+                        if (!routeIdToStationsWithIndex.containsKey(r.id)) {
+                            routeIdToStationsWithIndex.put(r.id, new HashMap<>());
+                        }
+                        routeIdToStationsWithIndex.get(r.id).put(s, r.getPlatformIdIndex(p.id));
+                    }
+                }));
+            });
             stationIdToRoutes.clear();
             routes.forEach(route -> {
                 if (!route.isHidden) {
@@ -62,7 +76,6 @@ public class KSDDataCache {
                 }
             });
             blockPosToPlatformId.clear();
-            blockPosToStation.clear();
             syncAdditional();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -85,11 +98,24 @@ public class KSDDataCache {
     private static <U extends SavedRailBase, V extends KSDAreaBase> void mapSavedRailIdToStation(Map<Long, V> map, Set<U> savedRails, Set<V> areas) {
         map.clear();
         savedRails.forEach(savedRail -> {
-            final BlockPos pos = savedRail.getMidPos();
             for (final V area : areas) {
-                if (area.isTransportMode(savedRail.transportMode) && area.inArea(pos)) {
+                if (area.isTransportMode(savedRail.transportMode) && area.inArea(savedRail.getMidPos())) {
                     map.put(savedRail.id, area);
                     break;
+                }
+            }
+        });
+    }
+
+    private static <U extends KSDAreaBase, V extends SavedRailBase> void mapAreaIdToSavedRails(Map<Long, Set<V>> map, Set<U> areas, Set<V> savedRails) {
+        map.clear();
+        areas.forEach(area -> {
+            for (final V savedRail : savedRails) {
+                if (area.isTransportMode(savedRail.transportMode) && area.inArea(savedRail.getMidPos())) {
+                    if (!map.containsKey(area.id)) {
+                        map.put(area.id, new HashSet<>());
+                    }
+                    map.get(area.id).add(savedRail);
                 }
             }
         });

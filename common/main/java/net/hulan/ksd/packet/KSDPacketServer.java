@@ -123,7 +123,7 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         boolean firstClassAvailable = packet.readBoolean();
         minecraftServer.execute(() -> {
             Level world = player.level;
-            long expiredTime = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1);
+            long expiredTime = System.currentTimeMillis() + net.hulan.ksd.utils.Utilities.TWO_HOURS;
             int fare = discount / amount;
             for (int i = 1; i <= amount; i++) {
                 ItemStack singleTicketItem = new ItemStack(KSDItems.SINGLE_TICKET.get());

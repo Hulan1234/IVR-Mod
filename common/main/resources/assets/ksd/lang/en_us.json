@@ -43,6 +43,8 @@
   "gui.ksd.destination" : "Destination:%s",
   "gui.ksd.fare" : "Fare:$%s",
   "gui.ksd.is_concessionary" : "Concessionary",
+  "gui.ksd.fc_available" : "First Class Available",
+  "gui.ksd.st_fc_warning" : "Warning:Please make sure there's a first class service route between the two stations.",
   "gui.ksd.amount" : "Amount:",
   "gui.ksd.total" : "Total:$%s",
   "gui.ksd.paying" : "Paying:%s",
@@ -57,5 +59,12 @@
   "gui.ksd.insufficient_emeralds": "Insufficient Emeralds",
   "gui.ksd.insufficient_mtr_balance": "Insufficient MTR Balance",
   "gui.ksd.no_octopus": "No Octopus Detected",
-  "gui.ksd.insufficient_octopus": "Insufficient Octopus Balance"
+  "gui.ksd.insufficient_octopus": "Insufficient Octopus Balance",
+  "gui.ksd.st_enter" : "Enter",
+  "gui.ksd.st_enter_concessionary" : "Enter(Concessionary)",
+  "gui.ksd.st_exit" : "Exit",
+  "gui.ksd.st_exit_concessionary" : "Exit(Concessionary)",
+  "gui.ksd.st_expired" : "Expired(Please Contact to the staff)",
+  "gui.ksd.st_insufficient_fare" : "Insufficient Fare(Please Contact to the staff)",
+  "gui.ksd.st_already_entered" : "Already Entered"
 }

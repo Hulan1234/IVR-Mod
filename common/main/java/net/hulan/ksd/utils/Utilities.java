@@ -8,9 +8,12 @@ import net.fabricmc.loader.api.Version;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.TimeUnit;
 
 public abstract class Utilities {
 
+    public static final long TWO_HOURS = TimeUnit.HOURS.toMillis(2);
+    public static final long DAY = TimeUnit.DAYS.toMillis(1);
     public static final RouteType KCR_CLASSICAL = EnumHelper.valueOf(RouteType.NORMAL, "KCR_CLASSICAL");
     public static final RouteType KCR_MODERN = EnumHelper.valueOf(RouteType.NORMAL, "KCR_MODERN");
     private static Utilities instance;

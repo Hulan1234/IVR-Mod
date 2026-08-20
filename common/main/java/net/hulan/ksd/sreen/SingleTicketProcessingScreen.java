@@ -37,6 +37,7 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
     private final KCRSingleTicketMachineScreen ticketMachineScreen;
     private final Button buttonPayment;
     private final WidgetBetterCheckbox buttonIsConcessionary;
+    private final WidgetBetterCheckbox buttonFCAvailable;
     private final Button buttonConfirm;
     private final Button buttonCancel;
     private final List<Button> amountButtons = new ArrayList<>(10);
@@ -50,6 +51,7 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
         this.ticketMachineScreen = ticketMachineScreen;
         buttonPayment = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_value"), button -> setPayment(payment.next()));
         buttonIsConcessionary = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.is_concessionary"), this::setIsConcessionary);
+        buttonFCAvailable = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.fc_available"), this::setFCAvailable);
         buttonConfirm = UtilitiesClient.newButton(Text.translatable("gui.ksd.confirm"), button -> process(true));
         buttonCancel = UtilitiesClient.newButton(Text.translatable("gui.ksd.cancel"), button -> process(false));
         for (int i = 0; i < 10; i++) {
@@ -62,7 +64,8 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
 
     protected void init() {
         IDrawing.setPositionAndWidth(buttonPayment,width / 2 - 100, height / 2 + 20, 200);
-        IDrawing.setPositionAndWidth(buttonIsConcessionary,width / 2 - 100, height / 2 - 40, 100);
+        IDrawing.setPositionAndWidth(buttonIsConcessionary,width / 2 - 100, height / 2 - 60, 100);
+        IDrawing.setPositionAndWidth(buttonFCAvailable,width / 2, height / 2 - 60, 100);
         IDrawing.setPositionAndWidth(buttonConfirm, width / 2 - PADDING - 100, height / 2 + 100, 100);
         IDrawing.setPositionAndWidth(buttonCancel, width / 2 + PADDING, height / 2 + 100, 100);
         for (int i = 0; i < 10; i++) {
@@ -72,6 +75,7 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
         }
         addDrawableChild(buttonPayment);
         addDrawableChild(buttonIsConcessionary);
+        addDrawableChild(buttonFCAvailable);
         addDrawableChild(buttonConfirm);
         addDrawableChild(buttonCancel);
         setAmount(1);
@@ -87,9 +91,12 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
 
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
         renderBackground(matrices);
-        drawCenteredString(matrices, Minecraft.getInstance().font, getCurrentText(), width / 2, height / 2 - 100, ARGB_WHITE);
-        drawCenteredString(matrices, Minecraft.getInstance().font, getDestinationText(), width / 2, height / 2 - 80, ARGB_WHITE);
-        drawCenteredString(matrices, Minecraft.getInstance().font, getFareText(), width / 2, height / 2 - 60, ARGB_WHITE);
+        drawCenteredString(matrices, Minecraft.getInstance().font, getCurrentText(), width / 2, height / 2 - 120, ARGB_WHITE);
+        drawCenteredString(matrices, Minecraft.getInstance().font, getDestinationText(), width / 2, height / 2 - 100, ARGB_WHITE);
+        drawCenteredString(matrices, Minecraft.getInstance().font, getFareText(), width / 2, height / 2 - 80, ARGB_WHITE);
+        if (buttonFCAvailable.selected()) {
+            drawCenteredString(matrices, Minecraft.getInstance().font, getWarningMessage(), width / 2, height / 2 - 40, RGB_RED | ARGB_BLACK);
+        }
         drawCenteredString(matrices, Minecraft.getInstance().font, getAmountText(), width / 2, height / 2 - 20, ARGB_WHITE);
         drawCenteredString(matrices, Minecraft.getInstance().font, getTotalFareText(), width / 2, height / 2 + 40, ARGB_WHITE);
         drawCenteredString(matrices, Minecraft.getInstance().font, getPayingText(), width / 2, height / 2 + 60, ARGB_WHITE);
@@ -119,8 +126,13 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
         calculateFare();
     }
 
+    private void setFCAvailable(boolean firstClassAvailable) {
+        buttonFCAvailable.setChecked(firstClassAvailable);
+        calculateFare();
+    }
+
     private void calculateFare() {
-        totalFare = fare / (buttonIsConcessionary.selected() ? 2 : 1) * amount;
+        totalFare = fare / (buttonIsConcessionary.selected() ? 2 : 1) * amount * (buttonFCAvailable.selected() ? 2 : 1);
         failed = false;
     }
 
@@ -136,6 +148,10 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
 
     private MutableComponent getFareText() {
         return Text.translatable("gui.ksd.fare", String.valueOf(fare));
+    }
+
+    private MutableComponent getWarningMessage() {
+        return Text.translatable("gui.ksd.st_fc_warning");
     }
 
     private MutableComponent getAmountText() {
@@ -183,7 +199,7 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
                 }
             }
             if (!failed) {
-                KSDPacketClient.sendTicketProcessingDataC2S(payment, payCount, amount, buttonIsConcessionary.selected(), false);
+                KSDPacketClient.sendTicketProcessingDataC2S(payment, payCount, amount, buttonIsConcessionary.selected(), buttonFCAvailable.selected());
                 if (minecraft != null) {
                     UtilitiesClient.setScreen(minecraft, null);
                 }

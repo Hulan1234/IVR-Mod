@@ -43,6 +43,8 @@
   "gui.ksd.destination": "目的地：%s",
   "gui.ksd.fare": "票价：$%s",
   "gui.ksd.is_concessionary" : "优惠票",
+  "gui.ksd.fc_available" : "可乘坐头等",
+  "gui.ksd.st_fc_warning" : "请确保两站之间有头等服务的线路",
   "gui.ksd.amount" : "数量：",
   "gui.ksd.total": "总价：$%s",
   "gui.ksd.paying": "需支付：%s",
@@ -57,5 +59,12 @@
   "gui.ksd.insufficient_emeralds": "绿宝石数量不足",
   "gui.ksd.insufficient_mtr_balance": "MTR余额不足",
   "gui.ksd.no_octopus": "无八达通卡",
-  "gui.ksd.insufficient_octopus": "八达通余额不足"
+  "gui.ksd.insufficient_octopus": "八达通余额不足",
+  "gui.ksd.st_enter" : "入闸",
+  "gui.ksd.st_enter_concessionary" : "入闸（优惠票）",
+  "gui.ksd.st_exit" : "出闸",
+  "gui.ksd.st_exit_concessionary" : "出闸（优惠票）",
+  "gui.ksd.st_expired" : "超时（请联系工作人员）",
+  "gui.ksd.st_insufficient_fare" : "余额不足（请联系工作人员）",
+  "gui.ksd.st_already_entered" : "已入闸"
 }

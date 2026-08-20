@@ -35,6 +35,7 @@
   "block.ivr.kcr_station_color_station_wall_slab": "KCR Station Wall Slab",
   "block.ivr.modern_sign": "KCR Modern Sign (In West Rail and MOS Rail)",
   "block.ivr.modern_sign_pole": "KCR Modern Sign Pole (In West Rail and MOS Rail)",
+  "block.ivr.kcr_single_ticket_machine" : "KCR Single Ticket Machine",
   "item.ivr.kcr_apg_door": "KCR Automatic Platform Gates",
   "item.ivr.kcr_apg_glass": "KCR Automatic Platform Gates",
   "item.ivr.kcr_apg_glass_end": "KCR Automatic Platform Gates",
