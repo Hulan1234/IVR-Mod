@@ -4,12 +4,15 @@ import mtr.block.IBlock;
 import mtr.mappings.BlockDirectionalMapper;
 import mtr.mappings.Utilities;
 import net.hulan.ksd.data.FirstClassValidationSystem;
+import net.hulan.ksd.item.ItemOctopus;
+import net.hulan.ksd.item.ItemSingleTicket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -37,10 +40,16 @@ public class BlockKCRFirstClassProcessor extends BlockDirectionalMapper {
     @SuppressWarnings("deprecation")
     public @NotNull InteractionResult use(BlockState blockState, Level world, BlockPos blockPos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
         if (!world.isClientSide) {
-            FirstClassValidationSystem.FirstClassState firstClassState = FirstClassValidationSystem.validateOnMachine(blockPos, world, player);
+            ItemStack holdingItem = player.getItemInHand(interactionHand);
+            FirstClassValidationSystem.FirstClassState firstClassState = FirstClassValidationSystem.FirstClassState.MTR;
+            if (holdingItem.getItem() instanceof ItemSingleTicket) {
+                firstClassState = FirstClassValidationSystem.ticketValidate(world, player, holdingItem);
+            } else if (holdingItem.getItem() instanceof ItemOctopus) {
+                firstClassState = FirstClassValidationSystem.FirstClassState.DENIED;
+            }
             switch (firstClassState) {
-                case ENABLED_ACCESS -> world.setBlockAndUpdate(blockPos, blockState.setValue(TYPE, 1));
-                case ENABLED_ACCESS_CONCESSIONARY -> world.setBlockAndUpdate(blockPos, blockState.setValue(TYPE, 2));
+                case VALIDATED -> world.setBlockAndUpdate(blockPos, blockState.setValue(TYPE, 1));
+                case VALIDATED_CONCESSIONARY -> world.setBlockAndUpdate(blockPos, blockState.setValue(TYPE, 2));
                 case DENIED -> world.setBlockAndUpdate(blockPos, blockState.setValue(TYPE, 3));
             }
             Utilities.scheduleBlockTick(world, blockPos, this, 20);

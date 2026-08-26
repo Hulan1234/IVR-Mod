@@ -153,6 +153,7 @@ public class IVR implements ModInitializer, IVRPacket, IVRBlocks, IVRBlockEntity
         registerBlockEntityType.accept("kcr_station_name_tall_block", KCR_STATION_NAME_TALL_BLOCK_TILE_ENTITY);
         registerBlockEntityType.accept("kcr_station_name_tall_block_double_sided", KCR_STATION_NAME_TALL_BLOCK_DOUBLE_SIDED_TILE_ENTITY);
         registerBlockEntityType.accept("kcr_station_name_tall_wall", KCR_STATION_NAME_TALL_WALL_TILE_ENTITY);
+        registerBlockEntityType.accept("kcr_single_ticket_machine", KCR_SINGLE_TICKET_MACHINE_TILE_ENTITY);
         registerBlockEntityType.accept("modern_route_sign", MODERN_ROUTE_SIGN_TILE_ENTITY);
         mtr.Registry.registerNetworkReceiver(PACKET_CLASSICAL_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveClassicalSignIdsC2S);
         mtr.Registry.registerNetworkReceiver(PACKET_CLASSICAL_1ODD_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveClassicalSign1OddIdsC2S);

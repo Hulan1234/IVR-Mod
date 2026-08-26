@@ -9,7 +9,7 @@ import mtr.data.TransportMode;
 import mtr.mappings.UtilitiesClient;
 import mtr.packet.PacketTrainDataBase;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.data.Payment;
+import net.hulan.ksd.data.PaymentMethod;
 import net.hulan.ksd.sreen.KCRSingleTicketMachineScreen;
 import net.hulan.ksd.sreen.KSDDashboardScreen;
 import net.minecraft.client.Minecraft;
@@ -95,11 +95,19 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
         sendUpdate(packetId, packet);
     }
 
-    public static void sendTicketProcessingDataC2S(Payment payment, int discount, int amount, boolean isConcessionary, boolean firstClassAvailable) {
+    public static void sendTicketProcessingDataC2S(BlockPos machinePos,
+                                                   PaymentMethod paymentMethod,
+                                                   int fare,
+                                                   int amount,
+                                                   int payCount,
+                                                   boolean isConcessionary,
+                                                   boolean firstClassAvailable) {
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
-        packet.writeUtf(payment.name());
-        packet.writeInt(discount);
+        packet.writeBlockPos(machinePos);
+        packet.writeUtf(paymentMethod.name());
+        packet.writeInt(fare);
         packet.writeInt(amount);
+        packet.writeInt(payCount);
         packet.writeBoolean(isConcessionary);
         packet.writeBoolean(firstClassAvailable);
         RegistryClient.sendToServer(KSD_PACKET_SINGLE_TICKET_PROCESSING, packet);

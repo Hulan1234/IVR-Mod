@@ -8,12 +8,16 @@ import mtr.mappings.Text;
 import mtr.mappings.Utilities;
 import mtr.mappings.UtilitiesClient;
 import mtr.screen.WidgetBetterCheckbox;
+import net.hulan.ksd.KSDItems;
+import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.KCRTicketSystem;
 import net.hulan.ksd.data.KSDStation;
 import net.hulan.ksd.data.Payment;
+import net.hulan.ksd.data.WayFinder;
 import net.hulan.ksd.packet.KSDPacketClient;
 import net.hulan.ksd.utils.RailDataUtilities;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
@@ -30,7 +34,7 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
     private int amount;
     private boolean failed;
     private MutableComponent failedMessage;
-    private final int fare;
+    private int fare;
     private final int mtrBalance;
     private final KSDStation current;
     private final KSDStation destination;
@@ -58,7 +62,6 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
             final int amount = i + 1;
             amountButtons.add(UtilitiesClient.newButton(Text.literal(String.valueOf(amount)), button -> setAmount(amount)));
         }
-        fare = KCRTicketSystem.getMTRFare(current.zone, destination.zone, false);
         this.mtrBalance = mtrBalance;
     }
 
@@ -91,6 +94,9 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
 
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
         renderBackground(matrices);
+        // Use the same restrained inventory-panel background as PutItemScreen without changing payment logic.
+        Gui.fill(matrices, width / 2 - 220, height / 2 - 145, width / 2 + 220, height / 2 + 145, 0xFFC6C6C6);
+        Gui.fill(matrices, width / 2 - 216, height / 2 - 141, width / 2 + 216, height / 2 + 141, 0xFF4A4A4A);
         drawCenteredString(matrices, Minecraft.getInstance().font, getCurrentText(), width / 2, height / 2 - 120, ARGB_WHITE);
         drawCenteredString(matrices, Minecraft.getInstance().font, getDestinationText(), width / 2, height / 2 - 100, ARGB_WHITE);
         drawCenteredString(matrices, Minecraft.getInstance().font, getFareText(), width / 2, height / 2 - 80, ARGB_WHITE);
@@ -132,7 +138,9 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
     }
 
     private void calculateFare() {
-        totalFare = fare / (buttonIsConcessionary.selected() ? 2 : 1) * amount * (buttonFCAvailable.selected() ? 2 : 1);
+        WayFinder wayFinder = KSDClientData.DATA_CACHE.wayFinder;
+        fare = KCRTicketSystem.getFare(wayFinder, current, destination, buttonIsConcessionary.selected(), buttonFCAvailable.selected());
+        totalFare = fare * amount;
         failed = false;
     }
 
@@ -178,11 +186,23 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
             int payCount = totalFare;
             switch (payment) {
                 case EMERALDS -> {
-                    if (getEmeraldCount() < (int) Math.ceil((double) totalFare / 16)) {
-                        failed = true;
-                        failedMessage = Text.translatable("gui.ksd.insufficient_emeralds");
-                    } else {
-                        failed = false;
+                    payCount = KCRTicketSystem.getEmeraldCount(payCount);
+                    if (minecraft != null) {
+                        UtilitiesClient.setScreen(minecraft, new PutItemScreen(
+                                "item.minecraft.emerald",
+                                Items.EMERALD,
+                                payCount,
+                                PutItemScreen.PutMethod.PUT,
+                                true,
+                                null,
+                                (itemStack, count) -> KSDPacketClient.sendTicketProcessingDataC2S(
+                                        ticketMachineScreen.machinePos,
+                                        payment,
+                                        fare,
+                                        amount,
+                                        count,
+                                        buttonIsConcessionary.selected(),
+                                        buttonFCAvailable.selected())));
                     }
                 }
                 case MTR_BALANCE -> {
@@ -192,16 +212,16 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
                     } else {
                         failed = false;
                     }
+                    if (!failed) {
+                        KSDPacketClient.sendTicketProcessingDataC2S(ticketMachineScreen.machinePos, payment, fare, amount, payCount, buttonIsConcessionary.selected(), buttonFCAvailable.selected());
+                        if (minecraft != null) {
+                            UtilitiesClient.setScreen(minecraft, null);
+                        }
+                    }
                 }
                 case OCTOPUS -> {
                     failed = true;
                     failedMessage = Text.translatable("gui.ksd.no_octopus");
-                }
-            }
-            if (!failed) {
-                KSDPacketClient.sendTicketProcessingDataC2S(payment, payCount, amount, buttonIsConcessionary.selected(), buttonFCAvailable.selected());
-                if (minecraft != null) {
-                    UtilitiesClient.setScreen(minecraft, null);
                 }
             }
         } else {
@@ -209,10 +229,6 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
                 UtilitiesClient.setScreen(minecraft, ticketMachineScreen);
             }
         }
-    }
-
-    private int getEmeraldCount() {
-        return this.minecraft != null && this.minecraft.player != null ? Utilities.getInventory(this.minecraft.player).countItem(Items.EMERALD) : 0;
     }
 
     public static boolean isEnglish() {

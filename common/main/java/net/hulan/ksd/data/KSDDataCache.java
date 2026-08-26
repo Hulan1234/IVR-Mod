@@ -3,12 +3,8 @@ package net.hulan.ksd.data;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import mtr.data.NameColorDataBase;
 import mtr.data.SavedRailBase;
-import net.minecraft.core.BlockPos;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class KSDDataCache {
 
@@ -18,10 +14,11 @@ public class KSDDataCache {
     public final Map<Long, KSDRoute> routeIdMap = new HashMap<>();
     public final Map<Long, KSDStation> platformIdToStation = new HashMap<>();
     public final Map<Long, Set<KSDPlatform>> stationIdToPlatforms = new HashMap<>();
-    public final Map<Long, Map<KSDStation, Integer>> routeIdToStationsWithIndex = new HashMap<>();
+    public final Map<Long, List<KSDStation>> routeIdToStationsWithIndex = new HashMap<>();
     public final Map<Long, Set<KSDRoute>> stationIdToRoutes = new HashMap<>();
     public final Map<KSDStation, Set<KSDStation>> stationIdToConnectingStations = new HashMap<>();
     public final Long2LongOpenHashMap blockPosToPlatformId = new Long2LongOpenHashMap();
+    public final WayFinder wayFinder;
     protected final Set<KSDStation> stations;
     protected final Set<KSDPlatform> platforms;
     protected final Set<KSDRoute> routes;
@@ -30,6 +27,7 @@ public class KSDDataCache {
         this.stations = stations;
         this.platforms = platforms;
         this.routes = routes;
+        wayFinder = new WayFinder();
     }
 
     public final void sync() {
@@ -50,22 +48,24 @@ public class KSDDataCache {
             mapSavedRailIdToStation(platformIdToStation, platforms, stations);
             mapAreaIdToSavedRails(stationIdToPlatforms, stations, platforms);
             routeIdToStationsWithIndex.clear();
-            stations.forEach(s -> {
-                final Set<KSDPlatform> platforms = stationIdToPlatforms.get(s.id);
-                platforms.forEach(p -> routes.forEach(r -> {
-                    if (r.containsPlatformId(p.id)) {
-                        if (!routeIdToStationsWithIndex.containsKey(r.id)) {
-                            routeIdToStationsWithIndex.put(r.id, new HashMap<>());
+            routes.forEach(r -> {
+                if (!r.isHidden) {
+                    for (int index = 0; index < r.platformIds.size(); index++) {
+                        final KSDStation station = platformIdToStation.get(r.platformIds.get(index).platformId);
+                        if (station != null) {
+                            if (!routeIdToStationsWithIndex.containsKey(r.id)) {
+                                routeIdToStationsWithIndex.put(r.id, new ArrayList<>(r.platformIds.size()));
+                            }
+                            routeIdToStationsWithIndex.get(r.id).add(station);
                         }
-                        routeIdToStationsWithIndex.get(r.id).put(s, r.getPlatformIdIndex(p.id));
                     }
-                }));
+                }
             });
             stationIdToRoutes.clear();
             routes.forEach(route -> {
                 if (!route.isHidden) {
-                    route.platformIds.forEach(platformId -> {
-                        final KSDStation station = platformIdToStation.get(platformId.platformId);
+                    route.platformIds.forEach(pId -> {
+                        final KSDStation station = platformIdToStation.get(pId.platformId);
                         if (station != null) {
                             if (!stationIdToRoutes.containsKey(station.id)) {
                                 stationIdToRoutes.put(station.id, new HashSet<>());
@@ -77,6 +77,7 @@ public class KSDDataCache {
             });
             blockPosToPlatformId.clear();
             syncAdditional();
+            wayFinder.sync(this);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

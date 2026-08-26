@@ -13,7 +13,6 @@ import net.minecraft.util.Mth;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 
 public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMapper, GuiEventListener, IGui {
 
@@ -22,6 +21,7 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
     private int width;
     private int height;
     private final List<LegendRow> rows = new ArrayList<>();
+    private final KCRSingleTicketMachineScreen ticketMachineScreen;
     private float scrollOffset;
     private boolean dragging;
     private float dragGrabOffsetY;
@@ -48,6 +48,10 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
     // 线路名英文行缩放
     private static final float EN_SCALE = 0.65F;
 
+    public KCRSingleTicketMachineLegend(KCRSingleTicketMachineScreen ticketMachineScreen) {
+        this.ticketMachineScreen = ticketMachineScreen;
+    }
+
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
         RenderUtilities renderUtilities = RenderUtilities.getInstance();
         // 逐行绘制（跳过已滚出的行，超出面板底部的行不画）
@@ -69,9 +73,9 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
         }
     }
 
-    public void load(int maxHeight, Set<KSDRoute> routes) {
+    public void load(int maxHeight) {
         rows.clear();
-        List<KSDRoute> routeList = new ArrayList<>(routes.stream().toList());
+        List<KSDRoute> routeList = new ArrayList<>(ticketMachineScreen.mainRoutes.stream().toList());
         routeList.sort(Comparator.comparing(RailDataUtilities::getMainName));
         for (KSDRoute r : routeList) {
             if (rows.stream().anyMatch(row -> RailDataUtilities.isSameRoute(row.route, r))) {
@@ -79,7 +83,7 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
             }
             rows.add(new LegendRow(argb(r.color), r.name, r));
         }
-        height = Math.min(rows.size() * ROW_HEIGHT, maxHeight) + PADDING * 2;
+        height = Math.min(rows.size() * ROW_HEIGHT, height) + PADDING * 2;
     }
 
     // 绘制一行图例：站点圆图像（左右短线+圆环）在左，线路名（中文+英文两行）在右

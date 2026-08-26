@@ -1,15 +1,10 @@
 package net.hulan.ksd.utils;
 
-import net.hulan.ksd.data.FirstClassPlayer;
 import net.hulan.ksd.data.KSDPlatform;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
-import net.minecraft.world.entity.player.Player;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -79,5 +74,15 @@ public class DataUtilities {
 
     public static <T, R> Set<R> getMappedAndFilteredSetFromDataCollection(Collection<T> dataCollection, Function<T, R> mapper, Predicate<R> filter) {
         return dataCollection.stream().map(mapper).filter(filter).collect(Collectors.toSet());
+    }
+
+    public static <T> List<Integer> getAllIndexFromList(List<T> dataCollection, T value) {
+        List<Integer> indexes = new ArrayList<>();
+        for (int i = 0; i < dataCollection.size(); i++) {
+            if (dataCollection.get(i).equals(value)) {
+                indexes.add(i);
+            }
+        }
+        return indexes;
     }
 }

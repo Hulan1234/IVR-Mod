@@ -9,10 +9,8 @@ import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.KSDRailwayData;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
-import net.hulan.ksd.utils.DataUtilities;
 import net.hulan.ksd.utils.RailDataUtilities;
 import net.hulan.ksd.utils.RenderUtilities;
-import net.hulan.ksd.utils.Utilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.core.BlockPos;
@@ -23,8 +21,13 @@ import java.util.Set;
 
 public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
 
-    final Set<KSDRoute> routes = new HashSet<>();
-    final Set<KSDStation> stations = new HashSet<>();
+    final Set<KSDRoute> mainRoutes = new HashSet<>();
+    final Set<KSDRoute> otherRoutes = new HashSet<>();
+    final Set<KSDRoute> lightRailRoutes = new HashSet<>();
+    final Set<KSDStation> mainStations = new HashSet<>();
+    final Set<KSDStation> otherStations = new HashSet<>();
+    final Set<KSDStation> lightRailStations = new HashSet<>();
+    public final BlockPos machinePos;
     private final int balance;
     private final KSDStation current;
     private final KCRSingleTicketMachineRailMap railMap;
@@ -42,10 +45,11 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
 
     public KCRSingleTicketMachineScreen(BlockPos machinePos, int balance) {
         super(Text.literal(""));
+        this.machinePos = machinePos;
         this.balance = balance;
         current = KSDRailwayData.getStation(KSDClientData.STATIONS, machinePos);
         railMap = new KCRSingleTicketMachineRailMap(this::onClickedOnDestination, this);
-        legend = new KCRSingleTicketMachineLegend();
+        legend = new KCRSingleTicketMachineLegend(this);
     }
 
     protected void init() {
@@ -59,7 +63,7 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
         railMap.setPositionAndSize(LEGEND_WIDTH, RMH_HEADER_HEIGHT, width - LEGEND_WIDTH, componentHeight);
         addWidget(legend);
         addWidget(railMap);
-        legend.load(componentHeight, routes);
+        legend.load(componentHeight);
         railMap.load();
     }
 
@@ -80,19 +84,30 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
     }
 
     private void loadRoutes() {
-        routes.clear();
-        Set<KSDRoute> routeInCurrent = DataUtilities.getNonNullSetFromDataCollection(KSDClientData.DATA_CACHE.stationIdToRoutes.get(current.id));
-        routes.addAll(routeInCurrent);
-        Set<KSDRoute> routeInSameRailNet = new HashSet<>();
-        routeInCurrent.forEach(r -> routeInSameRailNet.addAll(RailDataUtilities.getRoutesInSameRailNet(KSDClientData.DATA_CACHE, r)));
-        routes.addAll(routeInSameRailNet);
-        routes.removeIf(r -> r.isHidden || (!r.routeType.equals(Utilities.KCR_CLASSICAL) && !r.routeType.equals(Utilities.KCR_MODERN)));
+        mainRoutes.clear();
+        otherRoutes.clear();
+        lightRailRoutes.clear();
+        Set<KSDRoute> routesInNetwork = KSDClientData.DATA_CACHE.wayFinder.getNetwork(current.id);
+        Set<KSDRoute> mtr = RailDataUtilities.getMTRRoutes(routesInNetwork);
+        Set<KSDRoute> kcr = RailDataUtilities.getKCRRoutes(routesInNetwork);
+        Set<KSDRoute> lightRails = RailDataUtilities.getLightRailRoutes(routesInNetwork);
+        mainRoutes.addAll(kcr);
+        otherRoutes.addAll(mtr);
+        lightRailRoutes.addAll(lightRails);
     }
 
     private void loadStations() {
-        stations.clear();
-        for (KSDRoute route : routes) {
-            stations.addAll(RailDataUtilities.getStationsInRoute(KSDClientData.DATA_CACHE, route));
+        mainStations.clear();
+        otherStations.clear();
+        lightRailStations.clear();
+        for (KSDRoute route : mainRoutes) {
+            mainStations.addAll(KSDClientData.DATA_CACHE.routeIdToStationsWithIndex.get(route.id));
+        }
+        for (KSDRoute route : otherRoutes) {
+            otherStations.addAll(KSDClientData.DATA_CACHE.routeIdToStationsWithIndex.get(route.id));
+        }
+        for (KSDRoute route : lightRailRoutes) {
+            lightRailStations.addAll(KSDClientData.DATA_CACHE.routeIdToStationsWithIndex.get(route.id));
         }
     }
 
@@ -113,5 +128,11 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
     static {
         RMH_CHI_WIDTH = RenderUtilities.getInstance().getTextWidth(RMH_CHI, RMH_CHI_HEIGHT / Minecraft.getInstance().font.lineHeight);
         RMH_ENG_WIDTH = RenderUtilities.getInstance().getTextWidth(RMH_ENG, RMH_ENG_HEIGHT / Minecraft.getInstance().font.lineHeight);
+    }
+
+    public enum screenType {
+        MTR,
+        KCR,
+        LIGHT_RAIL,
     }
 }

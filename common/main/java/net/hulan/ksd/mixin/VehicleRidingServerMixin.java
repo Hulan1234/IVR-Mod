@@ -54,7 +54,7 @@ public class VehicleRidingServerMixin {
                         if (route != null && route.hasFirstClassService) {
                             FirstClassPlayer fcPlayer = ksd.jsonDataManager.getFirstClassPlayer(player.getUUID());
                             if (fcPlayer != null && route.firstClassCar == percentageOffset && (fcPlayer.state.equals(FirstClassValidationSystem.FirstClassState.MTR) || fcPlayer.state.equals(FirstClassValidationSystem.FirstClassState.DENIED))) {
-                                FirstClassValidationSystem.illegallyEntered(world, ksd.dataCache, fcPlayer, percentageOffset);
+                                FirstClassValidationSystem.illegallyEntered(world, fcPlayer, percentageOffset);
                             }
                         }
                     }

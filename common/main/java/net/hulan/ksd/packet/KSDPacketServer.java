@@ -5,6 +5,7 @@ import mtr.Registry;
 import mtr.data.*;
 import mtr.mappings.Utilities;
 import mtr.packet.PacketTrainDataBase;
+import net.hulan.ivr.block.BlockKCRSingleTicketMachine;
 import net.hulan.ksd.KSDItems;
 import net.hulan.ksd.data.*;
 import net.minecraft.core.BlockPos;
@@ -16,14 +17,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.scores.Score;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -116,40 +115,47 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
     }
 
     public static void receiveSingleTicketProcessingData(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
-        Payment payment = EnumHelper.valueOf(Payment.MTR_BALANCE, packet.readUtf());
-        int discount = packet.readInt();
+        BlockPos machinePos = packet.readBlockPos();
+        PaymentMethod paymentMethod = EnumHelper.valueOf(PaymentMethod.MTR_BALANCE, packet.readUtf());
+        int fare = packet.readInt();
         int amount = packet.readInt();
+        int payCount = packet.readInt();
         boolean isConcessionary = packet.readBoolean();
         boolean firstClassAvailable = packet.readBoolean();
         minecraftServer.execute(() -> {
             Level world = player.level;
-            long expiredTime = System.currentTimeMillis() + net.hulan.ksd.utils.Utilities.TWO_HOURS;
-            int fare = discount / amount;
-            for (int i = 1; i <= amount; i++) {
-                ItemStack singleTicketItem = new ItemStack(KSDItems.SINGLE_TICKET.get());
-                CompoundTag singleTicketNBT = singleTicketItem.getOrCreateTag();
-                singleTicketNBT.putLong("id", new Random().nextLong());
-                singleTicketNBT.putInt("fare", fare);
-                singleTicketNBT.putLong("expired_time", expiredTime);
-                singleTicketNBT.putBoolean("is_concessionary", isConcessionary);
-                singleTicketNBT.putBoolean("first_class_available", firstClassAvailable);
-                BlockPos pos = player.blockPosition();
-                ItemEntity itemEntity = new ItemEntity(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, singleTicketItem);
-                world.addFreshEntity(itemEntity);
-            }
-            switch (payment) {
-                case EMERALDS -> {
-                    ContainerHelper.clearOrCountMatchingItems(Utilities.getInventory(player), (itemStack) -> itemStack.getItem() == Items.EMERALD, (int) Math.ceil((double) discount / 16), false);
-                    world.playSound(null, player.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1.0F, 1.0F);
+            long expiredTime = System.currentTimeMillis() + net.hulan.ksd.utils.Utilities.EXPIRED_TIME;
+            if (world.getBlockEntity(machinePos) instanceof BlockKCRSingleTicketMachine.TileEntityKCRSingleTicketMachine entity) {
+                List<ItemStack> items = new ArrayList<>();
+                for (int i = 1; i <= amount; i++) {
+                    ItemStack singleTicketItem = new ItemStack(KSDItems.SINGLE_TICKET.get());
+                    CompoundTag singleTicketNBT = singleTicketItem.getOrCreateTag();
+                    singleTicketNBT.putLong("id", new Random().nextLong());
+                    singleTicketNBT.putInt("fare", fare);
+                    singleTicketNBT.putLong("expired_time", expiredTime);
+                    singleTicketNBT.putBoolean("is_concessionary", isConcessionary);
+                    singleTicketNBT.putBoolean("fc_available", firstClassAvailable);
+                    items.add(singleTicketItem);
                 }
-                case MTR_BALANCE -> {
-                    TicketSystem.addObjectivesIfMissing(world);
-                    Score balanceScore = TicketSystem.getPlayerScore(world, player, "mtr_balance");
-                    balanceScore.setScore(balanceScore.getScore() - discount);
-                    world.playSound(null, player.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1.0F, 1.0F);
+                switch (paymentMethod) {
+                    case EMERALDS -> {
+                        int change = payCount - KCRTicketSystem.getEmeraldCount(fare * amount);
+                        ContainerHelper.clearOrCountMatchingItems(Utilities.getInventory(player), (itemStack) -> itemStack.getItem() == Items.EMERALD, payCount, false);
+                        if (change > 0) {
+                            ItemStack emeraldsStack = new ItemStack(Items.EMERALD, change);
+                            items.add(emeraldsStack);
+                        }
+                    }
+                    case MTR_BALANCE -> {
+                        TicketSystem.addObjectivesIfMissing(world);
+                        Score balanceScore = TicketSystem.getPlayerScore(world, player, "mtr_balance");
+                        balanceScore.setScore(balanceScore.getScore() - payCount);
+                    }
+                    case OCTOPUS -> {
+                    }
                 }
-                case OCTOPUS -> {
-                }
+                entity.storeItems(items);
+                world.playSound(null, player.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1.0F, 1.0F);
             }
         });
     }

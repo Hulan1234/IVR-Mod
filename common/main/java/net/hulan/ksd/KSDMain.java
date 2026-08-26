@@ -9,10 +9,11 @@ import mtr.mappings.FabricRegistryUtilities;
 import mtr.mappings.RegistryUtilities;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.hulan.ksd.commands.CommandManager;
 import net.hulan.ksd.data.*;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketServer;
-import net.hulan.ksd.utils.Utilities;
+import net.hulan.ksd.utils.DataUtilities;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -123,7 +124,7 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
             KSDRailwayData ksd = KSDRailwayData.getInstance(level);
             RailwayData mtr = RailwayData.getInstance(level);
             if (ksd != null && mtr != null) {
-                FirstClassValidationSystem.tick(ksd, mtr, level, level.players());
+                FirstClassValidationSystem.tick(ksd, mtr, level, DataUtilities.getFilteredListFromDataCollection(level.players(), player -> !player.isSpectator()));
             }
         }));
         mtr.Registry.registerPlayerJoinEvent((player) -> {
@@ -137,7 +138,7 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
             the_nether = server.getLevel(Level.NETHER);
             the_end = server.getLevel(Level.END);
         });
-        Utilities.getInstance().registerCommand();
+        CommandManager.registerCommands();
     }
 
     private static void registerItem(String path, RegistryObject<Item> item) {

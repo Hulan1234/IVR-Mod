@@ -1,13 +1,12 @@
 package net.hulan.ksd.utils;
 
 import mtr.data.NameColorDataBase;
-import net.hulan.ksd.client.KSDClientCache;
-import net.hulan.ksd.data.KSDPlatform;
+import mtr.data.RouteType;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class RailDataUtilities {
@@ -16,18 +15,22 @@ public class RailDataUtilities {
         if (station1 == null || station2 == null) {
             return false;
         }
-        String mainName1 = getMainName(station1);
-        String mainName2 = getMainName(station2);
-        return mainName1.equals(mainName2) && station1.color == station2.color;
+        return Objects.equals(getStationKey(station1), getStationKey(station2));
     }
 
     public static boolean isSameRoute(KSDRoute route1, KSDRoute route2) {
         if (route1 == null || route2 == null) {
             return false;
         }
-        String mainName1 = getMainName(route1);
-        String mainName2 = getMainName(route2);
-        return mainName1.equals(mainName2) && route1.color == route2.color;
+        return Objects.equals(getRouteKey(route1), getRouteKey(route2));
+    }
+
+    public static int stationHashCode(KSDStation station) {
+        return getStationKey(station).hashCode();
+    }
+
+    public static int routeHashCode(KSDRoute route) {
+        return getRouteKey(route).hashCode();
     }
 
     public static String getMainName(@NotNull NameColorDataBase data) {
@@ -38,16 +41,39 @@ public class RailDataUtilities {
         return getMainName(data).split("\\|");
     }
 
-    public static Set<KSDRoute> getRoutesInSameRailNet(KSDClientCache clientCache, KSDRoute route) {
-        Set<KSDStation> stationsInRoute = getStationsInRoute(clientCache, route);
-        Set<KSDRoute> routesInSameRailNet = new HashSet<>();
-        for (KSDStation station : stationsInRoute) {
-            routesInSameRailNet.addAll(DataUtilities.getNonNullSetFromDataCollection(clientCache.stationIdToRoutes.get(station.id)));
-        }
-        return routesInSameRailNet;
+    public static String getStationKey(@NotNull KSDStation station) {
+        return getMainName(station) + "\u0000" + station.color;
     }
 
-    public static Set<KSDStation> getStationsInRoute(KSDClientCache clientCache, KSDRoute route) {
-        return DataUtilities.getMappedAndNonNullSetFromDataCollection(route.platformIds, rp -> clientCache.platformIdToStation.get(rp.platformId));
+    public static String getRouteKey(@NotNull KSDRoute route) {
+        return getMainName(route) + "\u0000" + route.color;
+    }
+
+    public static Set<KSDRoute> getMTRRoutes(Set<KSDRoute> routes) {
+        return DataUtilities.getFilteredSetFromDataCollection(routes, RailDataUtilities::isMTRRoute);
+    }
+
+    public static Set<KSDRoute> getKCRRoutes(Set<KSDRoute> routes) {
+        return DataUtilities.getFilteredSetFromDataCollection(routes, RailDataUtilities::isKCRRoute);
+    }
+
+    public static Set<KSDRoute> getLightRailRoutes(Set<KSDRoute> routes) {
+        return DataUtilities.getFilteredSetFromDataCollection(routes, RailDataUtilities::isLightRailRoute);
+    }
+
+    public static boolean isMTRRoute(KSDRoute route) {
+        return route.routeType.equals(RouteType.NORMAL);
+    }
+
+    public static boolean isKCRRoute(KSDRoute route) {
+        return route.routeType.equals(Utilities.KCR_CLASSICAL) || route.routeType.equals(Utilities.KCR_MODERN);
+    }
+
+    public static boolean isLightRailRoute(KSDRoute route) {
+        return route.routeType.equals(RouteType.LIGHT_RAIL) && route.isLightRailRoute;
+    }
+
+    public static boolean hasFirstClassService(KSDRoute route) {
+        return route.routeType.equals(Utilities.KCR_CLASSICAL) && route.hasFirstClassService;
     }
 }
