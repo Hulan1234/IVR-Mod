@@ -33,6 +33,8 @@ import java.text.AttributedString;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 public class KSDClientCache extends KSDDataCache {
@@ -47,7 +49,8 @@ public class KSDClientCache extends KSDDataCache {
     private final Map<Long, List<ClientCache.PlatformRouteDetails>> platformIdToRoutes = new HashMap<>();
     private final List<Long> clearStationIdToPlatforms = new ArrayList<>();
     private final List<Long> clearPlatformIdToRoutes = new ArrayList<>();
-    private final java.util.List<Runnable> resourceRegistryQueue = new ArrayList<>();
+    private final Queue<Runnable> resourceRegistryQueue = new ConcurrentLinkedQueue<>();
+    private final Set<String> resourcesInFlight = ConcurrentHashMap.newKeySet();
     private static final ResourceLocation DEFAULT_BLACK_RESOURCE = new ResourceLocation("mtr", "textures/block/black.png");
     private static final ResourceLocation DEFAULT_WHITE_RESOURCE = new ResourceLocation("mtr", "textures/block/white.png");
     private static final ResourceLocation DEFAULT_TRANSPARENT_RESOURCE = new ResourceLocation("mtr", "textures/block/transparent.png");
@@ -492,7 +495,7 @@ public class KSDClientCache extends KSDDataCache {
             }
         }
         if (!resourceRegistryQueue.isEmpty()) {
-            Runnable runnable = resourceRegistryQueue.remove(0);
+            Runnable runnable = resourceRegistryQueue.poll();
             if (runnable != null) {
                 runnable.run();
             }
@@ -503,29 +506,32 @@ public class KSDClientCache extends KSDDataCache {
             return dynamicResource;
         } else {
             IVRRouteMapGenerator.setConstants();
-            CompletableFuture.supplyAsync(supplier).thenAccept((nativeImage) -> resourceRegistryQueue.add(() -> {
-                DynamicResource staticTextureProviderOld = dynamicResources.get(key);
-                if (staticTextureProviderOld != null) {
-                    staticTextureProviderOld.remove();
-                }
-                DynamicResource dynamicResourceNew;
-                if (nativeImage == null) {
-                    dynamicResourceNew = defaultRenderingColor.dynamicResource;
-                } else {
-                    DynamicTexture dynamicTexture = new DynamicTexture(nativeImage);
-                    String newKey = key;
-                    try {
-                        newKey = URLEncoder.encode(key, StandardCharsets.UTF_8);
-                    } catch (Exception var10) {
-                        var10.printStackTrace();
+            if (resourcesInFlight.add(key)) {
+                CompletableFuture.supplyAsync(supplier).whenComplete((nativeImage, throwable) -> resourceRegistryQueue.add(() -> {
+                    resourcesInFlight.remove(key);
+                    DynamicResource staticTextureProviderOld = dynamicResources.get(key);
+                    if (staticTextureProviderOld != null) {
+                        staticTextureProviderOld.remove();
                     }
-                    String var10003 = newKey.toLowerCase(Locale.ENGLISH);
-                    ResourceLocation resourceLocation = new ResourceLocation("ivr", "dynamic_texture_" + var10003.replaceAll("[^0-9a-z_]", "_"));
-                    minecraftClient.getTextureManager().register(resourceLocation, dynamicTexture);
-                    dynamicResourceNew = new DynamicResource(resourceLocation, dynamicTexture);
-                }
-                dynamicResources.put(key, dynamicResourceNew);
-            }));
+                    DynamicResource dynamicResourceNew;
+                    if (throwable != null || nativeImage == null) {
+                        dynamicResourceNew = defaultRenderingColor.dynamicResource;
+                    } else {
+                        DynamicTexture dynamicTexture = new DynamicTexture(nativeImage);
+                        String newKey = key;
+                        try {
+                            newKey = URLEncoder.encode(key, StandardCharsets.UTF_8);
+                        } catch (Exception var10) {
+                            var10.printStackTrace();
+                        }
+                        String var10003 = newKey.toLowerCase(Locale.ENGLISH);
+                        ResourceLocation resourceLocation = new ResourceLocation("ivr", "dynamic_texture_" + var10003.replaceAll("[^0-9a-z_]", "_"));
+                        minecraftClient.getTextureManager().register(resourceLocation, dynamicTexture);
+                        dynamicResourceNew = new DynamicResource(resourceLocation, dynamicTexture);
+                    }
+                    dynamicResources.put(key, dynamicResourceNew);
+                }));
+            }
             if (needsRefresh) {
                 resourcesToRefresh.remove(key);
             }

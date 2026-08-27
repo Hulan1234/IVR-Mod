@@ -78,5 +78,6 @@ public interface IVRBlocks {
     RegistryObject<Block> KCR_STATION_NAME_WALL_GRAY = new RegistryObject<>(BlockKCRStationNameWallGray::new);
     RegistryObject<Block> KCR_STATION_NAME_WALL_BLACK = new RegistryObject<>(BlockKCRStationNameWallBlack::new);
     RegistryObject<Block> MODERN_ROUTE = new RegistryObject<>(BlockModernRouteSign::new);
-    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE = new RegistryObject<>(BlockKCRSingleTicketMachine::new);
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(false));
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_WALL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(true));
 }

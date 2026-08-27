@@ -6,10 +6,8 @@ import mtr.data.*;
 import mtr.mappings.Utilities;
 import mtr.packet.PacketTrainDataBase;
 import net.hulan.ivr.block.BlockKCRSingleTicketMachine;
-import net.hulan.ksd.KSDItems;
 import net.hulan.ksd.data.*;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -121,21 +119,14 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         int amount = packet.readInt();
         int payCount = packet.readInt();
         boolean isConcessionary = packet.readBoolean();
-        boolean firstClassAvailable = packet.readBoolean();
+        boolean fcAvailable = packet.readBoolean();
         minecraftServer.execute(() -> {
             Level world = player.level;
             long expiredTime = System.currentTimeMillis() + net.hulan.ksd.utils.Utilities.EXPIRED_TIME;
             if (world.getBlockEntity(machinePos) instanceof BlockKCRSingleTicketMachine.TileEntityKCRSingleTicketMachine entity) {
                 List<ItemStack> items = new ArrayList<>();
                 for (int i = 1; i <= amount; i++) {
-                    ItemStack singleTicketItem = new ItemStack(KSDItems.SINGLE_TICKET.get());
-                    CompoundTag singleTicketNBT = singleTicketItem.getOrCreateTag();
-                    singleTicketNBT.putLong("id", new Random().nextLong());
-                    singleTicketNBT.putInt("fare", fare);
-                    singleTicketNBT.putLong("expired_time", expiredTime);
-                    singleTicketNBT.putBoolean("is_concessionary", isConcessionary);
-                    singleTicketNBT.putBoolean("fc_available", firstClassAvailable);
-                    items.add(singleTicketItem);
+                    items.add(KCRTicketSystem.createSingleTicketItem(fare, expiredTime, isConcessionary, fcAvailable));
                 }
                 switch (paymentMethod) {
                     case EMERALDS -> {

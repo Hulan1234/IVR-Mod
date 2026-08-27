@@ -72,7 +72,6 @@ public class IVRClient implements ClientModInitializer, IVRPacket, IVRBlockEntit
         RegistryClient.registerTileEntityRenderer(KCR_STATION_NAME_WALL_WHITE_TILE_ENTITY.get(), (dispatcher) -> new RenderKCRStationNameTiled<>(dispatcher, false));
         RegistryClient.registerTileEntityRenderer(KCR_STATION_NAME_WALL_GRAY_TILE_ENTITY.get(), (dispatcher) -> new RenderKCRStationNameTiled<>(dispatcher, false));
         RegistryClient.registerTileEntityRenderer(KCR_STATION_NAME_WALL_BLACK_TILE_ENTITY.get(), (dispatcher) -> new RenderKCRStationNameTiled<>(dispatcher, false));
-        RegistryClient.registerTileEntityRenderer(KCR_SINGLE_TICKET_MACHINE_TILE_ENTITY.get(), RenderKCRSingleTicketMachine::new);
         RegistryClient.registerTileEntityRenderer(MODERN_ROUTE_SIGN_TILE_ENTITY.get(), RenderModernRouteSign::new);
         RegistryClient.registerNetworkReceiver(PACKET_OPEN_CLASSICAL_SIGN_SCREEN, packet -> IVRPacketTrainDataGuiClient.openClassicalSignScreenS2C(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(PACKET_OPEN_CLASSICAL_1ODD_SIGN_SCREEN, packet -> IVRPacketTrainDataGuiClient.openClassicalSign1OddScreenS2C(Minecraft.getInstance(), packet));

@@ -2,6 +2,7 @@ package net.hulan.ivr.util;
 
 import mtr.data.TrainClient;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.Camera;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
@@ -52,6 +53,9 @@ public final class TrainRenderOptimize {
      * 规则：< 此距离完全渲染；≥ 此距离完全不渲染（纯距离剔除）。
      */
     public static final double BLOCK_ENTITY_RENDER_DISTANCE = 50.0D;
+
+    /** Conservative fallback FOV used if the client option cannot be read. */
+    private static final double FALLBACK_FOV_TAN_HALF = Math.tan(Math.toRadians(55.0D));
 
     /* -------------------- 公共方法（供 Mixin 调用） -------------------- */
 
@@ -106,6 +110,54 @@ public final class TrainRenderOptimize {
             return null;
         }
         return new Vec3(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D).subtract(cameraPosition());
+    }
+
+    /**
+     * Returns true only when the whole conservative bounding sphere is outside one frustum plane.
+     * A sphere is intentionally used here because the BlockEntity base API has no cross-version
+     * render-bounds method. A false negative keeps an object rendered; a false positive is avoided
+     * by using a deliberately generous radius at the call site.
+     */
+    public static boolean isOutsideFrustum(Vec3 rel, double radius) {
+        if (rel == null) {
+            return true;
+        }
+        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        double yaw = Math.toRadians(camera.getYRot());
+        double pitch = Math.toRadians(camera.getXRot());
+        double cosYaw = Math.cos(yaw);
+        double sinYaw = Math.sin(yaw);
+        double cosPitch = Math.cos(pitch);
+        double sinPitch = Math.sin(pitch);
+        Vec3 forward = new Vec3(-sinYaw * cosPitch, -sinPitch, cosYaw * cosPitch);
+        Vec3 right = new Vec3(-cosYaw, 0.0D, -sinYaw);
+        Vec3 up = right.cross(forward);
+        double tanVertical = getFovTanHalf();
+        double aspect = (double) Minecraft.getInstance().getWindow().getWidth()
+                / Math.max(1.0D, Minecraft.getInstance().getWindow().getHeight());
+        double tanHorizontal = tanVertical * aspect;
+        return isOutsidePlane(right.add(forward.scale(tanHorizontal)).normalize(), 0.0D, rel, radius)
+                || isOutsidePlane(forward.scale(tanHorizontal).subtract(right).normalize(), 0.0D, rel, radius)
+                || isOutsidePlane(up.add(forward.scale(tanVertical)).normalize(), 0.0D, rel, radius)
+                || isOutsidePlane(forward.scale(tanVertical).subtract(up).normalize(), 0.0D, rel, radius)
+                || isOutsidePlane(forward, 0.05D, rel, radius);
+    }
+
+    private static double getFovTanHalf() {
+        try {
+            java.lang.reflect.Field fovField = Minecraft.getInstance().options.getClass().getDeclaredField("fov");
+            fovField.setAccessible(true);
+            Object value = fovField.get(Minecraft.getInstance().options);
+            if (value instanceof Number) {
+                return Math.tan(Math.toRadians(Math.max(70.0D, ((Number) value).doubleValue()) * 0.5D));
+            }
+        } catch (Exception ignored) {
+        }
+        return FALLBACK_FOV_TAN_HALF;
+    }
+
+    private static boolean isOutsidePlane(Vec3 normal, double constant, Vec3 rel, double radius) {
+        return normal.dot(rel) - constant < -radius;
     }
 
     /**

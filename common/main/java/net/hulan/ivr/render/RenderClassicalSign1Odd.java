@@ -9,6 +9,7 @@ import mtr.client.IDrawing;
 import mtr.data.IGui;
 import mtr.mappings.BlockEntityRendererMapper;
 import mtr.mappings.UtilitiesClient;
+import mtr.render.RenderRailwaySign;
 import mtr.render.RenderTrains;
 import mtr.render.StoredMatrixTransformations;
 import net.hulan.ivr.block.BlockClassicalSign;
@@ -54,7 +55,7 @@ public class RenderClassicalSign1Odd<T extends BlockClassicalSign.TileEntityClas
         int backgroundColor = 0;
         for (final String signId : signId1) {
             if (signId != null) {
-                final CustomResources.CustomSign sign = getSign(signId);
+                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId);
                 if (sign != null) {
                     renderBackground = true;
                     if (sign.backgroundColor != 0) {
@@ -129,7 +130,7 @@ public class RenderClassicalSign1Odd<T extends BlockClassicalSign.TileEntityClas
         int backgroundColor = 0;
         for (final String signId : SignId2) {
             if (signId != null) {
-                final CustomResources.CustomSign sign = getSign(signId);
+                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId);
                 if (sign != null) {
                     renderBackground = true;
                     if (sign.backgroundColor != 0) {
@@ -190,20 +191,11 @@ public class RenderClassicalSign1Odd<T extends BlockClassicalSign.TileEntityClas
         return true;
     }
 
-    public static CustomResources.CustomSign getSign(String signId) {
-        try {
-            final BlockRailwaySign.SignType sign = BlockRailwaySign.SignType.valueOf(signId);
-            return new CustomResources.CustomSign(sign.textureId, sign.flipTexture, sign.customText, sign.flipCustomText, sign.small, sign.backgroundColor);
-        } catch (Exception ignored) {
-            return signId == null ? null : CustomResources.CUSTOM_SIGNS.get(signId);
-        }
-    }
-
     public static float getMaxWidth(String[] signIds, int index, boolean right) {
         float maxWidthLeft = 0;
         for (int i = index + (right ? 1 : -1); right ? i < signIds.length : i >= 0; i += (right ? 1 : -1)) {
             if (signIds[i] != null) {
-                final CustomResources.CustomSign sign = RenderClassicalSign.getSign(signIds[i]);
+                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signIds[i]);
                 if (sign != null && sign.hasCustomText() && right == sign.flipCustomText) {
                     maxWidthLeft /= 2;
                 }

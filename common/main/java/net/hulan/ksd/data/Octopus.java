@@ -21,6 +21,7 @@ public class Octopus extends JSONData implements PrintableData {
 
     public final long id;
     public int balance;
+    public boolean isConcessionary;
     public List<History> histories;
     private static final String KEY_BALANCE = "balance";
     private static final String KEY_HISTORY = "histories";
@@ -162,6 +163,7 @@ public class Octopus extends JSONData implements PrintableData {
         public enum TransactionType implements StringRepresentable {
 
             NONE,
+            ADD_VALUE,
             MTR,
             KCR,
             LIGHT_RAIL,

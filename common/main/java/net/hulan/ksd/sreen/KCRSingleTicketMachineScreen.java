@@ -50,12 +50,12 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
         current = KSDRailwayData.getStation(KSDClientData.STATIONS, machinePos);
         railMap = new KCRSingleTicketMachineRailMap(this::onClickedOnDestination, this);
         legend = new KCRSingleTicketMachineLegend(this);
-    }
-
-    protected void init() {
         if (current == null) {
             onClose();
         }
+    }
+
+    protected void init() {
         loadRoutes();
         loadStations();
         int componentHeight = height - RMH_HEADER_HEIGHT;

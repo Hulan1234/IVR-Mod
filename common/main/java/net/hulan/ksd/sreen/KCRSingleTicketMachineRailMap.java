@@ -43,7 +43,6 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
     private static final int RADIUS_PADDING = 8;
     private static final int SEGMENTS = 64;
     private static final float LINE_WIDTH = 5.0F;
-    private static final float LINE_SPACING = 8.0F;
     private static final float STATION_RING_THICKNESS = 1.5F;
     // 站名文字缩放倍数：原版字体行高 9 像素，1.2 倍约等于原动态贴图（10 像素高）的显示效果
     private static final float STATION_NAME_SCALE = 1.2F;
@@ -501,7 +500,10 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                 if (dist(p0, p3) < 0.001) {
                     continue;
                 }
-                List<Tuple<Float, Float>> curve = createNonOverlappingThreePartLine(p0, p3);
+                RailMapStation startStation = railMapStations.get(i);
+                RailMapStation endStation = railMapStations.get(i + 1);
+                // Keep the existing station endpoints, but connect them using MTR Web Map's direction-aware path rules.
+                List<Tuple<Float, Float>> curve = connectWebMapLine(p0, startStation.direction, p3, endStation.direction);
                 drawingLines.add(curve);
                 drawingLineColors.add(getDrawingColor(route));
             }
@@ -807,118 +809,85 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         return argb(route.color);
     }
 
-    // 根据两站圆心连线的正切值，生成水平/斜线/水平或竖直/斜线/竖直的三段线路。
-    private static void addThreePartLine(List<Tuple<Float, Float>> curve, Tuple<Float, Float> start, Tuple<Float, Float> end) {
-        addThreePartLine(curve, start, end, 0.5);
-    }
-
-    private static void addThreePartLine(List<Tuple<Float, Float>> curve, Tuple<Float, Float> start, Tuple<Float, Float> end, double split) {
-        double x1 = start.getA();
-        double y1 = start.getB();
-        double x2 = end.getA();
-        double y2 = end.getB();
-        double dx = x2 - x1;
-        double dy = y2 - y1;
-        double absDx = Math.abs(dx);
-        double absDy = Math.abs(dy);
-
-        curve.add(start);
-
-        // 同列时直接画竖直线，同排时直接画水平线。
-        if (absDx < 0.001 || absDy < 0.001) {
-            curve.add(end);
-            return;
-        }
-
-        double signX = Math.signum(dx);
-        double signY = Math.signum(dy);
-        double tan = absDy / absDx;
-
-        if (tan < 1) {
-            // 两侧为水平线，中间斜线的横向和纵向位移相等。
-            double remaining = absDx - absDy;
-            double firstLength = remaining * split;
-            double lastLength = remaining - firstLength;
-            curve.add(new Tuple<>((float) (x1 + signX * firstLength), (float) y1));
-            curve.add(new Tuple<>((float) (x2 - signX * lastLength), (float) y2));
+    /**
+     * Java port of the MTR Web Map connectLine algorithm. It constructs the connection in the start route's local
+     * direction space, then rotates it back, so 0/45/90/135 degree station directions produce consistent bends.
+     */
+    private static List<Tuple<Float, Float>> connectWebMapLine(Tuple<Float, Float> point1, int direction1,
+                                                                Tuple<Float, Float> point2, int direction2) {
+        List<Tuple<Float, Float>> segments = new ArrayList<>();
+        if (point2.getA() > point1.getA()) {
+            connectWebMapLineForward(point1, direction1, point2, direction2, segments);
         } else {
-            // 两侧为竖直线，中间斜线的横向和纵向位移相等。
-            double remaining = absDy - absDx;
-            double firstLength = remaining * split;
-            double lastLength = remaining - firstLength;
-            curve.add(new Tuple<>((float) x1, (float) (y1 + signY * firstLength)));
-            curve.add(new Tuple<>((float) x2, (float) (y2 - signY * lastLength)));
+            connectWebMapLineForward(point2, direction2, point1, direction1, segments);
         }
-        curve.add(end);
+        return segments;
     }
 
-    /** Chooses the least-conflicting split among valid horizontal/diagonal/vertical three-part paths. */
-    private List<Tuple<Float, Float>> createNonOverlappingThreePartLine(Tuple<Float, Float> start, Tuple<Float, Float> end) {
-        double[] splits = {0.5, 0.25, 0.75, 0, 1};
-        List<Tuple<Float, Float>> best = null;
-        double bestScore = Double.MAX_VALUE;
-        for (double split : splits) {
-            List<Tuple<Float, Float>> candidate = new ArrayList<>();
-            addThreePartLine(candidate, start, end, split);
-            double score = routeOverlapScore(candidate, start, end);
-            if (score < bestScore) {
-                bestScore = score;
-                best = candidate;
+    /** Implements MTR Web Map's connectLine1 using one already-resolved endpoint per route at each station. */
+    private static void connectWebMapLineForward(Tuple<Float, Float> point1, int direction1,
+                                                 Tuple<Float, Float> point2, int direction2,
+                                                 List<Tuple<Float, Float>> segments) {
+        double[] localEnd = rotatePoint(point2.getA() - point1.getA(), point2.getB() - point1.getB(), -direction1);
+        double x = localEnd[0];
+        double y = localEnd[1];
+        int signX = x < 0 ? -1 : 1;
+        int signY = y < 0 ? -1 : 1;
+        double absX = Math.abs(x);
+        double absY = Math.abs(y);
+        int rotatedDirection = Math.floorMod(direction2 - direction1, 180);
+        double halfLineWidth = LINE_WIDTH / 2.0;
+        List<double[]> localPoints = new ArrayList<>();
+        localPoints.add(new double[]{0, 0});
+
+        if (rotatedDirection == 0) {
+            if (absX > absY) {
+                double difference = absY / 2.0;
+                double endOffset = clampWeb(halfLineWidth, difference / 2.0);
+                localPoints.add(new double[]{0, signY * endOffset});
+                localPoints.add(new double[]{signX * difference - signX * endOffset, signY * difference});
+                localPoints.add(new double[]{x - signX * difference + signX * endOffset, signY * difference});
+                localPoints.add(new double[]{x, y - signY * endOffset});
+            } else {
+                double difference = (absY - absX) / 2.0;
+                localPoints.add(new double[]{0, signY * difference});
+                localPoints.add(new double[]{x, y - signY * difference});
             }
+        } else if (absX > absY) {
+            double endOffset = clampWeb(halfLineWidth, absY / 2.0);
+            localPoints.add(new double[]{0, signY * endOffset});
+            if (rotatedDirection == 90) {
+                localPoints.add(new double[]{signX * absY - signX * endOffset, y});
+            } else {
+                double[] finalPoint = rotatePoint(0, clampWeb(halfLineWidth, absX / 2.0), rotatedDirection);
+                int directionSign = direction2 == 45 ? -1 : 1;
+                localPoints.add(new double[]{signX * absY - signX * endOffset + directionSign * signY * finalPoint[0], y + finalPoint[1]});
+                localPoints.add(new double[]{x + finalPoint[0], y + finalPoint[1]});
+            }
+        } else if (rotatedDirection == 90) {
+            double endOffset = clampWeb(halfLineWidth, absX / 2.0);
+            localPoints.add(new double[]{0, y - signY * absX + signX * endOffset});
+            localPoints.add(new double[]{x - signX * endOffset, y});
         }
-        return best == null ? new ArrayList<>() : best;
+
+        localPoints.add(new double[]{x, y});
+        for (double[] localPoint : localPoints) {
+            double[] rotated = rotatePoint(localPoint[0], localPoint[1], direction1);
+            addWebMapPoint(segments, point1.getA() + rotated[0], point1.getB() + rotated[1]);
+        }
     }
 
-    /** Measures a candidate route against previously accepted routes, capsules and station centers. */
-    private double routeOverlapScore(List<Tuple<Float, Float>> candidate, Tuple<Float, Float> start, Tuple<Float, Float> end) {
-        double score = 0;
-        double clearance = LINE_WIDTH + 2;
-        for (int i = 0; i < candidate.size() - 1; i++) {
-            Tuple<Float, Float> a = candidate.get(i);
-            Tuple<Float, Float> b = candidate.get(i + 1);
-            for (List<Tuple<Float, Float>> existing : drawingLines) {
-                for (int j = 0; j < existing.size() - 1; j++) {
-                    // 同一线路或共线换乘在共同端点处正常接续，不视为碰撞。
-                    if (shareEndpoint(a, b, existing.get(j), existing.get(j + 1))) {
-                        continue;
-                    }
-                    double distance = segmentDistance(a, b, existing.get(j), existing.get(j + 1));
-                    if (distance < clearance) {
-                        score += (clearance - distance) * 100;
-                    }
-                }
-            }
-            for (InterchangeCapsule capsule : interchangeCapsules) {
-                if (shareEndpoint(a, b, capsule.start, capsule.end)) {
-                    continue;
-                }
-                double distance = segmentDistance(a, b, capsule.start, capsule.end);
-                double capsuleClearance = RADIUS + LINE_WIDTH / 2 + 2;
-                if (distance < capsuleClearance) {
-                    score += (capsuleClearance - distance) * 100;
-                }
-            }
-            for (Tuple<Float, Float> center : logicalStationCenters) {
-                if (dist(center, start) < 0.001 || dist(center, end) < 0.001) {
-                    continue;
-                }
-                double distance = pointSegmentDistance(center, a, b);
-                if (distance < RADIUS + LINE_WIDTH / 2 + 2) {
-                    score += (RADIUS + LINE_WIDTH / 2 + 2 - distance) * 1000;
-                }
-            }
-        }
-        return score;
+    /** Clamps an offset symmetrically around zero, matching the website's two-argument clamp helper. */
+    private static double clampWeb(double value, double bound) {
+        return Math.max(-bound, Math.min(value, bound));
     }
 
-    /** Returns the shortest distance between two finite line segments. */
-    private static double segmentDistance(Tuple<Float, Float> a1, Tuple<Float, Float> a2,
-                                          Tuple<Float, Float> b1, Tuple<Float, Float> b2) {
-        if (segmentsIntersect(a1, a2, b1, b2)) {
-            return 0;
+    /** Avoids zero-length polyline pieces that otherwise produce visible square artifacts in drawThickLine. */
+    private static void addWebMapPoint(List<Tuple<Float, Float>> points, double x, double y) {
+        Tuple<Float, Float> point = new Tuple<>((float) x, (float) y);
+        if (points.isEmpty() || dist(points.get(points.size() - 1), point) > 0.001) {
+            points.add(point);
         }
-        return Math.min(Math.min(pointSegmentDistance(a1, b1, b2), pointSegmentDistance(a2, b1, b2)),
-                Math.min(pointSegmentDistance(b1, a1, a2), pointSegmentDistance(b2, a1, a2)));
     }
 
     /** Returns the shortest distance between a point and a finite line segment. */
@@ -934,45 +903,6 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         double x = start.getA() + t * dx;
         double y = start.getB() + t * dy;
         return Math.hypot(point.getA() - x, point.getB() - y);
-    }
-
-    /** Detects finite segment intersection, including collinear endpoint contact. */
-    private static boolean segmentsIntersect(Tuple<Float, Float> a1, Tuple<Float, Float> a2,
-                                             Tuple<Float, Float> b1, Tuple<Float, Float> b2) {
-        double d1 = cross(a1, a2, b1);
-        double d2 = cross(a1, a2, b2);
-        double d3 = cross(b1, b2, a1);
-        double d4 = cross(b1, b2, a2);
-        double epsilon = 1E-6;
-        if (((d1 > epsilon && d2 < -epsilon) || (d1 < -epsilon && d2 > epsilon))
-                && ((d3 > epsilon && d4 < -epsilon) || (d3 < -epsilon && d4 > epsilon))) {
-            return true;
-        }
-        return Math.abs(d1) <= epsilon && pointOnSegment(b1, a1, a2)
-                || Math.abs(d2) <= epsilon && pointOnSegment(b2, a1, a2)
-                || Math.abs(d3) <= epsilon && pointOnSegment(a1, b1, b2)
-                || Math.abs(d4) <= epsilon && pointOnSegment(a2, b1, b2);
-    }
-
-    /** Tests whether a collinear point lies inside a finite segment's bounding box. */
-    private static boolean pointOnSegment(Tuple<Float, Float> point, Tuple<Float, Float> start, Tuple<Float, Float> end) {
-        double epsilon = 1E-6;
-        return point.getA() >= Math.min(start.getA(), end.getA()) - epsilon
-                && point.getA() <= Math.max(start.getA(), end.getA()) + epsilon
-                && point.getB() >= Math.min(start.getB(), end.getB()) - epsilon
-                && point.getB() <= Math.max(start.getB(), end.getB()) + epsilon;
-    }
-
-    /** Allows route segments to meet at a shared station endpoint without treating the junction as overlap. */
-    private static boolean shareEndpoint(Tuple<Float, Float> a1, Tuple<Float, Float> a2,
-                                         Tuple<Float, Float> b1, Tuple<Float, Float> b2) {
-        return dist(a1, b1) < 0.001 || dist(a1, b2) < 0.001 || dist(a2, b1) < 0.001 || dist(a2, b2) < 0.001;
-    }
-
-    /** Computes the 2D cross product used by segment intersection tests. */
-    private static double cross(Tuple<Float, Float> start, Tuple<Float, Float> end, Tuple<Float, Float> point) {
-        return (end.getA() - start.getA()) * (point.getB() - start.getB())
-                - (end.getB() - start.getB()) * (point.getA() - start.getA());
     }
 
     public void setPositionAndSize(int x, int y, int width, int height) {

@@ -35,6 +35,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class RenderModernSign<T extends BlockModernSign.TileEntityModernSign> extends BlockEntityRendererMapper<T> implements IBlock, IGui, IDrawing {
 
+    private static final Map<String, CustomResources.CustomSign> BUILT_IN_SIGN_CACHE = new HashMap<>();
+
     public RenderModernSign(BlockEntityRenderDispatcher dispatcher) {
         super(dispatcher);
     }
@@ -300,11 +302,19 @@ public class RenderModernSign<T extends BlockModernSign.TileEntityModernSign> ex
     }
 
     public static CustomResources.CustomSign getSign(String signId) {
+        if (signId == null) {
+            return null;
+        }
         try {
             final BlockRailwaySign.SignType sign = BlockRailwaySign.SignType.valueOf(signId);
-            return new CustomResources.CustomSign(sign.textureId, sign.flipTexture, sign.customText, sign.flipCustomText, sign.small, sign.backgroundColor);
+            CustomResources.CustomSign cached = BUILT_IN_SIGN_CACHE.get(signId);
+            if (cached == null) {
+                cached = new CustomResources.CustomSign(sign.textureId, sign.flipTexture, sign.customText, sign.flipCustomText, sign.small, sign.backgroundColor);
+                BUILT_IN_SIGN_CACHE.put(signId, cached);
+            }
+            return cached;
         } catch (Exception ignored) {
-            return signId == null ? null : CustomResources.CUSTOM_SIGNS.get(signId);
+            return CustomResources.CUSTOM_SIGNS.get(signId);
         }
     }
 

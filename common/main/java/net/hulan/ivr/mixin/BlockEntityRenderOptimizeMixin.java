@@ -7,7 +7,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,13 +17,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *
  * 目的：降低城市密集区（站台 / PSD / PID / 站牌 / 时钟 / 站名牌等）的渲染开销。
  *
- * 规则（纯距离阈值，无任何视觉剔除）：
+ * 规则：
  *   - 距离 < BLOCK_ENTITY_RENDER_DISTANCE（50 格）：完全渲染；
  *   - 距离 ≥ 50 格：完全不渲染。
- * 不做视锥剔除、身后剔除——避免方块实体在屏幕边缘/身后误消失。
+ *   - 只有保守包围球完全在视锥外时才剔除；包围球与视锥有任何交集都保留。
  */
 @Mixin(BlockEntityRenderDispatcher.class)
 public abstract class BlockEntityRenderOptimizeMixin {
+
+    private static final double BLOCK_ENTITY_BOUNDING_RADIUS = 16.0D;
 
     /**
      * 注入到 BlockEntityRenderDispatcher.render 方法开头。
@@ -40,14 +41,15 @@ public abstract class BlockEntityRenderOptimizeMixin {
         // 只优化 MTR 生态的块实体，不影响原版方块实体
         if (blockEntity instanceof BlockEntityMapper) {
             final BlockPos pos = blockEntity.getBlockPos();
-            // 方块中心相对相机的坐标
-            final Vec3 rel = TrainRenderOptimize.toCameraRelative(pos);
+            final net.minecraft.world.phys.Vec3 rel = TrainRenderOptimize.toCameraRelative(pos);
             if (rel == null) {
                 return;
             }
-            // 纯距离剔除：距离 ≥ 50 格不渲染，< 50 格完全渲染
-            final double thresholdSquared = TrainRenderOptimize.BLOCK_ENTITY_RENDER_DISTANCE * TrainRenderOptimize.BLOCK_ENTITY_RENDER_DISTANCE;
-            if (rel.lengthSqr() >= thresholdSquared) {
+            // 距离剔除保留原有阈值；视锥剔除只接受完整包围球在视线外的情况。
+            final double renderDistance = TrainRenderOptimize.BLOCK_ENTITY_RENDER_DISTANCE + BLOCK_ENTITY_BOUNDING_RADIUS;
+            final double thresholdSquared = renderDistance * renderDistance;
+            // A generous sphere makes this conservative: only a completely out-of-view entity is culled.
+            if (rel.lengthSqr() >= thresholdSquared || TrainRenderOptimize.isOutsideFrustum(rel, BLOCK_ENTITY_BOUNDING_RADIUS)) {
                 ci.cancel();
             }
         }

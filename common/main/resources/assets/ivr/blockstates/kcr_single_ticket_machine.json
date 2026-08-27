@@ -1,34 +1,52 @@
 {
   "variants": {
-    "facing=west,stored=false": {
-      "model": "ivr:block/kcr_single_ticket_machine"
-    },
-    "facing=north,stored=false": {
-      "model": "ivr:block/kcr_single_ticket_machine",
-      "y": 90
-    },
-    "facing=east,stored=false": {
-      "model": "ivr:block/kcr_single_ticket_machine",
-      "y": 180
-    },
-    "facing=south,stored=false": {
-      "model": "ivr:block/kcr_single_ticket_machine",
-      "y": 270
-    },
-    "facing=west,stored=true": {
-      "model": "ivr:block/kcr_single_ticket_machine"
-    },
-    "facing=north,stored=true": {
-      "model": "ivr:block/kcr_single_ticket_machine",
-      "y": 90
-    },
-    "facing=east,stored=true": {
-      "model": "ivr:block/kcr_single_ticket_machine",
-      "y": 180
-    },
-    "facing=south,stored=true": {
-      "model": "ivr:block/kcr_single_ticket_machine",
-      "y": 270
-    }
+    "facing=west,side=left,height=down,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_left_bottom" },
+    "facing=west,side=left,height=down,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_left_bottom" },
+    "facing=west,side=left,height=middle,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_left_middle" },
+    "facing=west,side=left,height=middle,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_left_middle" },
+    "facing=west,side=left,height=top,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_left_top" },
+    "facing=west,side=left,height=top,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_left_top" },
+    "facing=west,side=right,height=down,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_right_bottom" },
+    "facing=west,side=right,height=down,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_right_bottom" },
+    "facing=west,side=right,height=middle,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_right_middle" },
+    "facing=west,side=right,height=middle,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_right_middle" },
+    "facing=west,side=right,height=top,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_right_top" },
+    "facing=west,side=right,height=top,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_right_top" },
+    "facing=north,side=left,height=down,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_left_bottom", "y": 90 },
+    "facing=north,side=left,height=down,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_left_bottom", "y": 90 },
+    "facing=north,side=left,height=middle,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_left_middle", "y": 90 },
+    "facing=north,side=left,height=middle,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_left_middle", "y": 90 },
+    "facing=north,side=left,height=top,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_left_top", "y": 90 },
+    "facing=north,side=left,height=top,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_left_top", "y": 90 },
+    "facing=north,side=right,height=down,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_right_bottom", "y": 90 },
+    "facing=north,side=right,height=down,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_right_bottom", "y": 90 },
+    "facing=north,side=right,height=middle,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_right_middle", "y": 90 },
+    "facing=north,side=right,height=middle,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_right_middle", "y": 90 },
+    "facing=north,side=right,height=top,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_right_top", "y": 90 },
+    "facing=north,side=right,height=top,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_right_top", "y": 90 },
+    "facing=east,side=left,height=down,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_left_bottom", "y": 180 },
+    "facing=east,side=left,height=down,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_left_bottom", "y": 180 },
+    "facing=east,side=left,height=middle,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_left_middle", "y": 180 },
+    "facing=east,side=left,height=middle,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_left_middle", "y": 180 },
+    "facing=east,side=left,height=top,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_left_top", "y": 180 },
+    "facing=east,side=left,height=top,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_left_top", "y": 180 },
+    "facing=east,side=right,height=down,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_right_bottom", "y": 180 },
+    "facing=east,side=right,height=down,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_right_bottom", "y": 180 },
+    "facing=east,side=right,height=middle,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_right_middle", "y": 180 },
+    "facing=east,side=right,height=middle,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_right_middle", "y": 180 },
+    "facing=east,side=right,height=top,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_right_top", "y": 180 },
+    "facing=east,side=right,height=top,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_right_top", "y": 180 },
+    "facing=south,side=left,height=down,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_left_bottom", "y": 270 },
+    "facing=south,side=left,height=down,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_left_bottom", "y": 270 },
+    "facing=south,side=left,height=middle,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_left_middle", "y": 270 },
+    "facing=south,side=left,height=middle,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_left_middle", "y": 270 },
+    "facing=south,side=left,height=top,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_left_top", "y": 270 },
+    "facing=south,side=left,height=top,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_left_top", "y": 270 },
+    "facing=south,side=right,height=down,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_right_bottom", "y": 270 },
+    "facing=south,side=right,height=down,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_right_bottom", "y": 270 },
+    "facing=south,side=right,height=middle,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_right_middle", "y": 270 },
+    "facing=south,side=right,height=middle,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_right_middle", "y": 270 },
+    "facing=south,side=right,height=top,stored=false": { "model": "ivr:block/kcr_single_ticket_machine_right_top", "y": 270 },
+    "facing=south,side=right,height=top,stored=true": { "model": "ivr:block/kcr_single_ticket_machine_right_top", "y": 270 }
   }
 }

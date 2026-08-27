@@ -189,12 +189,7 @@ public class RenderModernSign1Odd<T extends BlockModernSign.TileEntityModernSign
     }
 
     public static CustomResources.CustomSign getSign(String signId) {
-        try {
-            final BlockRailwaySign.SignType sign = BlockRailwaySign.SignType.valueOf(signId);
-            return new CustomResources.CustomSign(sign.textureId, sign.flipTexture, sign.customText, sign.flipCustomText, sign.small, sign.backgroundColor);
-        } catch (Exception ignored) {
-            return signId == null ? null : CustomResources.CUSTOM_SIGNS.get(signId);
-        }
+        return RenderModernSign.getSign(signId);
     }
 
     public static float getMaxWidth(String[] signIds, int index, boolean right) {
