@@ -7,6 +7,7 @@ import mtr.mappings.WidgetMapper;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.utils.RailDataUtilities;
 import net.hulan.ksd.utils.RenderUtilities;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.util.Mth;
 
@@ -47,12 +48,15 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
     private static final float CN_SCALE = 1.0F;
     // 线路名英文行缩放
     private static final float EN_SCALE = 0.65F;
+    private static final int OTHER_NETWORK_COLOR = 0xFF808080;
+    private static final int ORANGE_NETWORK_COLOR = 0xFFF98C2B;
 
     public KCRSingleTicketMachineLegend(KCRSingleTicketMachineScreen ticketMachineScreen) {
         this.ticketMachineScreen = ticketMachineScreen;
     }
 
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
+        Gui.fill(matrices, x, y, x + width, y + height, ARGB_WHITE);
         RenderUtilities renderUtilities = RenderUtilities.getInstance();
         // 逐行绘制（跳过已滚出的行，超出面板底部的行不画）
         int startRow = (int) (scrollOffset / ROW_HEIGHT);
@@ -75,15 +79,37 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
 
     public void load(int maxHeight) {
         rows.clear();
+        scrollOffset = 0;
         List<KSDRoute> routeList = new ArrayList<>(ticketMachineScreen.mainRoutes.stream().toList());
         routeList.sort(Comparator.comparing(RailDataUtilities::getMainName));
         for (KSDRoute r : routeList) {
             if (rows.stream().anyMatch(row -> RailDataUtilities.isSameRoute(row.route, r))) {
                 continue;
             }
-            rows.add(new LegendRow(argb(r.color), r.name, r));
+            rows.add(new LegendRow(getMainRouteColor(r), r.name, r, true));
         }
-        height = Math.min(rows.size() * ROW_HEIGHT, height) + PADDING * 2;
+        switch (ticketMachineScreen.railMapType) {
+            case MTR -> {
+                rows.add(new LegendRow(OTHER_NETWORK_COLOR, "九廣鐵路|KCR", null, false));
+                rows.add(new LegendRow(ORANGE_NETWORK_COLOR, "輕鐵|Light Rail", null, false));
+            }
+            case KCR -> {
+                rows.add(new LegendRow(OTHER_NETWORK_COLOR, "地鐵|MTR", null, false));
+                rows.add(new LegendRow(ORANGE_NETWORK_COLOR, "輕鐵|Light Rail", null, false));
+            }
+            case LIGHT_RAIL -> {
+                rows.add(new LegendRow(OTHER_NETWORK_COLOR, "九廣鐵路|KCR", null, false));
+                rows.add(new LegendRow(OTHER_NETWORK_COLOR, "地鐵|MTR", null, false));
+            }
+        }
+        height = Math.min(rows.size() * ROW_HEIGHT + PADDING * 2, maxHeight);
+    }
+
+    private int getMainRouteColor(KSDRoute route) {
+        if (ticketMachineScreen.railMapType == KCRSingleTicketMachineScreen.RailMapType.LIGHT_RAIL) {
+            return ORANGE_NETWORK_COLOR;
+        }
+        return argb(route.color);
     }
 
     // 绘制一行图例：站点圆图像（左右短线+圆环）在左，线路名（中文+英文两行）在右
@@ -93,10 +119,12 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
         float circleY = rowY + ROW_HEIGHT / 2.0F;
         // 先画穿过圆心的水平粗线（颜色与线路一致）
         renderUtilities.drawThickLine(matrices, circleX - RADIUS - STUB_LENGTH, circleY, circleX + RADIUS + STUB_LENGTH, circleY, 2.0F, row.color);
-        // 白色实心圆盖住中间，两侧各露出 3 像素短线
-        renderUtilities.drawStationCircle(matrices, circleX, circleY, RADIUS, 16, RADIUS, ARGB_WHITE);
-        // 线路色圆环
-        renderUtilities.drawStationCircle(matrices, circleX, circleY, RADIUS, 16, RING_THICKNESS, row.color);
+        if (row.drawCircle) {
+            // 白色实心圆盖住中间，两侧各露出 3 像素短线
+            renderUtilities.drawStationCircle(matrices, circleX, circleY, RADIUS, 16, RADIUS, ARGB_WHITE);
+            // 线路色圆环
+            renderUtilities.drawStationCircle(matrices, circleX, circleY, RADIUS, 16, RING_THICKNESS, row.color);
+        }
         // 线路名：中文在上、英文在下，垂直居中于行内
         renderUtilities.drawTextCjk(matrices, row.name, rowX + IMAGE_SIZE + IMAGE_TEXT_GAP, circleY, CN_SCALE, EN_SCALE, ARGB_BLACK);
     }
@@ -232,12 +260,14 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
         final KSDRoute route;
         final int color;
         final String name;
+        final boolean drawCircle;
 
         // 构造器：记录线路对象、颜色与线路名
-        LegendRow(int color, String name, KSDRoute route) {
+        LegendRow(int color, String name, KSDRoute route, boolean drawCircle) {
             this.color = color;
             this.name = name;
             this.route = route;
+            this.drawCircle = drawCircle;
         }
     }
 }

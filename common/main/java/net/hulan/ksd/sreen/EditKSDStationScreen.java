@@ -105,13 +105,13 @@ public class EditKSDStationScreen extends EditNameColorScreenBase<KSDStation> {
         exitParentList.tick();
         exitDestinationList.tick();
 
-        List<DataConverter> exitParents = DataUtilities.getSortedAndMappedListFromDataCollection(data.exits.keySet(), value -> {
+        List<DataConverter> exitParents = DataUtilities.sortAndMapToList(data.exits.keySet(), value -> {
             List<String> destinations = data.exits.get(value);
             String additional = destinations.size() > 1 ? "(+" + (destinations.size() - 1) + ")" : "";
             return new DataConverter(!destinations.isEmpty() ? value + "|" + destinations.get(0) + "|" + additional : value, 0);
         });
         exitParentList.setData(exitParents, false, false, true, false, false, true);
-        List<DataConverter> exitDestinations = parentExists() ? DataUtilities.getMappedListFromDataCollection(data.exits.get(editingExit), value -> new DataConverter(value, 0)) : new ArrayList<>();
+        List<DataConverter> exitDestinations = parentExists() ? DataUtilities.mapToList(data.exits.get(editingExit), value -> new DataConverter(value, 0)) : new ArrayList<>();
         exitDestinationList.setData(exitDestinations, false, false, true, true, false, true);
     }
 
@@ -284,6 +284,6 @@ public class EditKSDStationScreen extends EditNameColorScreenBase<KSDStation> {
     }
 
     private void executeStationUpdate(Consumer<Station> action) {
-        DataUtilities.executeFromDataSet(ClientData.STATIONS, s -> s.id == data.id, action);
+        DataUtilities.execute(ClientData.STATIONS, s -> s.id == data.id, action);
     }
 }

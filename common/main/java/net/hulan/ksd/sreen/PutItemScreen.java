@@ -5,6 +5,7 @@ import mtr.data.IGui;
 import mtr.mappings.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -13,10 +14,6 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Client-side sandbox inventory with vanilla-style left-click pickup, placement, merging and swapping.
- * All slots are copies, so rearranging items never changes the real client inventory or sends server updates.
- */
 public class PutItemScreen extends ScreenMapper implements IGui {
 
     private final String itemKey;
@@ -24,7 +21,6 @@ public class PutItemScreen extends ScreenMapper implements IGui {
     private final int amount;
     private final PutMethod putMethod;
     private final boolean readOnly;
-    private final ScreenMapper parent;
     private final PutCallback callback;
     private final List<PutItemSlot> slots = new ArrayList<>(36);
     private Inventory inventory;
@@ -40,18 +36,17 @@ public class PutItemScreen extends ScreenMapper implements IGui {
     private static final int HOTBAR_TOP = 102;
     private static final int TARGET_SLOT_SIZE = 20;
 
-    public PutItemScreen(String itemKey, Item item, PutMethod putMethod, boolean readOnly, ScreenMapper parent, PutCallback callback) {
-        this(itemKey, item, 1, putMethod, readOnly, parent, callback);
+    public PutItemScreen(String itemKey, Item item, PutMethod putMethod, boolean readOnly, PutCallback callback) {
+        this(itemKey, item, 1, putMethod, readOnly, callback);
     }
 
-    public PutItemScreen(String itemKey, Item item, int amount, PutMethod putMethod, boolean readOnly, ScreenMapper parent, PutCallback callback) {
+    public PutItemScreen(String itemKey, Item item, int amount, PutMethod putMethod, boolean readOnly, PutCallback callback) {
         super(Text.literal(""));
         this.itemKey = itemKey;
         this.item = item;
         this.amount = Math.max(1, amount);
         this.putMethod = putMethod;
         this.readOnly = readOnly;
-        this.parent = parent;
         this.callback = callback;
     }
 
@@ -190,7 +185,6 @@ public class PutItemScreen extends ScreenMapper implements IGui {
         if (readOnly) {
             placedStack = carriedStack.copy();
             returnCarriedStack();
-            runCallback();
             onClose();
         } else {
             int transferred = carriedStack.getCount();
@@ -206,7 +200,6 @@ public class PutItemScreen extends ScreenMapper implements IGui {
                 selectedInventoryIndex = -1;
             }
             if (placedStack.getCount() >= amount) {
-                runCallback();
                 onClose();
             }
         }
@@ -219,11 +212,9 @@ public class PutItemScreen extends ScreenMapper implements IGui {
     }
 
     public void onClose() {
+        runCallback();
         carriedStack = ItemStack.EMPTY;
         placedStack = ItemStack.EMPTY;
-        if (minecraft != null) {
-            UtilitiesClient.setScreen(minecraft, parent);
-        }
     }
 
     private void runCallback() {
@@ -270,8 +261,14 @@ public class PutItemScreen extends ScreenMapper implements IGui {
         return null;
     }
 
-    private String getTitleText() {
-        return putMethod.name() + " " + amount + " x " + item.getDescription().getString();
+    private MutableComponent getTitleText() {
+        return readOnly ?
+                Text.translatable("gui.ksd.read_item", getPutMethodText(), item.getDescription().getString()) :
+                Text.translatable("gui.ksd.put_item", getPutMethodText(), amount, item.getDescription().getString());
+    }
+
+    private MutableComponent getPutMethodText() {
+        return Text.translatable("gui.ksd.put_item_" + putMethod.name().toLowerCase());
     }
 
     /** Resolves itemKey as either an item registry id or a translation/description key. */

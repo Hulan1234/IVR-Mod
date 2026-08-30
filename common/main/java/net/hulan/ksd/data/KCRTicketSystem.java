@@ -24,20 +24,6 @@ public class KCRTicketSystem {
     private static final int BASE_FARE = 2;
     private static final int ZONE_FARE = 1;
 
-    public static ItemStack createSingleTicketItem(int fare, long expiredTime, boolean isConcessionary, boolean fcAvailable) {
-        ItemStack singleTicketItem = new ItemStack(KSDItems.SINGLE_TICKET.get());
-        long id = new Random().nextLong();
-        CompoundTag singleTicketNBT = singleTicketItem.getOrCreateTag();
-        singleTicketNBT.putLong("id", id);
-        singleTicketNBT.putInt("fare", fare);
-        singleTicketNBT.putLong("expired_time", expiredTime);
-        singleTicketNBT.putBoolean("is_concessionary", isConcessionary);
-        singleTicketNBT.putBoolean("fc_available", fcAvailable);
-        return singleTicketItem;
-    }
-
-    public static ItemStack s;
-
     public static TicketSystem.EnumTicketBarrierOpen singleTicketCheck(Level world, Player player, BlockPos pos, ItemStack singleTicketStack, boolean isEntrance) {
         KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
         if (railwayData != null && singleTicketStack.getItem() instanceof ItemSingleTicket) {
@@ -73,11 +59,11 @@ public class KCRTicketSystem {
         KSDStation enteredStation = DataUtilities.getStation(railwayData.stations, enteredStationId);
         if (enteredStation != null) {
             int singleTicketFare = singleTicketTag.getInt("fare");
-            long expiredTime = singleTicketTag.getLong("expired_time");
+            long expireTime = singleTicketTag.getLong("expire_time");
             boolean isConcessionary = singleTicketTag.getBoolean("is_concessionary");
             boolean fcAvailable = singleTicketTag.getBoolean("fc_available");
             int fare = getFare(railwayData.dataCache.wayFinder, enteredStation, exitStation, isConcessionary, fcAvailable);
-            if (System.currentTimeMillis() >= expiredTime) {
+            if (KCRSingleTicketSystem.isExpired(expireTime)) {
                 playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.st_expired");
                 return TicketSystem.EnumTicketBarrierOpen.CLOSED;
             } else if (fare > singleTicketFare){
@@ -97,7 +83,7 @@ public class KCRTicketSystem {
         return TicketSystem.EnumTicketBarrierOpen.CLOSED;
     }
 
-    private static TicketSystem.EnumTicketBarrierOpen octopusCheck(Level world, Player player, BlockPos pos, ItemStack octopusStack, boolean isEntrance) {
+    public static TicketSystem.EnumTicketBarrierOpen octopusCheck(Level world, Player player, BlockPos pos, ItemStack octopusStack, boolean isEntrance) {
         KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
         if (railwayData != null && octopusStack.getItem() instanceof ItemOctopus) {
             KSDStation currentStation = KSDRailwayData.getStation(railwayData.stations, pos);
@@ -133,12 +119,12 @@ public class KCRTicketSystem {
         KSDStation enteredStation = DataUtilities.getStation(railwayData.stations, enteredStationId);
         if (enteredStation != null) {
             int balance = octopusTag.getInt("balance");
-            long expiredTime = octopusTag.getLong("entered_time") + net.hulan.ksd.utils.Utilities.EXPIRED_TIME;
+            long expireTime = octopusTag.getLong("entered_time") + net.hulan.ksd.utils.Utilities.EXPIRE_TIME;
             boolean isConcessionary = octopusTag.getBoolean("is_concessionary");
             boolean fcValidated = octopusTag.getBoolean("fc_validated");
             int fare = getFare(railwayData.dataCache.wayFinder, enteredStation, exitStation, isConcessionary, fcValidated);
-            if (System.currentTimeMillis() >= expiredTime) {
-                playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.st_expired");
+            if (KCRSingleTicketSystem.isExpired(expireTime)) {
+                playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.st_expire");
                 return TicketSystem.EnumTicketBarrierOpen.CLOSED;
             } else if (balance < 0){
                 playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.st_insufficient_octopus");

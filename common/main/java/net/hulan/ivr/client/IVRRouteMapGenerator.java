@@ -31,6 +31,7 @@ public class IVRRouteMapGenerator implements IGui {
     private static final float lightFactor = 0.5f;
     public static final int PIXEL_SCALE = 4;
     private static final int MIN_VERTICAL_SIZE = 5;
+    private static final int MAX_DYNAMIC_TEXTURE_SIZE = 4096; // 限制动态纹理的最大边长。
 
     public static void setConstants() {
         scale = (int)Math.pow(2.0D, Config.dynamicTextureResolution() + 5);
@@ -123,19 +124,22 @@ public class IVRRouteMapGenerator implements IGui {
     }
 
     public static NativeImage generateSingleRowStationName(long platformId, float aspectRatio) {
-        if (aspectRatio <= 0.0F) {
-            return null;
+        if (aspectRatio <= 0.0F || !Float.isFinite(aspectRatio)) { // 拒绝无效的纹理宽高比。
+            return null; // 无效参数时不生成纹理。
         } else {
             try {
                 int[] dimensions = new int[2];
                 byte[] pixels = KSDClientData.DATA_CACHE.getTextPixels(getStationName(platformId).replace("|", " | "), dimensions, fontSizeBig, fontSizeSmall);
                 int padding = dimensions[1] / 2;
-                int height = dimensions[1] + padding;
-                int width = Math.max(Math.round((float)height * aspectRatio), dimensions[0] + padding);
-                NativeImage nativeImage = new NativeImage(NativeImage.Format.RGBA, width, height, false);
-                nativeImage.fillRect(0, 0, width, height, -1);
-                drawString(nativeImage, pixels, width / 2, height / 2, dimensions, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, 0, ARGB_BLACK, false);
-                return nativeImage;
+                int rawHeight = dimensions[1] + padding; // 计算未限制的纹理高度。
+                int rawWidth = Math.max(Math.round((float) rawHeight * aspectRatio), dimensions[0] + padding); // 计算未限制的纹理宽度。
+                int width = Math.min(MAX_DYNAMIC_TEXTURE_SIZE, Math.max(1, rawWidth)); // 将纹理宽度限制在有效范围内。
+                int height = Math.min(MAX_DYNAMIC_TEXTURE_SIZE, Math.max(1, rawHeight)); // 将纹理高度限制在有效范围内。
+                NativeImage nativeImage = new NativeImage(NativeImage.Format.RGBA, width, height, false); // 创建限制尺寸后的图像。
+                nativeImage.fillRect(0, 0, width, height, -1); // 使用白色填充图像背景。
+                drawStringScaled(nativeImage, pixels, width / 2, height / 2, dimensions,
+                        (float) width / rawWidth, (float) height / rawHeight, ARGB_BLACK); // 按限制后的尺寸绘制缩放文字。
+                return nativeImage; // 返回生成完成的站名纹理。
             } catch (Exception var9) {
                 var9.printStackTrace();
                 return null;
@@ -426,21 +430,11 @@ public class IVRRouteMapGenerator implements IGui {
                     rawHeight = rawHeightTotal;
                     extraPadding = 0;
                     yOffset = rawHeightPart;
-                    final int height;
-                    final int width;
-                    final float widthScale;
-                    final float heightScale;
-                    if (rawWidth / rawHeight > aspectRatio) {
-                        width = Math.round(rawWidth * scale);
-                        height = Math.round(width / aspectRatio);
-                        widthScale = 1;
-                        heightScale = height / rawHeight / scale;
-                    } else {
-                        height = Math.round(rawHeight * scale);
-                        width = Math.round(height * aspectRatio);
-                        heightScale = 1;
-                        widthScale = width / rawWidth / scale;
-                    }
+                    final TextureSize textureSize = getTextureSize(rawWidth, rawHeight, aspectRatio); // 计算路线图纹理尺寸和缩放比例。
+                    final int width = textureSize.width; // 获取路线图纹理宽度。
+                    final int height = textureSize.height; // 获取路线图纹理高度。
+                    final float widthScale = textureSize.widthScale; // 获取路线图横向绘制比例。
+                    final float heightScale = textureSize.heightScale; // 获取路线图纵向绘制比例。
                     if (width > 0 && height > 0) {
                         final NativeImage nativeImage = new NativeImage(NativeImage.Format.RGBA, width, height, false);
                         nativeImage.fillRect(0, 0, width, height, ARGB_WHITE);
@@ -683,21 +677,11 @@ public class IVRRouteMapGenerator implements IGui {
                         extraPadding = 0;
                         yOffset = rawHeightPart;
                     }
-                    final int height;
-                    final int width;
-                    final float widthScale;
-                    final float heightScale;
-                    if (rawWidth / rawHeight > aspectRatio) {
-                        width = Math.round(rawWidth * scale);
-                        height = Math.round(width / aspectRatio);
-                        widthScale = 1;
-                        heightScale = height / rawHeight / scale;
-                    } else {
-                        height = Math.round(rawHeight * scale);
-                        width = Math.round(height * aspectRatio);
-                        heightScale = 1;
-                        widthScale = width / rawWidth / scale;
-                    }
+                    final TextureSize textureSize = getTextureSize(rawWidth, rawHeight, aspectRatio); // 计算路线牌纹理尺寸和缩放比例。
+                    final int width = textureSize.width; // 获取路线牌纹理宽度。
+                    final int height = textureSize.height; // 获取路线牌纹理高度。
+                    final float widthScale = textureSize.widthScale; // 获取路线牌横向绘制比例。
+                    final float heightScale = textureSize.heightScale; // 获取路线牌纵向绘制比例。
                     if (width > 0 && height > 0) {
                         final NativeImage nativeImage = new NativeImage(NativeImage.Format.RGBA, width, height, false);
                         nativeImage.fillRect(0, 0, width, height, ARGB_WHITE);
@@ -906,6 +890,35 @@ public class IVRRouteMapGenerator implements IGui {
         IDrawing.drawTexture(matrices, vertexConsumer, Math.max(x, 0.0F), 0.0F, (float)imageWidth * scale + Math.min(x, 0.0F), availableHeight, Math.max(-x, 0.0F) / (float)imageWidth / scale, (float)row / (float)rows, 1.0F, (float)(row + 1) / (float)rows, Direction.UP, -1, 15728880);
     }
 
+    private static TextureSize getTextureSize(float rawWidth, float rawHeight, float aspectRatio) {
+        if (rawWidth <= 0.0F || rawHeight <= 0.0F || aspectRatio <= 0.0F) { // 检查原始尺寸和宽高比是否有效。
+            return new TextureSize(0, 0, 0.0F, 0.0F); // 返回无效尺寸标记。
+        }
+        int width; // 保存目标纹理宽度。
+        int height; // 保存目标纹理高度。
+        float widthScale; // 保存路线图横向缩放比例。
+        float heightScale; // 保存路线图纵向缩放比例。
+        if (rawWidth / rawHeight > aspectRatio) { // 根据目标宽高比选择以宽度或高度为基准缩放。
+            width = Math.round(rawWidth * scale); // 按原始宽度计算纹理宽度。
+            height = Math.round(width / aspectRatio); // 根据宽高比计算纹理高度。
+            widthScale = 1.0F; // 保持横向原始比例。
+            heightScale = (float) height / rawHeight / scale; // 计算纵向缩放比例。
+        } else {
+            height = Math.round(rawHeight * scale); // 按原始高度计算纹理高度。
+            width = Math.round(height * aspectRatio); // 根据宽高比计算纹理宽度。
+            heightScale = 1.0F; // 保持纵向原始比例。
+            widthScale = (float) width / rawWidth / scale; // 计算横向缩放比例。
+        }
+        final float downscale = Math.min(1.0F, Math.min( // 计算不超过最大纹理尺寸的缩放比例。
+                (float) MAX_DYNAMIC_TEXTURE_SIZE / Math.max(1, width),
+                (float) MAX_DYNAMIC_TEXTURE_SIZE / Math.max(1, height)));
+        return new TextureSize( // 返回尺寸和对应的路线图缩放比例。
+                Math.max(1, Math.round(width * downscale)), // 计算限制后的纹理宽度。
+                Math.max(1, Math.round(height * downscale)), // 计算限制后的纹理高度。
+                widthScale * downscale, // 计算限制后的横向绘制比例。
+                heightScale * downscale); // 计算限制后的纵向绘制比例。
+    }
+
     private static void setup(List<Map<Integer, StationPosition>> stationPositions, List<List<Long>> stationsIdLists, int[] colorIndices, float[] bounds, boolean passed, boolean reverse) {
         int passedMultiplier = passed ? -1 : 1;
         int reverseMultiplier = reverse ? -1 : 1;
@@ -966,6 +979,21 @@ public class IVRRouteMapGenerator implements IGui {
 
     private static float getLineOffset(int routeIndex, int[] colorIndices) {
         return (float)lineSpacing / (float)scale * ((float)colorIndices[routeIndex] - (float)colorIndices[colorIndices.length - 1] / 2.0F);
+    }
+
+    private static final class TextureSize {
+
+        private final int width; // 保存纹理宽度。
+        private final int height; // 保存纹理高度。
+        private final float widthScale; // 保存横向绘制缩放比例。
+        private final float heightScale; // 保存纵向绘制缩放比例。
+
+        private TextureSize(int width, int height, float widthScale, float heightScale) {
+            this.width = width; // 保存计算后的宽度。
+            this.height = height; // 保存计算后的高度。
+            this.widthScale = widthScale; // 保存计算后的横向比例。
+            this.heightScale = heightScale; // 保存计算后的纵向比例。
+        }
     }
 
     private static List<Integer> getRouteStream(long platformId, BiConsumer<KSDRoute, Integer> nonTerminatingCallback) {
@@ -1093,6 +1121,26 @@ public class IVRRouteMapGenerator implements IGui {
                 if (drawX == textDimensions[0]) {
                     drawX = 0;
                     ++drawY;
+                }
+            }
+        }
+    }
+
+    private static void drawStringScaled(NativeImage nativeImage, byte[] pixels, int centerX, int centerY, int[] dimensions, float scaleX, float scaleY, int color) {
+        if (pixels == null || dimensions[0] <= 0 || dimensions[1] <= 0 || scaleX <= 0.0F || scaleY <= 0.0F) { // 检查文字像素和缩放参数。
+            return; // 参数无效时跳过文字绘制。
+        }
+        int width = Math.max(1, Math.round(dimensions[0] * scaleX)); // 计算缩放后的文字宽度。
+        int height = Math.max(1, Math.round(dimensions[1] * scaleY)); // 计算缩放后的文字高度。
+        int startX = centerX - width / 2; // 计算文字左边界。
+        int startY = centerY - height / 2; // 计算文字上边界。
+        for (int y = 0; y < height; y++) {
+            int sourceY = Math.min(dimensions[1] - 1, (int) (y / scaleY)); // 将目标 Y 坐标映射回源像素。
+            for (int x = 0; x < width; x++) {
+                int sourceX = Math.min(dimensions[0] - 1, (int) (x / scaleX)); // 将目标 X 坐标映射回源像素。
+                int alpha = pixels[sourceY * dimensions[0] + sourceX] & 255; // 读取源像素透明度。
+                if (alpha > 0) {
+                    blendPixel(nativeImage, startX + x, startY + y, (alpha << 24) | (color & 0xFFFFFF)); // 将有效文字像素混合到目标图像。
                 }
             }
         }

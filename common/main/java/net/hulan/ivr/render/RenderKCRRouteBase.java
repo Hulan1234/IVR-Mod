@@ -69,6 +69,9 @@ public abstract class RenderKCRRouteBase <T extends BlockKCRPSDTop.TileEntityKCR
                     if ((renderType == RenderType.ARROW || renderType == RenderType.ROUTE) && IBlock.getStatePropertySafe(state, SIDE_EXTENDED) != EnumSide.SINGLE) {
                         float width = (float)(leftBlocks + rightBlocks + 1) - this.sidePadding * 2.0F;
                         float height = 1.0F - this.topPadding - this.bottomPadding;
+                        if (!(width > 0.0F) || !(height > 0.0F) || !Float.isFinite(width / height)) { // 防止路线牌动态纹理收到零值或非法宽高比。
+                            return; // 无效尺寸时跳过路线纹理绘制。
+                        }
                         int arrowDirection = IBlock.getStatePropertySafe(state, this.arrowDirectionProperty);
                         ResourceLocation resourceLocation;
                         if (renderType == RenderType.ARROW) {

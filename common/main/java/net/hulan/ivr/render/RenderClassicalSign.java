@@ -60,7 +60,7 @@ public class RenderClassicalSign<T extends BlockClassicalSign.TileEntityClassica
         int backgroundColor = 0;
         for (final String signId : signIds) {
             if (signId != null) {
-                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId);
+                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId); // 使用 MTR 获取经典指示牌定义。
                 if (sign != null) {
                     renderBackground = true;
                     if (sign.backgroundColor != 0) {
@@ -139,7 +139,7 @@ public class RenderClassicalSign<T extends BlockClassicalSign.TileEntityClassica
         if (RenderTrains.shouldNotRender(pos, RenderTrains.maxTrainRenderDistance, facing)) {
             return;
         }
-        final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId);
+        final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId); // 使用 MTR 获取经典指示牌定义。
         if (sign == null) {
             return;
         }
@@ -304,7 +304,7 @@ public class RenderClassicalSign<T extends BlockClassicalSign.TileEntityClassica
         float maxWidthLeft = 0;
         for (int i = index + (right ? 1 : -1); right ? i < signIds.length : i >= 0; i += (right ? 1 : -1)) {
             if (signIds[i] != null) {
-                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signIds[i]);
+                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signIds[i]); // 使用 MTR 获取相邻经典指示牌定义。
                 if (sign != null && sign.hasCustomText() && right == sign.flipCustomText) {
                     maxWidthLeft /= 2;
                 }

@@ -185,7 +185,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
         data.recommendedInterchangeStationId = recommendedInterchangeStationId;
         data.setExtraData(packet -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_ROUTE, packet));
         data.setFirstClassData(packet -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_ROUTE, packet));
-        DataUtilities.executeFromDataSet(ClientData.ROUTES, r -> r.id == data.id, mtrRoute -> {
+        DataUtilities.execute(ClientData.ROUTES, r -> r.id == data.id, mtrRoute -> {
             mtrRoute.name = data.name;
             mtrRoute.color = data.color;
             mtrRoute.routeType = data.routeType;

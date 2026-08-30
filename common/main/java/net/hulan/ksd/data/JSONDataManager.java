@@ -52,11 +52,11 @@ public class JSONDataManager {
     }
 
     public FirstClassPlayer getFirstClassPlayer(UUID uuid) {
-        return DataUtilities.getFilteredValueFromDataSet(fps, f -> f.uuid.equals(uuid));
+        return DataUtilities.getOrNull(fps, f -> f.uuid.equals(uuid));
     }
 
     public Octopus getOctopus(long octopusId) {
-        return DataUtilities.getFilteredValueFromDataSet(octopuses, o -> o.id == octopusId);
+        return DataUtilities.getOrNull(octopuses, o -> o.id == octopusId);
     }
 
     private <T extends JSONData> void loadData(Path path, Function<String, T> instance, Consumer<T> storeData) {

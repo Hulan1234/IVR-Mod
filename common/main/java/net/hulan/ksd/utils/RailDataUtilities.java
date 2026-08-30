@@ -26,7 +26,7 @@ public class RailDataUtilities {
     }
 
     public static int stationHashCode(KSDStation station) {
-        return getStationKey(station).hashCode();
+        return station != null? getStationKey(station).hashCode() : 0;
     }
 
     public static int routeHashCode(KSDRoute route) {
@@ -50,15 +50,15 @@ public class RailDataUtilities {
     }
 
     public static Set<KSDRoute> getMTRRoutes(Set<KSDRoute> routes) {
-        return DataUtilities.getFilteredSetFromDataCollection(routes, RailDataUtilities::isMTRRoute);
+        return DataUtilities.filterToSet(routes, RailDataUtilities::isMTRRoute);
     }
 
     public static Set<KSDRoute> getKCRRoutes(Set<KSDRoute> routes) {
-        return DataUtilities.getFilteredSetFromDataCollection(routes, RailDataUtilities::isKCRRoute);
+        return DataUtilities.filterToSet(routes, RailDataUtilities::isKCRRoute);
     }
 
     public static Set<KSDRoute> getLightRailRoutes(Set<KSDRoute> routes) {
-        return DataUtilities.getFilteredSetFromDataCollection(routes, RailDataUtilities::isLightRailRoute);
+        return DataUtilities.filterToSet(routes, RailDataUtilities::isLightRailRoute);
     }
 
     public static boolean isMTRRoute(KSDRoute route) {

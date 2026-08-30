@@ -9,6 +9,7 @@ import mtr.client.IDrawing;
 import mtr.data.IGui;
 import mtr.mappings.BlockEntityRendererMapper;
 import mtr.mappings.UtilitiesClient;
+import mtr.render.RenderRailwaySign;
 import mtr.render.RenderTrains;
 import mtr.render.StoredMatrixTransformations;
 import net.hulan.ivr.block.BlockModernSign;
@@ -52,7 +53,7 @@ public class RenderModernSign1Odd<T extends BlockModernSign.TileEntityModernSign
         int backgroundColor = 0;
         for (final String signId : signId1) {
             if (signId != null) {
-                final CustomResources.CustomSign sign = getSign(signId);
+                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId); // 使用 MTR 获取第一面指示牌定义。
                 if (sign != null) {
                     renderBackground = true;
                     if (sign.backgroundColor != 0) {
@@ -127,7 +128,7 @@ public class RenderModernSign1Odd<T extends BlockModernSign.TileEntityModernSign
         int backgroundColor = 0;
         for (final String signId : SignId2) {
             if (signId != null) {
-                final CustomResources.CustomSign sign = getSign(signId);
+                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId); // 使用 MTR 获取第二面指示牌定义。
                 if (sign != null) {
                     renderBackground = true;
                     if (sign.backgroundColor != 0) {
@@ -188,15 +189,11 @@ public class RenderModernSign1Odd<T extends BlockModernSign.TileEntityModernSign
         return true;
     }
 
-    public static CustomResources.CustomSign getSign(String signId) {
-        return RenderModernSign.getSign(signId);
-    }
-
     public static float getMaxWidth(String[] signIds, int index, boolean right) {
         float maxWidthLeft = 0;
         for (int i = index + (right ? 1 : -1); right ? i < signIds.length : i >= 0; i += (right ? 1 : -1)) {
             if (signIds[i] != null) {
-                final CustomResources.CustomSign sign = RenderModernSign.getSign(signIds[i]);
+                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signIds[i]); // 使用 MTR 获取相邻指示牌定义。
                 if (sign != null && sign.hasCustomText() && right == sign.flipCustomText) {
                     maxWidthLeft /= 2;
                 }

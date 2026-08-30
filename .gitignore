@@ -122,3 +122,4 @@ run/
 *.ai
 *.psd
 *.psb
+/.gradle-codex/

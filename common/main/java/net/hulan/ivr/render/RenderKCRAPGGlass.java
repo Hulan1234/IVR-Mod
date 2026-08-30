@@ -44,6 +44,9 @@ public class RenderKCRAPGGlass extends RenderKCRRouteBase<BlockKCRAPGGlass.TileE
             });
             float width = (float)(leftBlocks + rightBlocks + 1) - sidePadding * 2.0F;
             float height = 1.0F - topPadding - bottomPadding;
+            if (!(width > 0.0F) || !(height > 0.0F) || !Float.isFinite(width / height)) { // 防止无效宽高比进入 APG 动态纹理生成。
+                return; // 无效尺寸时跳过附加纹理绘制。
+            }
             RenderTrains.scheduleRender(KSDClientData.DATA_CACHE.getSingleRowStationName(platformId, width / height).resourceLocation, false, RenderTrains.QueuedRenderLayer.EXTERIOR, (matrices, vertexConsumer) -> {
                 storedMatrixTransformations.transform(matrices);
                 IDrawing.drawTexture(matrices, vertexConsumer, 1.0F - (rightBlocks == 0 ? sidePadding : 0.0F), this.topPadding, 0.125F, leftBlocks == 0 ? this.sidePadding : 0.0F, 1.0F - this.bottomPadding, 0.125F, ((float)rightBlocks - (rightBlocks == 0 ? 0.0F : this.sidePadding)) / width, 0.0F, (width - (float)leftBlocks + (leftBlocks == 0 ? 0.0F : this.sidePadding)) / width, 1.0F, facing, color, light);

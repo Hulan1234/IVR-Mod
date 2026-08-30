@@ -7,5 +7,6 @@ public class CommandManager {
     public static void registerCommands() {
         Utilities utilities = Utilities.getInstance();
         utilities.registerCommand(CommandTest.register());
+        utilities.registerCommand(CommandAdjustFare.register());
     }
 }

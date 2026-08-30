@@ -167,7 +167,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
                     if (editingRoute == null) {
                         dashboardList.setData(ClientData.getFilteredDataSet(TransportMode.TRAIN, KSDClientData.ROUTES), false, true, true, false, false, true);
                     } else {
-                        final List<DataConverter> routeData = DataUtilities.getMappedAndNonNullListFromDataCollection(editingRoute.platformIds, platformId -> {
+                        final List<DataConverter> routeData = DataUtilities.mapAndNonNullToList(editingRoute.platformIds, platformId -> {
                             final KSDPlatform platform = KSDClientData.DATA_CACHE.platformIdMap.get(platformId.platformId);
                             if (platform == null) {
                                 return null;
@@ -466,13 +466,13 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
 
     private void executeStationUpdate(Consumer<Station> action) {
         if (editingStation != null) {
-            DataUtilities.executeFromDataSet(ClientData.STATIONS, s -> s.id == editingStation.id, action);
+            DataUtilities.execute(ClientData.STATIONS, s -> s.id == editingStation.id, action);
         }
     }
 
     private void executeRouteUpdate(Consumer<Route> action) {
         if (editingRoute != null) {
-            DataUtilities.executeFromDataSet(ClientData.ROUTES, r -> r.id == editingRoute.id, action);
+            DataUtilities.execute(ClientData.ROUTES, r -> r.id == editingRoute.id, action);
         }
     }
 

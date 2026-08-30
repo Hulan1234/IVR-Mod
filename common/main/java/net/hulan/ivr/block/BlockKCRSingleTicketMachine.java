@@ -4,6 +4,7 @@ import mtr.block.IBlock;
 import mtr.mappings.*;
 import net.hulan.ivr.IVRBlockEntityTypes;
 import net.hulan.ksd.packet.KSDPacketServer;
+import net.hulan.ksd.sreen.KCRSingleTicketMachineScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -42,13 +43,15 @@ public class BlockKCRSingleTicketMachine extends BlockDirectionalMapper implemen
     private static final BooleanProperty STORED = BooleanProperty.create("stored");
     public static final EnumProperty<Side> SIDE = EnumProperty.create("side", Side.class);
     public static final EnumProperty<Height> HEIGHT = EnumProperty.create("height", Height.class);
+    public final KCRSingleTicketMachineScreen.RailMapType railMapType;
     public final boolean isWall;
 
-    public BlockKCRSingleTicketMachine(boolean isWall) {
-        super(BlockBehaviour.Properties.of(Material.METAL, MaterialColor.COLOR_GRAY)
+    public BlockKCRSingleTicketMachine(KCRSingleTicketMachineScreen.RailMapType railMapType, boolean isWall) {
+        super(Properties.of(Material.METAL, MaterialColor.COLOR_GRAY)
                 .requiresCorrectToolForDrops()
                 .strength(2)
                 .lightLevel(state -> 14));
+        this.railMapType = railMapType;
         this.isWall = isWall;
         registerDefaultState(defaultBlockState().setValue(STORED, false).setValue(SIDE, Side.LEFT).setValue(HEIGHT, Height.DOWN));
     }
@@ -58,7 +61,7 @@ public class BlockKCRSingleTicketMachine extends BlockDirectionalMapper implemen
         BlockPos leftBottomPos = getLeftBottomPos(blockState, pos);
         if (!world.isClientSide) {
             if (!isLeftBottom(blockState) || (isLeftBottom(blockState) && !IBlock.getStatePropertySafe(blockState, STORED))) {
-                KSDPacketServer.openKCRTicketMachineScreenS2C((ServerPlayer) player, leftBottomPos);
+                KSDPacketServer.openKCRTicketMachineScreenS2C((ServerPlayer) player, railMapType, leftBottomPos);
             } else {
                 BlockEntity entity = world.getBlockEntity(leftBottomPos);
                 if (entity instanceof TileEntityKCRSingleTicketMachine stmEntity) {
@@ -77,7 +80,7 @@ public class BlockKCRSingleTicketMachine extends BlockDirectionalMapper implemen
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction facing = context.getHorizontalDirection().getClockWise();
         return IBlock.isReplaceable(context, Direction.UP, 3)
-                && canPlaceParts(context.getLevel(), context.getClickedPos(), facing) ?
+                && canBePlaced(context.getLevel(), context.getClickedPos(), facing) ?
                 defaultBlockState()
                 .setValue(FACING, facing)
                 .setValue(SIDE, Side.LEFT)
@@ -105,7 +108,7 @@ public class BlockKCRSingleTicketMachine extends BlockDirectionalMapper implemen
     public void setPlacedBy(Level world, BlockPos pos, BlockState state, LivingEntity placer, ItemStack itemStack) {
         if (!world.isClientSide) {
             Direction widthDirection = IBlock.getStatePropertySafe(state, FACING);
-            if (!canPlaceParts(world, pos, widthDirection)) {
+            if (!canBePlaced(world, pos, widthDirection)) {
                 world.removeBlock(pos, false);
                 return;
             }
@@ -126,14 +129,13 @@ public class BlockKCRSingleTicketMachine extends BlockDirectionalMapper implemen
         super.setPlacedBy(world, pos, state, placer, itemStack);
     }
 
-    /** Checks the five secondary positions again immediately before setPlacedBy writes them. */
-    private boolean canPlaceParts(Level world, BlockPos anchor, Direction widthDirection) {
+    private boolean canBePlaced(Level world, BlockPos leftBottom, Direction widthDirection) {
         for (Side side : Side.values()) {
             for (Height height : Height.values()) {
                 if (side == Side.LEFT && height == Height.DOWN) {
                     continue;
                 }
-                BlockPos partPos = anchor.relative(widthDirection, side == Side.RIGHT ? 1 : 0).above(height.offset);
+                BlockPos partPos = leftBottom.relative(widthDirection, side == Side.RIGHT ? 1 : 0).above(height.offset);
                 if (!world.getBlockState(partPos).getMaterial().isReplaceable()) {
                     return false;
                 }
@@ -144,11 +146,8 @@ public class BlockKCRSingleTicketMachine extends BlockDirectionalMapper implemen
 
     @SuppressWarnings("deprecation")
     public @NotNull VoxelShape getShape(BlockState blockState, BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext) {
-        double minY = switch (blockState.getValue(HEIGHT)) {
-            case DOWN -> isWall ? 10 : -1;
-            case MIDDLE, TOP -> 0;
-        };
-        Direction shapeDirection = IBlock.getStatePropertySafe(blockState, FACING).getCounterClockWise();
+        Direction shapeDirection = IBlock.getStatePropertySafe(blockState, FACING).getClockWise();
+        double minY = (blockState.getValue(HEIGHT) == Height.DOWN) && isWall ? 10 : 0;
         double minZ = blockState.getValue(HEIGHT) == Height.TOP ? -2.26898 : -0.1;
         return IBlock.getVoxelShapeByDirection(0, minY, minZ, 16, 16, 11.9, shapeDirection);
     }
@@ -206,15 +205,25 @@ public class BlockKCRSingleTicketMachine extends BlockDirectionalMapper implemen
 
     @Override
     public BlockEntityMapper createBlockEntity(BlockPos blockPos, BlockState blockState) {
-        return isLeftBottom(blockState) ? new TileEntityKCRSingleTicketMachine(isWall, blockPos, blockState) : null;
+        return isLeftBottom(blockState) ? new TileEntityKCRSingleTicketMachine(railMapType, isWall, blockPos, blockState) : null;
     }
 
-    public static class TileEntityKCRSingleTicketMachine extends BlockEntityClientSerializableMapper {
+    public static class TileEntityKCRSingleTicketMachine extends BlockEntityClientSerializableMapper implements StorableBlockEntity {
 
         private final List<ItemStack> items = new ArrayList<>();
 
-        public TileEntityKCRSingleTicketMachine(boolean isWall, BlockPos blockPos, BlockState blockState) {
-            super(isWall ? IVRBlockEntityTypes.KCR_SINGLE_TICKET_MACHINE_WALL_TILE_ENTITY.get() : IVRBlockEntityTypes.KCR_SINGLE_TICKET_MACHINE_TILE_ENTITY.get(),
+        public TileEntityKCRSingleTicketMachine(KCRSingleTicketMachineScreen.RailMapType railMapType, boolean isWall, BlockPos blockPos, BlockState blockState) {
+            super(switch (railMapType) {
+                        case MTR -> isWall ?
+                                IVRBlockEntityTypes.KCR_SINGLE_TICKET_MACHINE_MTR_WALL_TILE_ENTITY.get() :
+                                IVRBlockEntityTypes.KCR_SINGLE_TICKET_MACHINE_MTR_TILE_ENTITY.get();
+                        case KCR ->isWall ?
+                                IVRBlockEntityTypes.KCR_SINGLE_TICKET_MACHINE_KCR_WALL_TILE_ENTITY.get() :
+                                IVRBlockEntityTypes.KCR_SINGLE_TICKET_MACHINE_KCR_TILE_ENTITY.get();
+                        case LIGHT_RAIL -> isWall ?
+                                IVRBlockEntityTypes.KCR_SINGLE_TICKET_MACHINE_LIGHT_RAIL_TILE_ENTITY.get() :
+                                IVRBlockEntityTypes.KCR_SINGLE_TICKET_MACHINE_LIGHT_RAIL_WALL_TILE_ENTITY.get();
+                    },
                     blockPos,
                     blockState);
         }
