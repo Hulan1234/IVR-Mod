@@ -40,6 +40,7 @@ public abstract class DynamicResourceRemoveMixin {
      * 与 MTR 原版逻辑一致：跳过默认资源（黑/白/透明），否则
      * release(texture) + getTexture().releaseId() + close()。
      * 默认资源判断通过 resourceLocation 的命名空间/路径前缀判断（避免访问外层 private 字段）。
+     * @author
      */
     @Overwrite(remap = false)
     private void remove() {

@@ -55,7 +55,7 @@ public class RenderClassicalSign1Odd<T extends BlockClassicalSign.TileEntityClas
         int backgroundColor = 0;
         for (final String signId : signId1) {
             if (signId != null) {
-                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId);
+                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId); // 使用 MTR 获取第一面经典指示牌定义。
                 if (sign != null) {
                     renderBackground = true;
                     if (sign.backgroundColor != 0) {
@@ -130,7 +130,7 @@ public class RenderClassicalSign1Odd<T extends BlockClassicalSign.TileEntityClas
         int backgroundColor = 0;
         for (final String signId : SignId2) {
             if (signId != null) {
-                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId);
+                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId); // 使用 MTR 获取第二面经典指示牌定义。
                 if (sign != null) {
                     renderBackground = true;
                     if (sign.backgroundColor != 0) {
@@ -195,7 +195,7 @@ public class RenderClassicalSign1Odd<T extends BlockClassicalSign.TileEntityClas
         float maxWidthLeft = 0;
         for (int i = index + (right ? 1 : -1); right ? i < signIds.length : i >= 0; i += (right ? 1 : -1)) {
             if (signIds[i] != null) {
-                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signIds[i]);
+                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signIds[i]); // 使用 MTR 获取相邻经典指示牌定义。
                 if (sign != null && sign.hasCustomText() && right == sign.flipCustomText) {
                     maxWidthLeft /= 2;
                 }

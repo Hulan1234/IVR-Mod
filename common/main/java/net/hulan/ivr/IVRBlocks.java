@@ -4,6 +4,7 @@ import mtr.RegistryObject;
 import mtr.block.BlockStationColor;
 import mtr.block.BlockStationColorSlab;
 import net.hulan.ivr.block.*;
+import net.hulan.ksd.sreen.KCRSingleTicketMachineScreen;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SlabBlock;
@@ -78,6 +79,10 @@ public interface IVRBlocks {
     RegistryObject<Block> KCR_STATION_NAME_WALL_GRAY = new RegistryObject<>(BlockKCRStationNameWallGray::new);
     RegistryObject<Block> KCR_STATION_NAME_WALL_BLACK = new RegistryObject<>(BlockKCRStationNameWallBlack::new);
     RegistryObject<Block> MODERN_ROUTE = new RegistryObject<>(BlockModernRouteSign::new);
-    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(false));
-    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_WALL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(true));
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_MTR = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(KCRSingleTicketMachineScreen.RailMapType.MTR, false));
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_KCR = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(KCRSingleTicketMachineScreen.RailMapType.KCR, false));
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_LIGHT_RAIL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(KCRSingleTicketMachineScreen.RailMapType.LIGHT_RAIL, false));
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_MTR_WALL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(KCRSingleTicketMachineScreen.RailMapType.MTR, true));
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_KCR_WALL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(KCRSingleTicketMachineScreen.RailMapType.KCR, true));
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_LIGHT_RAIL_WALL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(KCRSingleTicketMachineScreen.RailMapType.LIGHT_RAIL, true));
 }

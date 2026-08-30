@@ -1,7 +1,7 @@
 package net.hulan.ivr.mixin;
 
 import mtr.data.LiftClient;
-import net.hulan.ivr.util.TrainRenderOptimize;
+import net.hulan.ivr.utils.TrainRenderOptimize;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;

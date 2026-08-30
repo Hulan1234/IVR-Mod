@@ -15,21 +15,23 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 import java.util.Set;
 
 public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
 
+    public final RailMapType railMapType;
+    private final KSDStation current;
+    public final BlockPos machinePos;
+    private final int balance;
     final Set<KSDRoute> mainRoutes = new HashSet<>();
     final Set<KSDRoute> otherRoutes = new HashSet<>();
     final Set<KSDRoute> lightRailRoutes = new HashSet<>();
     final Set<KSDStation> mainStations = new HashSet<>();
     final Set<KSDStation> otherStations = new HashSet<>();
     final Set<KSDStation> lightRailStations = new HashSet<>();
-    public final BlockPos machinePos;
-    private final int balance;
-    private final KSDStation current;
     private final KCRSingleTicketMachineRailMap railMap;
     private final KCRSingleTicketMachineLegend legend;
     private static final String RMH_CHI = "路線圖";
@@ -43,16 +45,14 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
     private static final int RGB_HEADER_BLUE = 0x004684;
     private static final int LEGEND_WIDTH = 100;
 
-    public KCRSingleTicketMachineScreen(BlockPos machinePos, int balance) {
+    public KCRSingleTicketMachineScreen(RailMapType railMapType, @NotNull KSDStation current, BlockPos machinePos, int balance) {
         super(Text.literal(""));
+        this.railMapType = railMapType;
+        this.current = current;
         this.machinePos = machinePos;
         this.balance = balance;
-        current = KSDRailwayData.getStation(KSDClientData.STATIONS, machinePos);
-        railMap = new KCRSingleTicketMachineRailMap(this::onClickedOnDestination, this);
+        railMap = new KCRSingleTicketMachineRailMap(this::onClickedOnDestination, railMapType, current);
         legend = new KCRSingleTicketMachineLegend(this);
-        if (current == null) {
-            onClose();
-        }
     }
 
     protected void init() {
@@ -91,9 +91,23 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
         Set<KSDRoute> mtr = RailDataUtilities.getMTRRoutes(routesInNetwork);
         Set<KSDRoute> kcr = RailDataUtilities.getKCRRoutes(routesInNetwork);
         Set<KSDRoute> lightRails = RailDataUtilities.getLightRailRoutes(routesInNetwork);
-        mainRoutes.addAll(kcr);
-        otherRoutes.addAll(mtr);
-        lightRailRoutes.addAll(lightRails);
+        switch (railMapType) {
+            case MTR -> {
+                mainRoutes.addAll(mtr);
+                otherRoutes.addAll(kcr);
+                lightRailRoutes.addAll(lightRails);
+            }
+            case KCR -> {
+                mainRoutes.addAll(kcr);
+                otherRoutes.addAll(mtr);
+                lightRailRoutes.addAll(lightRails);
+            }
+            case LIGHT_RAIL -> {
+                mainRoutes.addAll(lightRails);
+                otherRoutes.addAll(kcr);
+                otherRoutes.addAll(mtr);
+            }
+        }
     }
 
     private void loadStations() {
@@ -130,7 +144,7 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
         RMH_ENG_WIDTH = RenderUtilities.getInstance().getTextWidth(RMH_ENG, RMH_ENG_HEIGHT / Minecraft.getInstance().font.lineHeight);
     }
 
-    public enum screenType {
+    public enum RailMapType {
         MTR,
         KCR,
         LIGHT_RAIL,

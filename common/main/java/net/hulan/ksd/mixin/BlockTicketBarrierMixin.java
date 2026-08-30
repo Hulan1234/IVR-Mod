@@ -6,10 +6,13 @@ import mtr.data.TicketSystem;
 import mtr.mappings.BlockDirectionalMapper;
 import net.hulan.ksd.KSDItems;
 import net.hulan.ksd.data.KCRTicketSystem;
+import net.hulan.ksd.item.ItemOctopus;
+import net.hulan.ksd.item.ItemSingleTicket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
@@ -41,14 +44,22 @@ public class BlockTicketBarrierMixin extends BlockDirectionalMapper {
 
     @SuppressWarnings("deprecation")
     public @NotNull InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
-        return IBlock.checkHoldingItem(world, player, item -> {
-            if (!world.isClientSide) {
-                TicketSystem.EnumTicketBarrierOpen canOpen = KCRTicketSystem.singleTicketCheck(world, player, pos, player.getItemInHand(interactionHand), isEntrance);
+        if (!world.isClientSide) {
+            ItemStack itemInHand = player.getItemInHand(interactionHand);
+            if (itemInHand.getItem() instanceof ItemSingleTicket) {
+                TicketSystem.EnumTicketBarrierOpen canOpen = KCRTicketSystem.singleTicketCheck(world, player, pos, itemInHand, isEntrance, !isEntrance);
+                world.setBlockAndUpdate(pos, state.setValue(OPEN, canOpen));
+                if (canOpen.isOpen() && !world.getBlockTicks().hasScheduledTick(pos, this)) {
+                    mtr.mappings.Utilities.scheduleBlockTick(world, pos, this, 40);
+                }
+            } else if (itemInHand.getItem() instanceof ItemOctopus) {
+                TicketSystem.EnumTicketBarrierOpen canOpen = KCRTicketSystem.octopusCheck(world, player, pos, itemInHand, isEntrance, !isEntrance);
                 world.setBlockAndUpdate(pos, state.setValue(OPEN, canOpen));
                 if (canOpen.isOpen() && !world.getBlockTicks().hasScheduledTick(pos, this)) {
                     mtr.mappings.Utilities.scheduleBlockTick(world, pos, this, 40);
                 }
             }
-        }, null, KSDItems.SINGLE_TICKET.get());
+        }
+        return InteractionResult.SUCCESS;
     }
 }

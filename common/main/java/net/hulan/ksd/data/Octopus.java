@@ -5,6 +5,7 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonWriter;
 import mtr.data.EnumHelper;
 import mtr.mappings.Text;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,25 +15,27 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
+import java.util.UUID;
 
 public class Octopus extends JSONData implements PrintableData {
 
-    public final long id;
+    public final UUID uuid;
     public int balance;
     public boolean isConcessionary;
     public List<History> histories;
+    private static final String KEY_UUID = "uuid";
     private static final String KEY_BALANCE = "balance";
     private static final String KEY_HISTORY = "histories";
 
     public Octopus(String id) {
-        this.id = parseId(id, Long::parseLong, () -> new Random().nextLong());
+        this.uuid = parseId(id, UUID::fromString, UUID::randomUUID);
     }
 
     public Octopus() {
-        id = new Random().nextLong();
-        histories = new ArrayList<>(20);
+        uuid = UUID.randomUUID();
+        histories = new ArrayList<>();
     }
 
     @Override
@@ -62,18 +65,18 @@ public class Octopus extends JSONData implements PrintableData {
 
     @Override
     public String getId() {
-        return String.valueOf(id);
+        return uuid.toString();
     }
 
     @Override
     public int hashCode() {
-        return Long.hashCode(id);
+        return uuid.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Octopus octopus) {
-            return octopus.id == id;
+            return octopus.uuid == uuid;
         }
         return false;
     }
@@ -81,39 +84,50 @@ public class Octopus extends JSONData implements PrintableData {
     @Override
     public String getPrintedData() {
         StringBuilder printed = new StringBuilder();
-        printed.append(Text.translatable("gui.ksd.balance", balance)).append("\n");
-        printed.append(Text.translatable("gui.ksd.histories")).append("\n");
+        printed.append(Text.translatable("gui.ksd.pd_balance", balance).getString()).append("\n");
+        printed.append(Text.translatable("gui.ksd.pd_histories").getString()).append("\n");
         for (History history : histories) {
             printed.append("\t").append(history.getPrintedData());
         }
         return printed.toString();
     }
 
-    public void addBalance(int balance) {
+    public void addBalance(int balance, History.TransactionType source) {
         this.balance += balance;
+        addHistory(balance, source);
     }
 
-    public void decBalance(int balance) {
-        this.balance -= balance;
+    public void addHistory(int change, History.TransactionType source) {
+        History history = new History(uuid, change, source);
+        histories.sort(Comparator.comparingLong(h -> h.time));
+        if (histories.size() >= 50) {
+            histories.remove(0);
+        }
+        histories.add(history);
+    }
+
+    public void toNBT(CompoundTag tag) {
+        tag.putUUID(KEY_UUID, uuid);
+        tag.putInt(KEY_BALANCE, balance);
+        tag.putBoolean(KEY_HISTORY, isConcessionary);
     }
 
     public static class History extends JSONData implements PrintableData {
 
-        public final long cardId;
+        public final UUID cardUUID;
         public long time;
         public TransactionType transactionType;
         public long count;
         private static final String KEY_TIME = "time";
         private static final String KEY_AMOUNT = "amount";
-        private static final String KEY_BALANCE = "balance";
         private static final String KEY_TRANSACTION_TYPE = "transaction_type";
 
-        public History(String cardId) {
-            this.cardId = parseId(cardId, Long::parseLong, () -> new Random().nextLong());
+        public History(String id) {
+            this.cardUUID = parseId(id, UUID::fromString, UUID::randomUUID);
         }
 
-        public History(long carId, long count, TransactionType transactionType) {
-            this.cardId = carId;
+        public History(UUID cardUUID, long count, TransactionType transactionType) {
+            this.cardUUID = cardUUID;
             time = System.currentTimeMillis();
             this.count = count;
             this.transactionType = transactionType;
@@ -135,18 +149,18 @@ public class Octopus extends JSONData implements PrintableData {
 
         @Override
         public String getId() {
-            return String.valueOf(cardId);
+            return cardUUID.toString();
         }
 
         @Override
         public int hashCode() {
-            return Long.hashCode(cardId);
+            return cardUUID.hashCode();
         }
 
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof History history) {
-                return history.cardId == cardId;
+                return history.cardUUID == cardUUID;
             }
             return false;
         }

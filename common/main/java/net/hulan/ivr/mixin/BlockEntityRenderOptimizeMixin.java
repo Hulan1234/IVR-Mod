@@ -2,7 +2,7 @@ package net.hulan.ivr.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.mappings.BlockEntityMapper;
-import net.hulan.ivr.util.TrainRenderOptimize;
+import net.hulan.ivr.utils.TrainRenderOptimize;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.core.BlockPos;
@@ -25,7 +25,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(BlockEntityRenderDispatcher.class)
 public abstract class BlockEntityRenderOptimizeMixin {
 
-    private static final double BLOCK_ENTITY_BOUNDING_RADIUS = 16.0D;
+    private static final double BLOCK_ENTITY_BOUNDING_RADIUS = 1.5D; // 为方块实体视锥判断设置保守包围半径。
 
     /**
      * 注入到 BlockEntityRenderDispatcher.render 方法开头。
@@ -41,16 +41,18 @@ public abstract class BlockEntityRenderOptimizeMixin {
         // 只优化 MTR 生态的块实体，不影响原版方块实体
         if (blockEntity instanceof BlockEntityMapper) {
             final BlockPos pos = blockEntity.getBlockPos();
-            final net.minecraft.world.phys.Vec3 rel = TrainRenderOptimize.toCameraRelative(pos);
+            final net.minecraft.world.phys.Vec3 rel = TrainRenderOptimize.toCameraRelative(pos); // 计算方块实体中心相对相机的位置。
             if (rel == null) {
                 return;
             }
             // 距离剔除保留原有阈值；视锥剔除只接受完整包围球在视线外的情况。
-            final double renderDistance = TrainRenderOptimize.BLOCK_ENTITY_RENDER_DISTANCE + BLOCK_ENTITY_BOUNDING_RADIUS;
-            final double thresholdSquared = renderDistance * renderDistance;
-            // A generous sphere makes this conservative: only a completely out-of-view entity is culled.
-            if (rel.lengthSqr() >= thresholdSquared || TrainRenderOptimize.isOutsideFrustum(rel, BLOCK_ENTITY_BOUNDING_RADIUS)) {
-                ci.cancel();
+            final double renderDistance = TrainRenderOptimize.BLOCK_ENTITY_RENDER_DISTANCE; // 将方块实体渲染距离固定为 50 格。
+            final double thresholdSquared = renderDistance * renderDistance; // 使用平方距离减少开方计算。
+            // 使用足够大的包围球，只剔除完全位于视线外的方块实体。
+            if (rel.lengthSqr() >= thresholdSquared
+                    || TrainRenderOptimize.isOutsideFrustum(rel, BLOCK_ENTITY_BOUNDING_RADIUS) // 立即剔除已经完全位于视锥外的方块实体。
+                    || TrainRenderOptimize.shouldCullBlockEntity(pos, rel, BLOCK_ENTITY_BOUNDING_RADIUS)) { // 仅剔除距离过远或异步确认完全在视锥外的方块实体。
+                ci.cancel(); // 取消完全不可见或超出范围的方块实体渲染。
             }
         }
     }

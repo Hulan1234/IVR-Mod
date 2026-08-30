@@ -169,7 +169,7 @@ public class KSDRailwayData extends PersistentStateMapper {
 
     public static KSDStation getStation(Set<KSDStation> stations, BlockPos pos) {
         try {
-            return DataUtilities.getFilteredValueFromDataSet(stations, station -> station.inArea(pos));
+            return DataUtilities.getOrNull(stations, station -> station.inArea(pos));
         } catch (Exception e) {
             e.printStackTrace();
             return null;

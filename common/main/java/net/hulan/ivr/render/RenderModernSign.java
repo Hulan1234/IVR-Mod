@@ -15,6 +15,7 @@ import mtr.data.IGui;
 import mtr.data.RailwayData;
 import mtr.mappings.BlockEntityRendererMapper;
 import mtr.mappings.UtilitiesClient;
+import mtr.render.RenderRailwaySign;
 import mtr.render.RenderTrains;
 import mtr.render.StoredMatrixTransformations;
 import net.hulan.ivr.block.BlockModernSign;
@@ -34,8 +35,6 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class RenderModernSign<T extends BlockModernSign.TileEntityModernSign> extends BlockEntityRendererMapper<T> implements IBlock, IGui, IDrawing {
-
-    private static final Map<String, CustomResources.CustomSign> BUILT_IN_SIGN_CACHE = new HashMap<>();
 
     public RenderModernSign(BlockEntityRenderDispatcher dispatcher) {
         super(dispatcher);
@@ -61,7 +60,7 @@ public class RenderModernSign<T extends BlockModernSign.TileEntityModernSign> ex
         int backgroundColor = 0;
         for (final String signId : signIds) {
             if (signId != null) {
-                final CustomResources.CustomSign sign = getSign(signId);
+                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId); // 使用 MTR 获取当前指示牌定义。
                 if (sign != null) {
                     renderBackground = true;
                     if (sign.backgroundColor != 0) {
@@ -140,7 +139,7 @@ public class RenderModernSign<T extends BlockModernSign.TileEntityModernSign> ex
         if (RenderTrains.shouldNotRender(pos, RenderTrains.maxTrainRenderDistance, facing)) {
             return;
         }
-        final CustomResources.CustomSign sign = getSign(signId);
+        final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId); // 使用 MTR 获取当前指示牌定义。
         if (sign == null) {
             return;
         }
@@ -301,28 +300,11 @@ public class RenderModernSign<T extends BlockModernSign.TileEntityModernSign> ex
         });
     }
 
-    public static CustomResources.CustomSign getSign(String signId) {
-        if (signId == null) {
-            return null;
-        }
-        try {
-            final BlockRailwaySign.SignType sign = BlockRailwaySign.SignType.valueOf(signId);
-            CustomResources.CustomSign cached = BUILT_IN_SIGN_CACHE.get(signId);
-            if (cached == null) {
-                cached = new CustomResources.CustomSign(sign.textureId, sign.flipTexture, sign.customText, sign.flipCustomText, sign.small, sign.backgroundColor);
-                BUILT_IN_SIGN_CACHE.put(signId, cached);
-            }
-            return cached;
-        } catch (Exception ignored) {
-            return CustomResources.CUSTOM_SIGNS.get(signId);
-        }
-    }
-
     public static float getMaxWidth(String[] signIds, int index, boolean right) {
         float maxWidthLeft = 0;
         for (int i = index + (right ? 1 : -1); right ? i < signIds.length : i >= 0; i += (right ? 1 : -1)) {
             if (signIds[i] != null) {
-                final CustomResources.CustomSign sign = RenderModernSign.getSign(signIds[i]);
+                final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signIds[i]); // 使用 MTR 获取相邻指示牌定义。
                 if (sign != null && sign.hasCustomText() && right == sign.flipCustomText) {
                     maxWidthLeft /= 2;
                 }

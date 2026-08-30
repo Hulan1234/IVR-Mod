@@ -49,8 +49,8 @@ public class KSDClientCache extends KSDDataCache {
     private final Map<Long, List<ClientCache.PlatformRouteDetails>> platformIdToRoutes = new HashMap<>();
     private final List<Long> clearStationIdToPlatforms = new ArrayList<>();
     private final List<Long> clearPlatformIdToRoutes = new ArrayList<>();
-    private final Queue<Runnable> resourceRegistryQueue = new ConcurrentLinkedQueue<>();
-    private final Set<String> resourcesInFlight = ConcurrentHashMap.newKeySet();
+    private final Queue<Runnable> resourceRegistryQueue = new ConcurrentLinkedQueue<>(); // 保存等待主线程执行的纹理注册任务。
+    private final Set<String> resourcesInFlight = ConcurrentHashMap.newKeySet(); // 记录正在后台生成的资源键。
     private static final ResourceLocation DEFAULT_BLACK_RESOURCE = new ResourceLocation("mtr", "textures/block/black.png");
     private static final ResourceLocation DEFAULT_WHITE_RESOURCE = new ResourceLocation("mtr", "textures/block/white.png");
     private static final ResourceLocation DEFAULT_TRANSPARENT_RESOURCE = new ResourceLocation("mtr", "textures/block/transparent.png");
@@ -118,19 +118,19 @@ public class KSDClientCache extends KSDDataCache {
 
     public List<ClientCache.PlatformRouteDetails> requestPlatformIdToRoutes(long platformId) {
         if (!platformIdToRoutes.containsKey(platformId)) {
-            platformIdToRoutes.put(platformId, DataUtilities.getMappedAndNonNullListFromDataCollection(routes, route -> {
+            platformIdToRoutes.put(platformId, DataUtilities.mapAndNonNullToList(routes, route -> {
                 final int index = route.getPlatformIdIndex(platformId);
                 if (index < 0) {
                     return null;
                 } else {
                     final List<ClientCache.PlatformRouteDetails.StationDetails> stationDetails =
-                            DataUtilities.getMappedListFromDataCollection(route.platformIds, pi -> {
+                            DataUtilities.mapToList(route.platformIds, pi -> {
                                 final KSDStation station = platformIdToStation.get(pi.platformId);
                                 if (station == null || !stationIdToRoutesColor.containsKey(station.id)) {
                                     return new ClientCache.PlatformRouteDetails.StationDetails("", new ArrayList<>());
                                 } else {
                                     return new ClientCache.PlatformRouteDetails.StationDetails(station.name,
-                                            DataUtilities.getFilteredListFromDataCollection(stationIdToRoutesColor.get(station.id).values(),
+                                            DataUtilities.filterToList(stationIdToRoutesColor.get(station.id).values(),
                                                     colorNameTuple -> colorNameTuple.color != route.color));
                                 }
                             });
@@ -495,7 +495,7 @@ public class KSDClientCache extends KSDDataCache {
             }
         }
         if (!resourceRegistryQueue.isEmpty()) {
-            Runnable runnable = resourceRegistryQueue.poll();
+            Runnable runnable = resourceRegistryQueue.poll(); // 每次处理一个等待中的主线程任务。
             if (runnable != null) {
                 runnable.run();
             }
@@ -506,40 +506,43 @@ public class KSDClientCache extends KSDDataCache {
             return dynamicResource;
         } else {
             IVRRouteMapGenerator.setConstants();
-            if (resourcesInFlight.add(key)) {
-                CompletableFuture.supplyAsync(supplier).whenComplete((nativeImage, throwable) -> resourceRegistryQueue.add(() -> {
-                    resourcesInFlight.remove(key);
-                    DynamicResource staticTextureProviderOld = dynamicResources.get(key);
-                    if (staticTextureProviderOld != null) {
-                        staticTextureProviderOld.remove();
-                    }
-                    DynamicResource dynamicResourceNew;
-                    if (throwable != null || nativeImage == null) {
-                        dynamicResourceNew = defaultRenderingColor.dynamicResource;
-                    } else {
-                        DynamicTexture dynamicTexture = new DynamicTexture(nativeImage);
-                        String newKey = key;
+            if (resourcesInFlight.add(key)) { // 仅允许同一资源同时存在一个后台生成任务。
+                CompletableFuture.supplyAsync(supplier).whenComplete((nativeImage, throwable) -> resourceRegistryQueue.add(() -> { // 异步生成图像并把注册工作排回主线程。
+                    resourcesInFlight.remove(key); // 标记资源生成任务已经结束。
+                    DynamicResource staticTextureProviderOld = dynamicResources.get(key); // 读取当前仍在使用的旧纹理。
+                    DynamicResource dynamicResourceNew; // 准备保存新的动态资源对象。
+                    if (throwable != null || nativeImage == null) { // 处理异步生成失败或没有生成图像的情况。
+                        if (nativeImage != null) { // 仅在确实生成了图像时释放它。
+                            nativeImage.close(); // 释放无效图像占用的内存。
+                        } // 释放未上传的无效图像资源。
+                        dynamicResourceNew = staticTextureProviderOld == null ? defaultRenderingColor.dynamicResource : staticTextureProviderOld; // 失败时保留旧资源或使用默认纹理。
+                    } else { // 只有尺寸有效时才替换当前动态纹理。
+                        if (staticTextureProviderOld != null) {
+                            staticTextureProviderOld.remove();
+                        } // 释放旧动态纹理，避免纹理资源泄漏。
+                        DynamicTexture dynamicTexture = new DynamicTexture(nativeImage); // 根据有效图像创建动态纹理。
+                        String newKey = key; // 准备用于生成资源路径的键。
                         try {
-                            newKey = URLEncoder.encode(key, StandardCharsets.UTF_8);
+                            newKey = URLEncoder.encode(key, StandardCharsets.UTF_8); // 对资源键进行 URL 编码。
                         } catch (Exception var10) {
-                            var10.printStackTrace();
+                            var10.printStackTrace(); // 输出编码失败的异常信息。
                         }
-                        String var10003 = newKey.toLowerCase(Locale.ENGLISH);
-                        ResourceLocation resourceLocation = new ResourceLocation("ivr", "dynamic_texture_" + var10003.replaceAll("[^0-9a-z_]", "_"));
-                        minecraftClient.getTextureManager().register(resourceLocation, dynamicTexture);
-                        dynamicResourceNew = new DynamicResource(resourceLocation, dynamicTexture);
+                        String var10003 = newKey.toLowerCase(Locale.ENGLISH); // 统一资源键的大小写。
+                        ResourceLocation resourceLocation = new ResourceLocation("ivr", "dynamic_texture_" + var10003.replaceAll("[^0-9a-z_]", "_")); // 构造合法的纹理资源位置。
+                        minecraftClient.getTextureManager().register(resourceLocation, dynamicTexture); // 在客户端线程注册 OpenGL 纹理。
+                        dynamicResourceNew = new DynamicResource(resourceLocation, dynamicTexture); // 保存纹理尺寸和资源位置。
                     }
-                    dynamicResources.put(key, dynamicResourceNew);
-                }));
-            }
+                    dynamicResources.put(key, dynamicResourceNew); // 更新资源缓存。
+                })); // 将完成回调放入主线程队列。
+            } // 生成中的资源不重复提交任务。
             if (needsRefresh) {
-                resourcesToRefresh.remove(key);
+                resourcesToRefresh.remove(key); // 消费本次资源刷新标记。
             }
             if (dynamicResource == null) {
-                dynamicResources.put(key, defaultRenderingColor.dynamicResource);
-                return defaultRenderingColor.dynamicResource;
+                dynamicResources.put(key, defaultRenderingColor.dynamicResource); // 为首次请求设置临时默认纹理。
+                return defaultRenderingColor.dynamicResource; // 在异步纹理完成前返回默认纹理。
             } else {
-                return dynamicResource;
+                return dynamicResource; // 资源刷新期间继续使用旧纹理。
             }
         }
     }

@@ -16,6 +16,7 @@ public abstract class RenderUtilities {
 
     private static RenderUtilities instance;
     private static final float LIGHT_FACTOR = 0.5f;
+    private static final float ANTIALIAS_PIXELS = 1.0F; // 设置抗锯齿渐变宽度为一个物理像素
     private static final Style FONT = Style.EMPTY.withFont(new ResourceLocation("ivr", "mtr"));
     // 「中文在上、英文在下」两行文字之间的行间距（像素）
     private static final float CJK_LINE_GAP = 2.0F;
@@ -69,6 +70,11 @@ public abstract class RenderUtilities {
                     .endVertex();
         }
         tesselator.end();
+        float antialiasWidth = getAntialiasWidth(); // 根据界面缩放换算渐变宽度
+        drawCircleEdge(matrices, centerX, centerY, radius, radius + antialiasWidth, segments, r, g, b, a, false); // 绘制圆外侧透明渐变
+        if (innerRadius > 0.0F && borderThickness < radius) { // 仅为空心圆绘制内侧渐变
+            drawCircleEdge(matrices, centerX, centerY, innerRadius - antialiasWidth, innerRadius, segments, r, g, b, a, true); // 绘制圆内侧透明渐变
+        }
         finishDrawingCircle();
         RenderSystem.disableBlend();
     }
@@ -141,8 +147,88 @@ public abstract class RenderUtilities {
                 .color(r, g, b, a)
                 .endVertex();
         tesselator.end();
+        drawLineEdge(matrices, x1, y1, x2, y2, nx, ny, getAntialiasWidth(), r, g, b, a); // 绘制粗线外侧透明渐变
         finishDrawingCircle();
         RenderSystem.disableBlend();
+    }
+
+    /** 在无纹理圆形边缘绘制一个物理像素宽的透明度渐变。 */
+    private void drawCircleEdge(PoseStack matrices, float centerX, float centerY, float innerRadius, float outerRadius,
+                                int segments, float r, float g, float b, float a, boolean transparentInnerEdge) {
+        if (innerRadius < 0.0F || outerRadius <= innerRadius) { // 检查圆环半径是否合法
+            return; // 忽略无效的渐变区域
+        }
+        Tesselator tesselator = Tesselator.getInstance(); // 获取当前顶点绘制器
+        BufferBuilder buffer = tesselator.getBuilder(); // 获取顶点缓冲区
+        beginDrawingCircle(buffer); // 开始圆形三角带绘制
+        for (int i = 0; i <= segments; i++) { // 遍历圆周采样点
+            double angle = 2.0 * Math.PI * i / segments; // 计算当前采样角度
+            float cos = (float) Math.cos(angle); // 计算角度余弦值
+            float sin = (float) Math.sin(angle); // 计算角度正弦值
+            float innerAlpha = transparentInnerEdge ? 0.0F : a; // 计算内圈顶点透明度
+            float outerAlpha = transparentInnerEdge ? a : 0.0F; // 计算外圈顶点透明度
+            buffer.vertex(matrices.last().pose(), centerX + cos * innerRadius, centerY + sin * innerRadius, 0)
+                    .color(r, g, b, innerAlpha)
+                    .endVertex(); // 写入内圈渐变顶点
+            buffer.vertex(matrices.last().pose(), centerX + cos * outerRadius, centerY + sin * outerRadius, 0)
+                    .color(r, g, b, outerAlpha)
+                    .endVertex(); // 写入外圈渐变顶点
+        }
+        tesselator.end(); // 提交圆形渐变顶点
+    }
+
+    /** 在粗线矩形主体和端部周围绘制透明到不透明的渐变环。 */
+    private void drawLineEdge(PoseStack matrices, float x1, float y1, float x2, float y2, float nx, float ny,
+                              float antialiasWidth, float r, float g, float b, float a) {
+        float dx = x2 - x1; // 计算线段的水平位移
+        float dy = y2 - y1; // 计算线段的垂直位移
+        float length = (float) Math.sqrt(dx * dx + dy * dy); // 计算线段长度
+        float extensionX = dx / length * antialiasWidth; // 计算线段端点的水平外扩量
+        float extensionY = dy / length * antialiasWidth; // 计算线段端点的垂直外扩量
+        float normalScale = (1.0F + antialiasWidth / (float) Math.sqrt(nx * nx + ny * ny)); // 计算法线方向外扩比例
+
+        float i0x = x1 - nx; // 计算起点左侧内边缘横坐标
+        float i0y = y1 - ny; // 计算起点左侧内边缘纵坐标
+        float i1x = x1 + nx; // 计算起点右侧内边缘横坐标
+        float i1y = y1 + ny; // 计算起点右侧内边缘纵坐标
+        float i2x = x2 + nx; // 计算终点右侧内边缘横坐标
+        float i2y = y2 + ny; // 计算终点右侧内边缘纵坐标
+        float i3x = x2 - nx; // 计算终点左侧内边缘横坐标
+        float i3y = y2 - ny; // 计算终点左侧内边缘纵坐标
+        float o0x = x1 - extensionX - nx * normalScale; // 计算起点左侧外边缘横坐标
+        float o0y = y1 - extensionY - ny * normalScale; // 计算起点左侧外边缘纵坐标
+        float o1x = x1 - extensionX + nx * normalScale; // 计算起点右侧外边缘横坐标
+        float o1y = y1 - extensionY + ny * normalScale; // 计算起点右侧外边缘纵坐标
+        float o2x = x2 + extensionX + nx * normalScale; // 计算终点右侧外边缘横坐标
+        float o2y = y2 + extensionY + ny * normalScale; // 计算终点右侧外边缘纵坐标
+        float o3x = x2 + extensionX - nx * normalScale; // 计算终点左侧外边缘横坐标
+        float o3y = y2 + extensionY - ny * normalScale; // 计算终点左侧外边缘纵坐标
+
+        Tesselator tesselator = Tesselator.getInstance(); // 获取当前顶点绘制器
+        BufferBuilder buffer = tesselator.getBuilder(); // 获取顶点缓冲区
+        beginDrawingCircle(buffer); // 开始线路渐变三角带绘制
+        drawLineEdgeVertex(buffer, matrices, o0x, o0y, r, g, b, 0.0F); // 写入起点左侧外边缘顶点
+        drawLineEdgeVertex(buffer, matrices, i0x, i0y, r, g, b, a); // 写入起点左侧内边缘顶点
+        drawLineEdgeVertex(buffer, matrices, o3x, o3y, r, g, b, 0.0F); // 写入终点左侧外边缘顶点
+        drawLineEdgeVertex(buffer, matrices, i3x, i3y, r, g, b, a); // 写入终点左侧内边缘顶点
+        drawLineEdgeVertex(buffer, matrices, o2x, o2y, r, g, b, 0.0F); // 写入终点右侧外边缘顶点
+        drawLineEdgeVertex(buffer, matrices, i2x, i2y, r, g, b, a); // 写入终点右侧内边缘顶点
+        drawLineEdgeVertex(buffer, matrices, o1x, o1y, r, g, b, 0.0F); // 写入起点右侧外边缘顶点
+        drawLineEdgeVertex(buffer, matrices, i1x, i1y, r, g, b, a); // 写入起点右侧内边缘顶点
+        drawLineEdgeVertex(buffer, matrices, o0x, o0y, r, g, b, 0.0F); // 闭合外边缘渐变带
+        drawLineEdgeVertex(buffer, matrices, i0x, i0y, r, g, b, a); // 闭合内边缘渐变带
+        tesselator.end(); // 提交线路渐变顶点
+    }
+
+    private static void drawLineEdgeVertex(BufferBuilder buffer, PoseStack matrices, float x, float y,
+                                           float r, float g, float b, float a) {
+        buffer.vertex(matrices.last().pose(), x, y, 0)
+                .color(r, g, b, a)
+                .endVertex(); // 写入一个线路渐变顶点
+    }
+
+    private static float getAntialiasWidth() {
+        return ANTIALIAS_PIXELS / (float) Math.max(1.0D, Minecraft.getInstance().getWindow().getGuiScale()); // 将物理像素宽度换算为 GUI 坐标
     }
 
     public void drawTexture(PoseStack matrices, ResourceLocation resourceLocation, float x, float y, float width, float height) {

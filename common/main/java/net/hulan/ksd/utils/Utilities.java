@@ -10,21 +10,24 @@ import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.item.Items;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 public abstract class Utilities {
 
-    public static final long EXPIRED_TIME = TimeUnit.MINUTES.toMillis(150);
+    public static final long EXPIRE_TIME = TimeUnit.MINUTES.toMillis(150);
     public static final RouteType KCR_CLASSICAL = EnumHelper.valueOf(RouteType.NORMAL, "KCR_CLASSICAL");
     public static final RouteType KCR_MODERN = EnumHelper.valueOf(RouteType.NORMAL, "KCR_MODERN");
     private static Utilities instance;
     
     public static Utilities getInstance() {
-        if (instance == null) {
+        if (instance == null || instance instanceof NullUtilities) {
             String version = getIVRMinecraftVersion();
             String className = "Utilities_" + version;
             Utilities tempInstance = new NullUtilities();
@@ -64,6 +67,16 @@ public abstract class Utilities {
             return "1_19_4";
         }
         return "1_18_2";
+    }
+
+    public ItemStack findFilteredItem(Inventory inventory, Predicate<ItemStack> filter) {
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack itemStack = inventory.getItem(i);
+            if (filter.test(itemStack)) {
+                return itemStack;
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     public abstract void registerCommand(LiteralArgumentBuilder<CommandSourceStack> command);

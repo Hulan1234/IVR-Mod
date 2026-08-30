@@ -193,7 +193,7 @@ public class ClassicalSign1OddScreen extends ScreenMapper implements IGui {
                 final int xOffsetBig = xOffsetSmall + SIGN_BUTTON_SIZE * (columns + 1);
                 loopSigns((index, x, y, isBig) -> {
                     final String signId = allSignIds.get(index);
-                    final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId);
+                    final CustomResources.CustomSign sign = RenderRailwaySign.getSign(signId); // 使用 MTR 获取指示牌预览定义。
                     if (sign != null) {
                         final boolean moveRight = sign.hasCustomText() && sign.flipCustomText;
                         UtilitiesClient.beginDrawingTexture(sign.textureId);
@@ -247,7 +247,7 @@ public class ClassicalSign1OddScreen extends ScreenMapper implements IGui {
         int totalPagesSmallCount = 1;
         int totalPagesBigCount = 1;
         for (int i = 0; i < allSignIds.size(); i++) {
-            final CustomResources.CustomSign sign = RenderRailwaySign.getSign(allSignIds.get(i));
+            final CustomResources.CustomSign sign = RenderRailwaySign.getSign(allSignIds.get(i)); // 使用 MTR 获取指示牌分页定义。
             final boolean isBig = sign != null && sign.hasCustomText();
             final boolean onPage = (isBig ? indexBig : indexSmall) / pageCount == page;
             buttonsSelection[i].visible = onPage;

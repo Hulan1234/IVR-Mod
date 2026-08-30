@@ -59,7 +59,9 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
         registerBlockItem.accept("kp_cell_top", KP_CELL_TOP, KCR_PLATFORM_BLOCKS);
         registerBlockItem.accept("kp_cell_light", KP_LIGHT, KCR_PLATFORM_BLOCKS);
         registerBlockItem.accept("first_class_processor", FIRST_CLASS_PROCESSOR, KCR_PLATFORM_BLOCKS);
-        mtr.Registry.registerNetworkReceiver(KSD_PACKET_SINGLE_TICKET_PROCESSING, KSDPacketServer::receiveSingleTicketProcessingData);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_CREATE_SINGLE_TICKET, KSDPacketServer::receiveCreateSingleTicketC2S);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_ADJUST_SINGLE_TICKET_FARE, KSDPacketServer::receiveAdjustSingleTicketFareC2S);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_PAYMENT, KSDPacketServer::receivePayment);
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_UPDATE_STATION,
                 (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(
                         minecraftServer,
@@ -124,7 +126,7 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
             KSDRailwayData ksd = KSDRailwayData.getInstance(level);
             RailwayData mtr = RailwayData.getInstance(level);
             if (ksd != null && mtr != null) {
-                FirstClassValidationSystem.tick(ksd, mtr, level, DataUtilities.getFilteredListFromDataCollection(level.players(), player -> !player.isSpectator()));
+                FirstClassValidationSystem.tick(ksd, mtr, level, DataUtilities.filterToList(level.players(), player -> !player.isSpectator()));
             }
         }));
         mtr.Registry.registerPlayerJoinEvent((player) -> {

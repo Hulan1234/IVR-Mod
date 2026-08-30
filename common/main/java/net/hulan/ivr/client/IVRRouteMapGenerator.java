@@ -11,6 +11,7 @@ import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.KSDPlatform;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
+import net.hulan.ksd.utils.RailDataUtilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -31,6 +32,7 @@ public class IVRRouteMapGenerator implements IGui {
     private static final float lightFactor = 0.5f;
     public static final int PIXEL_SCALE = 4;
     private static final int MIN_VERTICAL_SIZE = 5;
+    private static final int MAX_DYNAMIC_TEXTURE_SIZE = 4096; // 限制动态纹理的最大边长。
 
     public static void setConstants() {
         scale = (int)Math.pow(2.0D, Config.dynamicTextureResolution() + 5);
@@ -123,19 +125,22 @@ public class IVRRouteMapGenerator implements IGui {
     }
 
     public static NativeImage generateSingleRowStationName(long platformId, float aspectRatio) {
-        if (aspectRatio <= 0.0F) {
-            return null;
+        if (aspectRatio <= 0.0F || !Float.isFinite(aspectRatio)) { // 拒绝无效的纹理宽高比。
+            return null; // 无效参数时不生成纹理。
         } else {
             try {
                 int[] dimensions = new int[2];
                 byte[] pixels = KSDClientData.DATA_CACHE.getTextPixels(getStationName(platformId).replace("|", " | "), dimensions, fontSizeBig, fontSizeSmall);
                 int padding = dimensions[1] / 2;
-                int height = dimensions[1] + padding;
-                int width = Math.max(Math.round((float)height * aspectRatio), dimensions[0] + padding);
-                NativeImage nativeImage = new NativeImage(NativeImage.Format.RGBA, width, height, false);
-                nativeImage.fillRect(0, 0, width, height, -1);
-                drawString(nativeImage, pixels, width / 2, height / 2, dimensions, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, 0, ARGB_BLACK, false);
-                return nativeImage;
+                int rawHeight = dimensions[1] + padding; // 计算未限制的纹理高度。
+                int rawWidth = Math.max(Math.round((float) rawHeight * aspectRatio), dimensions[0] + padding); // 计算未限制的纹理宽度。
+                int width = Math.min(MAX_DYNAMIC_TEXTURE_SIZE, Math.max(1, rawWidth)); // 将纹理宽度限制在有效范围内。
+                int height = Math.min(MAX_DYNAMIC_TEXTURE_SIZE, Math.max(1, rawHeight)); // 将纹理高度限制在有效范围内。
+                NativeImage nativeImage = new NativeImage(NativeImage.Format.RGBA, width, height, false); // 创建限制尺寸后的图像。
+                nativeImage.fillRect(0, 0, width, height, -1); // 使用白色填充图像背景。
+                drawStringScaled(nativeImage, pixels, width / 2, height / 2, dimensions,
+                        (float) width / rawWidth, (float) height / rawHeight, ARGB_BLACK); // 按限制后的尺寸绘制缩放文字。
+                return nativeImage; // 返回生成完成的站名纹理。
             } catch (Exception var9) {
                 var9.printStackTrace();
                 return null;
@@ -383,7 +388,7 @@ public class IVRRouteMapGenerator implements IGui {
                     final Set<Integer> currentRouteColors = new HashSet<>();
                     final Set<String> currentRouteNames = new HashSet<>();
                     int colorIndex = -1;
-                    int previousColor = -1;
+                    KSDRoute previousRoute = null;
                     for (int routeIndex = 0; routeIndex < routeCount; routeIndex++) {
                         stationsIdsBefore.add(new ArrayList<>());
                         stationsIdsAfter.add(new ArrayList<>());
@@ -401,13 +406,12 @@ public class IVRRouteMapGenerator implements IGui {
                                 }
                             }
                         }
-                        final int color = routeDetail.getA().color;
-                        if (color != previousColor) {
+                        if (!RailDataUtilities.isSameRoute(previousRoute, routeDetail.getA())) {
                             colorIndex++;
-                            previousColor = color;
+                            previousRoute = routeDetail.getA();
                         }
                         colorIndices[routeIndex] = colorIndex;
-                        currentRouteColors.add(color);
+                        currentRouteColors.add(routeDetail.getA().color);
                         currentRouteNames.add(routeDetail.getA().name.split("\\|\\|")[0]);
                     }
                     for (int routeIndex = 0; routeIndex < routeCount; routeIndex++) {
@@ -634,7 +638,7 @@ public class IVRRouteMapGenerator implements IGui {
                     final Set<Integer> currentRouteColors = new HashSet<>();
                     final Set<String> currentRouteNames = new HashSet<>();
                     int colorIndex = -1;
-                    int previousColor = -1;
+                    KSDRoute previousRoute = null;
                     for (int routeIndex = 0; routeIndex < routeCount; routeIndex++) {
                         stationsIdsBefore.add(new ArrayList<>());
                         stationsIdsAfter.add(new ArrayList<>());
@@ -652,13 +656,12 @@ public class IVRRouteMapGenerator implements IGui {
                                 }
                             }
                         }
-                        final int color = routeDetail.getA().color;
-                        if (color != previousColor) {
+                        if (!RailDataUtilities.isSameRoute(previousRoute, routeDetail.getA())) {
                             colorIndex++;
-                            previousColor = color;
+                            previousRoute = routeDetail.getA();
                         }
                         colorIndices[routeIndex] = colorIndex;
-                        currentRouteColors.add(color);
+                        currentRouteColors.add(routeDetail.getA().color);
                         currentRouteNames.add(routeDetail.getA().name.split("\\|\\|")[0]);
                     }
                     for (int routeIndex = 0; routeIndex < routeCount; routeIndex++) {
@@ -1093,6 +1096,26 @@ public class IVRRouteMapGenerator implements IGui {
                 if (drawX == textDimensions[0]) {
                     drawX = 0;
                     ++drawY;
+                }
+            }
+        }
+    }
+
+    private static void drawStringScaled(NativeImage nativeImage, byte[] pixels, int centerX, int centerY, int[] dimensions, float scaleX, float scaleY, int color) {
+        if (pixels == null || dimensions[0] <= 0 || dimensions[1] <= 0 || scaleX <= 0.0F || scaleY <= 0.0F) { // 检查文字像素和缩放参数。
+            return; // 参数无效时跳过文字绘制。
+        }
+        int width = Math.max(1, Math.round(dimensions[0] * scaleX)); // 计算缩放后的文字宽度。
+        int height = Math.max(1, Math.round(dimensions[1] * scaleY)); // 计算缩放后的文字高度。
+        int startX = centerX - width / 2; // 计算文字左边界。
+        int startY = centerY - height / 2; // 计算文字上边界。
+        for (int y = 0; y < height; y++) {
+            int sourceY = Math.min(dimensions[1] - 1, (int) (y / scaleY)); // 将目标 Y 坐标映射回源像素。
+            for (int x = 0; x < width; x++) {
+                int sourceX = Math.min(dimensions[0] - 1, (int) (x / scaleX)); // 将目标 X 坐标映射回源像素。
+                int alpha = pixels[sourceY * dimensions[0] + sourceX] & 255; // 读取源像素透明度。
+                if (alpha > 0) {
+                    blendPixel(nativeImage, startX + x, startY + y, (alpha << 24) | (color & 0xFFFFFF)); // 将有效文字像素混合到目标图像。
                 }
             }
         }

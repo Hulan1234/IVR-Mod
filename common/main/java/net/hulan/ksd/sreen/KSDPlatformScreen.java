@@ -60,7 +60,7 @@ public class KSDPlatformScreen extends SavedRailScreenBase<KSDPlatform> {
         float second = (float) sliderDwellTimeSec.getIntValue() / 2.0F;
         savedRailBase.setDwellTime((int) ((second + (float) (minutes * 60)) * 2.0F), (packet) -> KSDPacketClient.sendUpdate(KSD_PACKET_UPDATE_PLATFORM, packet));
         savedRailBase.setSpanishPlatform(buttonIsSpanishPlatform.selected(), doorOpeningSide, (packet) -> KSDPacketClient.sendUpdate(KSD_PACKET_UPDATE_PLATFORM, packet));
-        DataUtilities.executeFromDataSet(ClientData.PLATFORMS, p -> p.id == savedRailBase.id, platform -> {
+        DataUtilities.execute(ClientData.PLATFORMS, p -> p.id == savedRailBase.id, platform -> {
             platform.name = savedRailBase.name;
             platform.setDwellTime((int) ((second + (float) (minutes * 60)) * 2.0F), (packet) -> PacketTrainDataGuiClient.sendUpdate(PACKET_UPDATE_PLATFORM, packet));
         });

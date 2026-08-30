@@ -27,7 +27,7 @@ public class KSDDataCache {
         this.stations = stations;
         this.platforms = platforms;
         this.routes = routes;
-        wayFinder = new WayFinder();
+        wayFinder = new WayFinder(this);
     }
 
     public final void sync() {
@@ -77,7 +77,7 @@ public class KSDDataCache {
             });
             blockPosToPlatformId.clear();
             syncAdditional();
-            wayFinder.sync(this);
+            wayFinder.sync();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

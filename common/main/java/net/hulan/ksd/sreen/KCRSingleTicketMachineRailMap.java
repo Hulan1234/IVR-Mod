@@ -7,14 +7,14 @@ import mtr.data.Route;
 import mtr.mappings.SelectableMapper;
 import mtr.mappings.WidgetMapper;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.utils.DataUtilities;
 import net.hulan.ksd.utils.RailDataUtilities;
 import net.hulan.ksd.utils.RenderUtilities;
 import net.hulan.ksd.data.KSDAreaBase;
-import net.hulan.ksd.data.KSDPlatform;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
+import net.hulan.ksd.data.WayFinder; // 引入线路可达关系和缓存索引类型
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui; // 引入界面背景填充工具
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -31,12 +31,21 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
     private int x;
     private int y;
     private int width;
-    private int maxHeight;
+    private int height; // 保存线路图组件的实际高度
     private double scale;
     private double centerX;
     private double centerY;
+    private boolean isLightRail;
+    private final KCRSingleTicketMachineScreen.RailMapType railMapType;
     private final Consumer<KSDStation> onClickedOnDestination;
-    private final KCRSingleTicketMachineScreen ticketMachineScreen;
+    private final KSDStation currentStation;
+    private final Set<KSDRoute> mainRoutes = new HashSet<>();
+    private final Set<KSDRoute> otherRoutes = new HashSet<>();
+    private final Set<KSDRoute> lightRailRoutes = new HashSet<>();
+    private final Set<KSDStation> mainStations = new HashSet<>();
+    private final Set<KSDStation> otherStations = new HashSet<>();
+    private final Set<KSDStation> lightRailStations = new HashSet<>();
+
     private static final double SCALE_UPPER_LIMIT = 64F;
     private static final double SCALE_LOWER_LIMIT = 0.0078125F;
     private static final float RADIUS = 5F;
@@ -44,24 +53,28 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
     private static final int SEGMENTS = 64;
     private static final float LINE_WIDTH = 5.0F;
     private static final float STATION_RING_THICKNESS = 1.5F;
+    private static final int LIGHT_RAIL_COLOR = 0xFFF98C2B;
     // 站名文字缩放倍数：原版字体行高 9 像素，1.2 倍约等于原动态贴图（10 像素高）的显示效果
     private static final float STATION_NAME_SCALE = 1.2F;
     // 站名英文行缩放倍数（小号，置于中文行下方）
     private static final float STATION_EN_SCALE = 0.7F;
     private final Map<Long, List<RailMapStation>> layouts = new HashMap<>();
-    private final Map<Long, double[]> stationOrigins = new HashMap<>();
     private final List<StationCircle> stationCircles = new ArrayList<>();
     private final List<InterchangeCapsule> interchangeCapsules = new ArrayList<>();
     private final List<Tuple<Float, Float>> logicalStationCenters = new ArrayList<>();
     private final List<List<Tuple<Float, Float>>> drawingLines = new ArrayList<>();
     private final List<Integer> drawingLineColors = new ArrayList<>();
     private final List<StationLabel> stationLabels = new ArrayList<>();
+    private final Map<Long, Integer> mainStationColors = new HashMap<>();
     private boolean lastHovering;
     private long handCursor;
 
-    public KCRSingleTicketMachineRailMap(Consumer<KSDStation> onClickedOnDestination, KCRSingleTicketMachineScreen ticketMachineScreen) {
+    public KCRSingleTicketMachineRailMap(Consumer<KSDStation> onClickedOnDestination,
+                                         KCRSingleTicketMachineScreen.RailMapType railMapType,
+                                         KSDStation currentStation) {
+        this.railMapType = railMapType; // 保存当前线路图类型
         this.onClickedOnDestination = onClickedOnDestination;
-        this.ticketMachineScreen = ticketMachineScreen;
+        this.currentStation = currentStation;
         Minecraft minecraftClient = Minecraft.getInstance();
         LocalPlayer player = minecraftClient.player;
         if (player == null) {
@@ -72,9 +85,11 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
             centerY = player.getZ();
         }
         scale = 0.05F;
+        isLightRail = railMapType.equals(KCRSingleTicketMachineScreen.RailMapType.LIGHT_RAIL); // 缓存轻铁线路图标记
     }
 
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
+        Gui.fill(matrices, x, y, x + width, y + height, ARGB_WHITE); // 清除上一帧内容并填充白色背景
         buildRenderData();
         stationLabels.clear();
         stationLabels.addAll(buildStationLabels());
@@ -91,6 +106,17 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                 renderUtilities.drawThickLine(matrices, x + points.get(j).getA(), y + points.get(j).getB(),
                         x + points.get(j + 1).getA(), y + points.get(j + 1).getB(), LINE_WIDTH, color);
             }
+            // 为每条线路段补上线宽直径的圆形端盖。
+            if (points.size() >= 2) { // 仅在线路段至少包含起止点时绘制端盖
+                Tuple<Float, Float> start = points.get(0); // 读取折线起点
+                Tuple<Float, Float> end = points.get(points.size() - 1); // 读取折线终点
+                float endpointRadius = LINE_WIDTH / 2.0F; // 计算端点圆半径
+                renderUtilities.drawStationCircle(matrices, x + start.getA(), y + start.getB(),
+                        endpointRadius, SEGMENTS, endpointRadius, color); // 绘制起点圆端盖
+                renderUtilities.drawStationCircle(matrices, x + end.getA(), y + end.getB(),
+                        endpointRadius, SEGMENTS, endpointRadius, color); // 绘制终点圆端盖
+            }
+            // 用圆点覆盖折线接缝，避免相邻线段之间出现裂缝。
             for (int j = 1; j < points.size() - 1; j++) {
                 Tuple<Float, Float> point = points.get(j);
                 renderUtilities.drawStationCircle(matrices, x + point.getA(), y + point.getB(),
@@ -112,7 +138,8 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
 
         // 先确定最终颜色，再把每个胶囊完整绘制一次，避免同深度重复叠画产生闪烁和错位。
         for (InterchangeCapsule capsule : interchangeCapsules) {
-            int color = capsule == hoveredCapsule ? renderUtilities.lightenColor(capsule.color) : capsule.color;
+            int color = capsule == hoveredCapsule && !isLightRail
+                    ? renderUtilities.lightenColor(capsule.color) : capsule.color;
             drawInterchangeCapsule(matrices, capsule, color);
         }
         // 遍历所有车站圆
@@ -134,8 +161,9 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                 // 判断圆是否属于被命中的车站
                 if (circle.stationId == station.id) {
                     // 用提亮后的颜色重画该圆的圆环
+                    int color = isLightRail ? ARGB_BLACK : renderUtilities.lightenColor(circle.color);
                     renderUtilities.drawStationCircle(matrices, (float) x + (float) circle.centerX, (float) y + (float) circle.centerY,
-                            RADIUS, SEGMENTS, STATION_RING_THICKNESS, renderUtilities.lightenColor(circle.color));
+                            RADIUS, SEGMENTS, STATION_RING_THICKNESS, color);
                 }
             }
         });
@@ -154,15 +182,8 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         List<StationLabel> labels = new ArrayList<>();
         RenderUtilities renderUtilities = RenderUtilities.getInstance();
         List<LabelBox> placedLabels = new ArrayList<>();
-        for (KSDStation station : ticketMachineScreen.mainStations) {
+        for (KSDStation station : getRenderableStations()) {
             if (KSDAreaBase.nonNullCorners(station)) {
-                BlockPos pos = station.getCenter();
-                // 取该站的平台中点平均值作为文字锚点（若有）
-                double[] origin = stationOrigins.get(station.id);
-                // 无平台数据时退回车站中心 X
-                double originX = origin != null ? origin[0] : pos.getX();
-                // 无平台数据时退回车站中心 Z
-                double originZ = origin != null ? origin[1] : pos.getZ();
                 // 站名原文（「中文||English」形式）
                 String name = station.name;
                 // 测量「中文在上、英文在下」两行站名的整体宽高（供避让计算）
@@ -174,11 +195,12 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                 Tuple<Float, Float> labelAnchor = getVisibleStationCenter(station.id);
                 // 优先以避让后的实际圆圈质心作为站名锚点，无可见圆圈时退回世界坐标。
                 if (labelAnchor == null) {
-                    Tuple<Double, Double> fallback = worldPosToCords(originX, originZ);
+                    BlockPos stationCenter = station.getCenter(); // 获取车站选区中心作为文字锚点回退位置
+                    Tuple<Double, Double> fallback = worldPosToCords(stationCenter.getX(), stationCenter.getZ()); // 将选区中心转换为线路图坐标
                     labelAnchor = new Tuple<>(fallback.getA().floatValue(), fallback.getB().floatValue());
                 }
                 if (RailwayData.isBetween(labelAnchor.getA(), 0.0F, width)
-                        && RailwayData.isBetween(labelAnchor.getB(), 0.0F, maxHeight)) {
+                        && RailwayData.isBetween(labelAnchor.getB(), 0.0F, height)) { // 使用组件高度限制站名标签范围
                     float anchorX = labelAnchor.getA();
                     float anchorY = labelAnchor.getB();
                             // 八个候选方位，优先水平两侧，再尝试上下及四个对角方向。
@@ -224,18 +246,18 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         float y1 = y + capsule.start.getB();
         float x2 = x + capsule.end.getA();
         float y2 = y + capsule.end.getB();
-        float innerRadius = RADIUS - STATION_RING_THICKNESS;
+        float innerRadius = capsule.radius - STATION_RING_THICKNESS; // 根据胶囊宽度计算内部留白半径
 
-        renderUtilities.drawThickLine(matrices, x1, y1, x2, y2, RADIUS * 2, color);
-        renderUtilities.drawStationCircle(matrices, x1, y1, RADIUS, SEGMENTS, RADIUS, color);
-        renderUtilities.drawStationCircle(matrices, x2, y2, RADIUS, SEGMENTS, RADIUS, color);
+        renderUtilities.drawThickLine(matrices, x1, y1, x2, y2, capsule.radius * 2, color); // 绘制胶囊外层长轴
+        renderUtilities.drawStationCircle(matrices, x1, y1, capsule.radius, SEGMENTS, capsule.radius, color); // 绘制胶囊起点外圆
+        renderUtilities.drawStationCircle(matrices, x2, y2, capsule.radius, SEGMENTS, capsule.radius, color); // 绘制胶囊终点外圆
         renderUtilities.drawThickLine(matrices, x1, y1, x2, y2, innerRadius * 2, ARGB_WHITE);
         renderUtilities.drawStationCircle(matrices, x1, y1, innerRadius, SEGMENTS, innerRadius, ARGB_WHITE);
         renderUtilities.drawStationCircle(matrices, x2, y2, innerRadius, SEGMENTS, innerRadius, ARGB_WHITE);
     }
 
     private static boolean isPointInCapsule(Tuple<Float, Float> point, InterchangeCapsule capsule) {
-        return pointSegmentDistance(point, capsule.start, capsule.end) <= RADIUS;
+        return pointSegmentDistance(point, capsule.start, capsule.end) <= capsule.radius; // 使用胶囊实际半径判断鼠标命中
     }
 
     private Tuple<Float, Float> getVisibleStationCenter(long stationId) {
@@ -288,7 +310,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         }
         for (InterchangeCapsule capsule : interchangeCapsules) {
             total += clippedSegmentLength(capsule.start.getA(), capsule.start.getB(), capsule.end.getA(), capsule.end.getB(),
-                    minX - RADIUS, minY - RADIUS, maxX + RADIUS, maxY + RADIUS) * 100;
+                    minX - capsule.radius, minY - capsule.radius, maxX + capsule.radius, maxY + capsule.radius) * 100; // 按胶囊实际半宽评估站名重叠
         }
         // 辅助站虽然不画圆，也必须为其线路端点保留空间。
         for (Tuple<Float, Float> center : logicalStationCenters) {
@@ -377,7 +399,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
             Tuple<Float, Float> mouse = new Tuple<>((float) mouseX - x, (float) mouseY - y);
             for (InterchangeCapsule capsule : interchangeCapsules) {
                 if (isPointInCapsule(mouse, capsule)) {
-                    KSDStation station = getMainStation(capsule.stationId);
+                    KSDStation station = getRenderableStation(capsule.stationId);
                     if (station != null) {
                         updateCursor(false);
                         onClickedOnDestination.accept(station);
@@ -395,25 +417,41 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         }
     }
 
-    private KSDStation getMainStation(long stationId) {
-        for (KSDStation station : ticketMachineScreen.mainStations) {
+    private KSDStation getRenderableStation(long stationId) {
+        for (KSDStation station : mainStations) {
             if (station.id == stationId) {
                 return station;
             }
         }
+        if (isLightRail) {
+            for (KSDStation station : lightRailStations) {
+                if (station.id == stationId) {
+                    return station;
+                }
+            }
+        }
         return null;
+    }
+
+    private Collection<KSDStation> getRenderableStations() {
+        Map<Long, KSDStation> stationsById = new LinkedHashMap<>();
+        mainStations.forEach(station -> stationsById.put(station.id, station));
+        if (isLightRail) {
+            lightRailStations.forEach(station -> stationsById.putIfAbsent(station.id, station));
+        }
+        return stationsById.values();
     }
 
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         double oldScale = this.scale;
         if (oldScale > SCALE_LOWER_LIMIT && amount < (double) 0.0F) {
             this.centerX -= (mouseX - (double) this.x - (double) this.width / (double) 2.0F) / this.scale;
-            this.centerY -= (mouseY - (double) this.y - (double) this.maxHeight / (double) 2.0F) / this.scale;
+            this.centerY -= (mouseY - (double) this.y - (double) this.height / (double) 2.0F) / this.scale; // 按组件高度修正缩放中心
         }
         this.scale(amount);
         if (oldScale < SCALE_UPPER_LIMIT && amount > (double) 0.0F) {
             this.centerX += (mouseX - (double) this.x - (double) this.width / (double) 2.0F) / this.scale;
-            this.centerY += (mouseY - (double) this.y - (double) this.maxHeight / (double) 2.0F) / this.scale;
+            this.centerY += (mouseY - (double) this.y - (double) this.height / (double) 2.0F) / this.scale; // 按组件高度修正缩放中心
         }
         return true;
     }
@@ -422,7 +460,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         return mouseX >= (double) this.x
                 && mouseY >= (double) this.y
                 && mouseX < (double) (this.x + this.width)
-                && mouseY < (double) (this.y + this.maxHeight);
+                && mouseY < (double) (this.y + this.height); // 使用组件高度判断鼠标是否位于线路图内
     }
 
     public void setFocused(boolean focused) {
@@ -439,10 +477,38 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         logicalStationCenters.clear();
         drawingLines.clear();
         drawingLineColors.clear();
+        mainStationColors.clear();
         Map<Long, Map<String, Tuple<Float, Float>>> endpointsByStation = new HashMap<>();
         Map<Long, List<Tuple<Float, Float>>> centersByStation = new HashMap<>();
-        Map<Long, List<MainStationEndpoint>> mainEndpointsByStation = new HashMap<>();
-        Map<Long, InterchangeCapsule> capsulesByStation = new HashMap<>();
+        Map<Long, List<StationRouteEndpoint>> routeEndpointsByStation = new HashMap<>(); // 记录每个车站各条线路的真实端点
+        Map<Long, Integer> routeCountsByStation = countRoutesByStation(); // 统计每个车站接入的线路数量
+        Map<Long, Integer> mainRouteCountsByStation = countRoutesByStation(mainRoutes);
+        Map<Long, Integer> otherRouteCountsByStation = countRoutesByStation(otherRoutes);
+        Map<Long, Integer> lightRailRouteCountsByStation = countRoutesByStation(lightRailRoutes);
+        Set<Long> capsuleStationIds = new HashSet<>();
+        Set<Long> specialInterchangeStationIds = new HashSet<>();
+        if (isLightRail) {
+            routeCountsByStation.forEach((stationId, count) -> {
+                // 轻铁图中所有多线路车站都使用胶囊站点。
+                if (count > 1) {
+                    specialInterchangeStationIds.add(stationId);
+                }
+            });
+        } else if (railMapType == KCRSingleTicketMachineScreen.RailMapType.KCR) {
+            mainRouteCountsByStation.forEach((stationId, count) -> {
+                // KCR 图中，主线路与任一辅助线路换乘时使用胶囊站点。
+                if (count > 0 && (otherRouteCountsByStation.getOrDefault(stationId, 0) > 0
+                        || lightRailRouteCountsByStation.getOrDefault(stationId, 0) > 0)) {
+                    specialInterchangeStationIds.add(stationId);
+                }
+            });
+        }
+        capsuleStationIds.addAll(specialInterchangeStationIds);
+        routeCountsByStation.forEach((stationId, count) -> {
+            if (count > 3) {
+                capsuleStationIds.add(stationId);
+            }
+        });
         Set<String> visibleCircleKeys = new HashSet<>();
         Set<String> drawnPairs = new HashSet<>();
 
@@ -453,7 +519,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                 continue;
             }
             String lineKey = RailDataUtilities.getRouteKey(route);
-            boolean mainRoute = ticketMachineScreen.mainRoutes.contains(route);
+            boolean mainRoute = mainRoutes.contains(route) || isLightRail && lightRailRoutes.contains(route);
             List<Tuple<Float, Float>> path = new ArrayList<>();
 
             // 先为本线路依次放置站点；候选位置只参考此前已经登记的线路和站点。
@@ -461,12 +527,12 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                 long stationId = railMapStation.station.id;
                 Map<String, Tuple<Float, Float>> endpoints = endpointsByStation.computeIfAbsent(stationId, key -> new HashMap<>());
                 Tuple<Float, Float> endpoint = endpoints.get(lineKey);
+                String circleKey = stationId + ":" + lineKey; // 生成当前站点与线路的唯一圆圈键
                 if (endpoint == null) {
                     Tuple<Float, Float> preferred = getPreferredStationPosition(railMapStation);
-                    List<MainStationEndpoint> mainEndpoints = mainEndpointsByStation.get(stationId);
-                    if (!mainRoute && mainEndpoints != null && !mainEndpoints.isEmpty()) {
-                        endpoint = placeAuxiliaryEndpointInCapsule(preferred, stationId, railMapStation.direction,
-                                centersByStation, mainEndpoints, capsulesByStation);
+                    List<Tuple<Float, Float>> sameStationCenters = centersByStation.get(stationId); // 读取该站已经放置的所有圆心
+                    if (mainRoute && (sameStationCenters == null || sameStationCenters.isEmpty())) { // 第一条主线路固定使用选区中心
+                        endpoint = preferred; // 保留车站选区中心作为初始圆心
                     } else {
                         endpoint = chooseStationPosition(preferred, stationId, railMapStation.direction, centersByStation);
                     }
@@ -474,18 +540,19 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                     centersByStation.computeIfAbsent(stationId, key -> new ArrayList<>()).add(endpoint);
                     logicalStationCenters.add(endpoint);
                     if (mainRoute) {
-                        mainEndpointsByStation.computeIfAbsent(stationId, key -> new ArrayList<>())
-                                .add(new MainStationEndpoint(lineKey, endpoint, railMapStation.direction, getDrawingColor(route)));
+                        mainStationColors.putIfAbsent(stationId, getDrawingColor(route));
                     }
+                    routeEndpointsByStation.computeIfAbsent(stationId, key -> new ArrayList<>()) // 获取当前车站的线路端点列表
+                            .add(new StationRouteEndpoint(lineKey, endpoint, railMapStation.direction, getDrawingColor(route))); // 记录线路的真实连接端点
                 }
                 path.add(endpoint);
 
-                // 只有主线路站点生成可见圆圈；辅助站点只登记逻辑端点。
-                String circleKey = stationId + ":" + lineKey;
-                if (mainRoute
-                        && ticketMachineScreen.mainStations.contains(railMapStation.station)
+                // 非胶囊站点按原逻辑为每条可见线路分别生成一个圆圈。
+                if (!capsuleStationIds.contains(stationId)
+                        && getRenderableStation(stationId) != null
                         && visibleCircleKeys.add(circleKey)) {
-                    stationCircles.add(new StationCircle(stationId, endpoint.getA(), endpoint.getB(), getDrawingColor(route)));
+                    stationCircles.add(new StationCircle(stationId, endpoint.getA(), endpoint.getB(),
+                            getStationMarkerColor(stationId, getDrawingColor(route))));
                 }
             }
 
@@ -509,186 +576,114 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
             }
         }
 
-        // 胶囊已经包含其锚定主线路圆，原位置不再重复绘制普通圆圈。
-        stationCircles.removeIf(circle -> interchangeCapsules.stream().anyMatch(capsule ->
-                capsule.stationId == circle.stationId
-                        && dist(capsule.mainCenter, new Tuple<>((float) circle.centerX, (float) circle.centerY)) < 0.001));
+        for (Map.Entry<Long, List<StationRouteEndpoint>> entry : routeEndpointsByStation.entrySet()) { // 遍历每个车站的真实线路端点
+            long stationId = entry.getKey(); // 获取当前车站编号
+            if (capsuleStationIds.contains(stationId) && getRenderableStation(stationId) != null) {
+                int color = getStationMarkerColor(stationId, entry.getValue().get(0).color);
+                interchangeCapsules.add(createAxisAlignedCapsule(stationId, entry.getValue(), color)); // 胶囊始终使用水平或竖直长轴
+            }
+        }
     }
 
     /** Returns routes in deterministic drawing priority: main network, other network, then light rail. */
     private List<KSDRoute> getAllRoutes() {
         List<KSDRoute> routes = new ArrayList<>();
-        addSortedRoutes(routes, ticketMachineScreen.mainRoutes);
-        addSortedRoutes(routes, ticketMachineScreen.otherRoutes);
-        addSortedRoutes(routes, ticketMachineScreen.lightRailRoutes);
-        return routes;
+        WayFinder wayFinder = KSDClientData.DATA_CACHE.wayFinder; // 读取当前客户端的线路关系缓存
+        addSortedRoutes(routes, mainRoutes, wayFinder); // 添加主线路并过滤无效数据
+        addSortedRoutes(routes, otherRoutes, wayFinder); // 添加其他线路并过滤无效数据
+        addSortedRoutes(routes, lightRailRoutes, wayFinder); // 添加轻铁线路并过滤无效数据
+        return routes; // 返回按类别和线路标识稳定排序的线路
     }
 
     /** Adds one route group in stable key/id order so incremental collision decisions remain reproducible. */
-    private static void addSortedRoutes(List<KSDRoute> target, Set<KSDRoute> source) {
-        List<KSDRoute> sorted = new ArrayList<>(source);
-        sorted.sort(Comparator.comparing(RailDataUtilities::getRouteKey).thenComparingLong(route -> route.id));
-        target.addAll(sorted);
+    private static void addSortedRoutes(List<KSDRoute> target, Set<KSDRoute> source, WayFinder wayFinder) {
+        List<KSDRoute> sorted = new ArrayList<>(source.stream() // 开始遍历当前类别的线路集合
+                // WayFinder 与客户端数据包同步，可过滤缺少有效站点索引的线路。
+                .filter(route -> wayFinder.routeIdToStationsWithIndex.containsKey(route.id)
+                        && wayFinder.routeIdToStationsWithIndex.get(route.id).size() >= 2)
+                .toList()); // 收集至少包含两个有效站点的线路
+        sorted.sort(Comparator.comparing(RailDataUtilities::getRouteKey).thenComparingLong(route -> route.id)); // 按线路标识和编号排序
+        target.addAll(sorted); // 将排序后的线路追加到绘制列表
     }
 
-    /** Converts this route's own platform midpoint (or station fallback) into local map coordinates. */
+    private Map<Long, Integer> countRoutesByStation() {
+        return countRoutesByStation(getAllRoutes());
+    }
+
+    private Map<Long, Integer> countRoutesByStation(Collection<KSDRoute> routes) {
+        Map<Long, Set<String>> routeKeysByStation = new HashMap<>(); // 按线路唯一标识记录每个车站接入的线路
+        for (KSDRoute route : routes) { // 遍历指定类别中的全部线路
+            List<RailMapStation> stations = layouts.get(route.id); // 获取线路对应的布局站点
+            if (stations == null) { // 跳过尚未生成布局的线路
+                continue; // 继续处理下一条线路
+            }
+            String lineKey = RailDataUtilities.getRouteKey(route); // 同一逻辑线路的不同 Route 变体共用一个标识
+            Set<Long> stationIds = new HashSet<>(); // 记录本线路已经统计过的车站
+            for (RailMapStation station : stations) { // 遍历线路上的布局站点
+                if (stationIds.add(station.station.id)) { // 确保同一线路在同一车站只计数一次
+                    routeKeysByStation.computeIfAbsent(station.station.id, key -> new HashSet<>()).add(lineKey);
+                }
+            }
+        }
+        Map<Long, Integer> routeCounts = new HashMap<>(); // 将唯一线路集合转换为绘制分支需要的数量映射
+        routeKeysByStation.forEach((stationId, lineKeys) -> routeCounts.put(stationId, lineKeys.size()));
+        return routeCounts; // 返回每个车站的线路数量
+    }
+
+    /** Converts the station selection center into local map coordinates. */
     private Tuple<Float, Float> getPreferredStationPosition(RailMapStation railMapStation) {
         KSDStation station = railMapStation.station;
-        BlockPos pos = station.getCenter();
-        double[] origin = stationOrigins.get(station.id);
-        double worldX = railMapStation.platformMid != null ? railMapStation.platformMid.getX() : origin == null ? pos.getX() : origin[0];
-        double worldZ = railMapStation.platformMid != null ? railMapStation.platformMid.getZ() : origin == null ? pos.getZ() : origin[1];
-        Tuple<Double, Double> point = worldPosToCords(worldX, worldZ);
-        return new Tuple<>(point.getA().floatValue(), point.getB().floatValue());
+        BlockPos pos = station.getCenter(); // 获取车站选区中心方块
+        double worldX = pos.getX(); // 使用车站选区中心作为线路圆心的世界 X 坐标
+        double worldZ = pos.getZ(); // 使用车站选区中心作为线路圆心的世界 Z 坐标
+        Tuple<Double, Double> point = worldPosToCords(worldX, worldZ); // 将世界坐标转换为线路图坐标
+        return new Tuple<>(point.getA().floatValue(), point.getB().floatValue()); // 返回浮点线路图坐标
     }
 
-    /** Assigns an auxiliary route endpoint to the existing station capsule, extending one axis as required. */
-    private Tuple<Float, Float> placeAuxiliaryEndpointInCapsule(Tuple<Float, Float> preferred, long stationId, int direction,
-                                                                Map<Long, List<Tuple<Float, Float>>> centersByStation,
-                                                                List<MainStationEndpoint> mainEndpoints,
-                                                                Map<Long, InterchangeCapsule> capsulesByStation) {
-        InterchangeCapsule capsule = capsulesByStation.get(stationId);
-        if (capsule == null) {
-            capsule = createInterchangeCapsule(preferred, stationId, direction, centersByStation, mainEndpoints);
-            capsulesByStation.put(stationId, capsule);
-            interchangeCapsules.add(capsule);
-            return capsule.auxiliaryCenters.get(0);
+    private static InterchangeCapsule createAxisAlignedCapsule(long stationId,
+                                                               List<StationRouteEndpoint> endpoints,
+                                                               int color) {
+        float minX = Float.MAX_VALUE; // 初始化线路圆心最小 X 坐标
+        float maxX = -Float.MAX_VALUE; // 初始化线路圆心最大 X 坐标
+        float minY = Float.MAX_VALUE; // 初始化线路圆心最小 Y 坐标
+        float maxY = -Float.MAX_VALUE; // 初始化线路圆心最大 Y 坐标
+        for (StationRouteEndpoint endpoint : endpoints) { // 遍历该站的每条换乘线路
+            minX = Math.min(minX, endpoint.center.getA()); // 更新线路圆心最小 X 坐标
+            maxX = Math.max(maxX, endpoint.center.getA()); // 更新线路圆心最大 X 坐标
+            minY = Math.min(minY, endpoint.center.getB()); // 更新线路圆心最小 Y 坐标
+            maxY = Math.max(maxY, endpoint.center.getB()); // 更新线路圆心最大 Y 坐标
         }
-
-        Tuple<Float, Float> startCandidate;
-        Tuple<Float, Float> endCandidate;
-        float spacing = RADIUS * 2;
-        if (capsule.horizontal) {
-            startCandidate = new Tuple<>(capsule.start.getA() - spacing, capsule.start.getB());
-            endCandidate = new Tuple<>(capsule.end.getA() + spacing, capsule.end.getB());
-        } else {
-            startCandidate = new Tuple<>(capsule.start.getA(), capsule.start.getB() - spacing);
-            endCandidate = new Tuple<>(capsule.end.getA(), capsule.end.getB() + spacing);
-        }
-
-        double startScore = capsulePlacementScore(capsule, startCandidate, capsule.end, preferred, stationId, centersByStation);
-        double endScore = capsulePlacementScore(capsule, capsule.start, endCandidate, preferred, stationId, centersByStation);
-        Tuple<Float, Float> endpoint;
-        if (startScore <= endScore) {
-            capsule.start = startCandidate;
-            endpoint = startCandidate;
-        } else {
-            capsule.end = endCandidate;
-            endpoint = endCandidate;
-        }
-        capsule.auxiliaryCenters.add(endpoint);
-        capsule.memberCenters.add(endpoint);
-        return endpoint;
+        CapsuleBounds horizontalBounds = createCapsuleBounds(minX, maxX, minY, maxY, endpoints.size(), true); // 计算水平胶囊包络
+        CapsuleBounds verticalBounds = createCapsuleBounds(minX, maxX, minY, maxY, endpoints.size(), false); // 计算竖直胶囊包络
+        CapsuleBounds bounds = horizontalBounds.area <= verticalBounds.area ? horizontalBounds : verticalBounds; // 选择占用面积更小的轴对齐胶囊
+        return new InterchangeCapsule(stationId, bounds.center, bounds.start, bounds.end,
+                bounds.radius, bounds.horizontal, color); // 创建覆盖全部线路圆心的轴对齐胶囊
     }
 
-    /** Creates the station's single capsule using fixed route directions and the closest axis endpoint. */
-    private InterchangeCapsule createInterchangeCapsule(Tuple<Float, Float> preferred, long stationId, int direction,
-                                                         Map<Long, List<Tuple<Float, Float>>> centersByStation,
-                                                         List<MainStationEndpoint> mainEndpoints) {
-        InterchangeCapsule best = null;
-        Tuple<Float, Float> bestEndpoint = null;
-        double bestScore = Double.MAX_VALUE;
-        float spacing = RADIUS * 2;
-        List<Integer> auxiliaryDirections = getAuxiliaryDirections(stationId);
-
-        for (MainStationEndpoint mainEndpoint : mainEndpoints) {
-            boolean horizontal = isCapsuleHorizontal(mainEndpoint, auxiliaryDirections, preferred);
-            for (int sign : new int[]{-1, 1}) {
-                Tuple<Float, Float> endpoint = horizontal
-                        ? new Tuple<>(mainEndpoint.center.getA() + sign * spacing, mainEndpoint.center.getB())
-                        : new Tuple<>(mainEndpoint.center.getA(), mainEndpoint.center.getB() + sign * spacing);
-                Tuple<Float, Float> start = horizontal
-                        ? (endpoint.getA() < mainEndpoint.center.getA() ? endpoint : mainEndpoint.center)
-                        : (endpoint.getB() < mainEndpoint.center.getB() ? endpoint : mainEndpoint.center);
-                Tuple<Float, Float> end = start == endpoint ? mainEndpoint.center : endpoint;
-                InterchangeCapsule candidate = new InterchangeCapsule(stationId, mainEndpoint.center, start, end,
-                        horizontal, mainEndpoint.color);
-                candidate.memberCenters.add(candidate.mainCenter);
-                double score = capsulePlacementScore(candidate, start, end, preferred, stationId, centersByStation);
-                if (score < bestScore) {
-                    bestScore = score;
-                    best = candidate;
-                    bestEndpoint = endpoint;
-                }
-            }
-        }
-
-        MainStationEndpoint fallback = mainEndpoints.get(0);
-        if (best == null || bestEndpoint == null) {
-            boolean horizontal = isCapsuleHorizontal(fallback, auxiliaryDirections, preferred);
-            bestEndpoint = horizontal
-                    ? new Tuple<>(fallback.center.getA() + spacing, fallback.center.getB())
-                    : new Tuple<>(fallback.center.getA(), fallback.center.getB() + spacing);
-            best = new InterchangeCapsule(stationId, fallback.center, fallback.center, bestEndpoint, horizontal, fallback.color);
-        }
-        best.auxiliaryCenters.add(bestEndpoint);
-        if (!best.containsMember(best.mainCenter)) {
-            best.memberCenters.add(best.mainCenter);
-        }
-        if (!best.containsMember(bestEndpoint)) {
-            best.memberCenters.add(bestEndpoint);
-        }
-        return best;
+    private static CapsuleBounds createCapsuleBounds(float minX, float maxX, float minY, float maxY,
+                                                      int routeCount, boolean horizontal) {
+        float axisMin = horizontal ? minX : minY; // 获取胶囊长轴最小坐标
+        float axisMax = horizontal ? maxX : maxY; // 获取胶囊长轴最大坐标
+        float crossMin = horizontal ? minY : minX; // 获取胶囊短轴最小坐标
+        float crossMax = horizontal ? maxY : maxX; // 获取胶囊短轴最大坐标
+        float crossSpan = crossMax - crossMin; // 计算线路圆心在短轴方向的跨度
+        float radius = Math.max(RADIUS, crossSpan / 2 + RADIUS); // 根据圆心位置计算胶囊半宽
+        int crossCapacity = Math.max(1, (int) Math.floor(radius / RADIUS)); // 估算胶囊短轴能容纳的圆圈行数
+        int axisCapacity = (int) Math.ceil((double) routeCount / crossCapacity); // 根据线路数量计算长轴所需圆圈列数
+        float minimumAxisSpan = Math.max(0, (axisCapacity - 1) * RADIUS * 2); // 根据线路数量计算胶囊最小长轴跨度
+        float axisCenter = (axisMin + axisMax) / 2; // 计算线路圆心的长轴中心
+        float crossCenter = (crossMin + crossMax) / 2; // 计算线路圆心的短轴中心
+        float axisSpan = Math.max(axisMax - axisMin, minimumAxisSpan); // 同时满足位置跨度与线路数量要求
+        Tuple<Float, Float> center = horizontal ? new Tuple<>(axisCenter, crossCenter) : new Tuple<>(crossCenter, axisCenter); // 生成胶囊几何中心
+        Tuple<Float, Float> start = horizontal ? new Tuple<>(axisCenter - axisSpan / 2, crossCenter)
+                : new Tuple<>(crossCenter, axisCenter - axisSpan / 2); // 生成轴对齐胶囊起点
+        Tuple<Float, Float> end = horizontal ? new Tuple<>(axisCenter + axisSpan / 2, crossCenter)
+                : new Tuple<>(crossCenter, axisCenter + axisSpan / 2); // 生成轴对齐胶囊终点
+        double area = (axisSpan + radius * 2) * radius * 2; // 计算胶囊近似包围面积供方向选择
+        return new CapsuleBounds(center, start, end, radius, horizontal, area); // 返回胶囊候选包络
     }
 
-    /** Collects fixed directions of all auxiliary routes serving one station. */
-    private List<Integer> getAuxiliaryDirections(long stationId) {
-        List<Integer> directions = new ArrayList<>();
-        addRouteDirectionsAtStation(directions, ticketMachineScreen.otherRoutes, stationId);
-        addRouteDirectionsAtStation(directions, ticketMachineScreen.lightRailRoutes, stationId);
-        return directions;
-    }
-
-    /** Looks up the snapped direction of each route at the requested station. */
-    private void addRouteDirectionsAtStation(List<Integer> directions, Set<KSDRoute> routes, long stationId) {
-        for (KSDRoute route : routes) {
-            List<RailMapStation> stations = layouts.get(route.id);
-            if (stations == null) {
-                continue;
-            }
-            for (RailMapStation station : stations) {
-                if (station.station.id == stationId) {
-                    directions.add(station.direction);
-                    break;
-                }
-            }
-        }
-    }
-
-    /** Selects capsule axis from route-normal weights; ties follow the main route for stability. */
-    private static boolean isCapsuleHorizontal(MainStationEndpoint mainEndpoint, List<Integer> auxiliaryDirections,
-                                               Tuple<Float, Float> auxiliaryPreferred) {
-        double horizontalWeight = normalHorizontalWeight(mainEndpoint.direction);
-        double verticalWeight = normalVerticalWeight(mainEndpoint.direction);
-        for (int direction : auxiliaryDirections) {
-            horizontalWeight += normalHorizontalWeight(direction);
-            verticalWeight += normalVerticalWeight(direction);
-        }
-        if (Math.abs(horizontalWeight - verticalWeight) < 0.001) {
-            return normalHorizontalWeight(mainEndpoint.direction) >= normalVerticalWeight(mainEndpoint.direction);
-        }
-        return horizontalWeight > verticalWeight;
-    }
-
-    private static double normalHorizontalWeight(int direction) {
-        return Math.abs(Math.sin(Math.toRadians(direction)));
-    }
-
-    private static double normalVerticalWeight(int direction) {
-        return Math.abs(Math.cos(Math.toRadians(direction)));
-    }
-
-    /** Scores only proximity to the auxiliary route anchor; capsule collision avoidance is intentionally disabled. */
-    private double capsulePlacementScore(InterchangeCapsule capsule, Tuple<Float, Float> start, Tuple<Float, Float> end,
-                                         Tuple<Float, Float> preferred, long stationId,
-                                         Map<Long, List<Tuple<Float, Float>>> centersByStation) {
-        Tuple<Float, Float> newEndpoint = dist(start, capsule.start) > 0.001 ? start
-                : dist(end, capsule.end) > 0.001 ? end
-                : dist(start, capsule.mainCenter) > dist(end, capsule.mainCenter) ? start : end;
-        return dist(newEndpoint, preferred);
-    }
-
-    /** Places an interchange circle along its route normal while retaining general station collision scoring. */
+    /** Places an interchange circle with axis-aligned grouping before falling back to route-aware offsets. */
     private Tuple<Float, Float> chooseStationPosition(Tuple<Float, Float> preferred, long stationId, int direction,
                                                       Map<Long, List<Tuple<Float, Float>>> centersByStation) {
         List<Tuple<Float, Float>> sameStationCenters = centersByStation.get(stationId);
@@ -696,15 +691,41 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
             return chooseFreeStationPosition(preferred, stationId, direction, centersByStation, null);
         }
 
-        Tuple<Float, Float> best = null;
-        double bestScore = Double.MAX_VALUE;
-        double spacing = RADIUS * 2;
+        Tuple<Float, Float> best = null; // 保存当前评分最低的候选圆心
+        double bestScore = Double.MAX_VALUE; // 初始化候选圆心评分
+        double spacing = RADIUS * 2; // 使用圆直径作为同站圆心间距
+        int maxRing = Math.max(8, sameStationCenters.size() + 1); // 预留足够的法线搜索层数
 
-        // 换乘圆只沿本线路法线两侧选点，使圆组方向跟随线路走向。
+        // 换乘圆优先保持共线：根据现有圆组的跨度选择水平或竖直方向，并从两端继续扩展。
+        float minX = Float.MAX_VALUE;
+        float maxX = -Float.MAX_VALUE;
+        float minY = Float.MAX_VALUE;
+        float maxY = -Float.MAX_VALUE;
+        float sumX = 0;
+        float sumY = 0;
         for (Tuple<Float, Float> center : sameStationCenters) {
-            for (int ring = 1; ring <= sameStationCenters.size() + 1; ring++) {
+            minX = Math.min(minX, center.getA());
+            maxX = Math.max(maxX, center.getA());
+            minY = Math.min(minY, center.getB());
+            maxY = Math.max(maxY, center.getB());
+            sumX += center.getA();
+            sumY += center.getB();
+        }
+        boolean preferHorizontal = maxX - minX >= maxY - minY;
+        for (int axisPass = 0; axisPass < 2 && best == null; axisPass++) {
+            boolean horizontal = axisPass == 0 ? preferHorizontal : !preferHorizontal;
+            float cross = horizontal ? sumY / sameStationCenters.size() : sumX / sameStationCenters.size();
+            float axisMin = horizontal ? minX : minY;
+            float axisMax = horizontal ? maxX : maxY;
+            for (int ring = 1; ring <= maxRing && best == null; ring++) {
+                double distance = spacing * ring;
                 for (int sign : new int[]{-1, 1}) {
-                    Tuple<Float, Float> candidate = offsetByRouteDirection(center, direction, spacing * ring, true, sign);
+                    float axis = sign < 0 ? (float) (axisMin - distance) : (float) (axisMax + distance);
+                    Tuple<Float, Float> candidate = horizontal
+                            ? new Tuple<>(axis, cross) : new Tuple<>(cross, axis);
+                    if (!isSameStationCandidateValid(candidate, sameStationCenters, spacing)) {
+                        continue;
+                    }
                     double score = stationPositionScore(candidate, preferred, stationId, centersByStation, sameStationCenters);
                     if (score < bestScore) {
                         bestScore = score;
@@ -713,7 +734,71 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                 }
             }
         }
-        return best == null ? preferred : best;
+
+        // 共线候选受阻时，仍优先使用水平/竖直轴向的局部位置。
+        if (best == null) {
+            for (Tuple<Float, Float> center : sameStationCenters) {
+                for (int ring = 1; ring <= maxRing; ring++) {
+                    double distance = spacing * ring;
+                    for (boolean horizontal : new boolean[]{true, false}) {
+                        for (int sign : new int[]{-1, 1}) {
+                            Tuple<Float, Float> candidate = offsetByAxis(center, distance, horizontal, sign);
+                            if (!isSameStationCandidateValid(candidate, sameStationCenters, spacing)) {
+                                continue;
+                            }
+                            double score = stationPositionScore(candidate, preferred, stationId, centersByStation, sameStationCenters);
+                            if (score < bestScore) {
+                                bestScore = score;
+                                best = candidate;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 若轴向候选都不可用，再沿本线路法线两侧寻找位置。
+        double directionalBestScore = Double.MAX_VALUE;
+        Tuple<Float, Float> directionalBest = null;
+        for (Tuple<Float, Float> center : sameStationCenters) {
+            for (int ring = 1; ring <= maxRing; ring++) { // 从已有圆心向外逐层搜索相切位置
+                for (int sign : new int[]{-1, 1}) {
+                    Tuple<Float, Float> candidate = offsetByRouteDirection(center, direction, spacing * ring, true, sign); // 沿线路法线生成候选圆心
+                    if (!isSameStationCandidateValid(candidate, sameStationCenters, spacing)) { // 过滤会造成同站圆圈重叠的候选位置
+                        continue; // 跳过不满足相切间距的候选位置
+                    }
+                    double score = stationPositionScore(candidate, preferred, stationId, centersByStation, sameStationCenters); // 评估候选位置的整体避让代价
+                    if (score < directionalBestScore) {
+                        directionalBestScore = score;
+                        directionalBest = candidate;
+                    }
+                }
+            }
+        }
+        if (best != null) {
+            return best;
+        }
+        return directionalBest == null
+                ? chooseFreeStationPosition(preferred, stationId, direction, centersByStation, sameStationCenters)
+                : directionalBest; // 无法相切时回退到通用避让算法
+    }
+
+    private static Tuple<Float, Float> offsetByAxis(Tuple<Float, Float> center, double distance,
+                                                    boolean horizontal, int sign) {
+        return horizontal
+                ? new Tuple<>((float) (center.getA() + sign * distance), center.getB())
+                : new Tuple<>(center.getA(), (float) (center.getB() + sign * distance));
+    }
+
+    private static boolean isSameStationCandidateValid(Tuple<Float, Float> candidate,
+                                                       List<Tuple<Float, Float>> sameStationCenters,
+                                                       double spacing) {
+        for (Tuple<Float, Float> center : sameStationCenters) { // 检查候选圆心与同站已有圆心的距离
+            if (dist(candidate, center) < spacing - 0.001) { // 判断两个圆圈是否会发生重叠
+                return false; // 拒绝小于直径的候选间距
+            }
+        }
+        return true; // 候选位置满足同站圆圈不重叠要求
     }
 
     /** Finds a free location, preferring route-normal movement over movement along the route. */
@@ -800,13 +885,20 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
 
     /** Applies category colors while preserving each main route's configured color. */
     private int getDrawingColor(KSDRoute route) {
-        if (ticketMachineScreen.otherRoutes.contains(route)) {
+        if (lightRailRoutes.contains(route)) {
+            return LIGHT_RAIL_COLOR;
+        }
+        if (otherRoutes.contains(route)) {
             return argb(0x808080);
         }
-        if (ticketMachineScreen.lightRailRoutes.contains(route)) {
-            return argb(0xF98C2B);
-        }
         return argb(route.color);
+    }
+
+    private int getStationMarkerColor(long stationId, int fallbackColor) {
+        if (isLightRail) {
+            return ARGB_BLACK;
+        }
+        return mainStationColors.getOrDefault(stationId, fallbackColor);
     }
 
     /**
@@ -909,7 +1001,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         this.x = x;
         this.y = y;
         this.width = width;
-        this.maxHeight = height;
+        this.height = height; // 保存线路图组件高度
     }
 
     public void scale(double amount) {
@@ -920,11 +1012,9 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
     private void mouseOnStation(List<StationCircle> circles, Tuple<Float, Float> mouseCord, MouseOnStationCallback callback) {
         for (StationCircle circle : circles) {
             if (dist(new Tuple<>((float) circle.centerX, (float) circle.centerY), mouseCord) <= RADIUS) {
-                for (KSDStation station : ticketMachineScreen.mainStations) {
-                    if (station.id == circle.stationId) {
-                        callback.mouseOnStation(station);
-                        break;
-                    }
+                KSDStation station = getRenderableStation(circle.stationId);
+                if (station != null) {
+                    callback.mouseOnStation(station);
                 }
             }
         }
@@ -954,33 +1044,68 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
     }
 
     public void load() {
+        loadRoutes();
+        loadStations();
         loadLayout();
+    }
+
+    private void loadRoutes() {
+        mainRoutes.clear();
+        otherRoutes.clear();
+        lightRailRoutes.clear();
+        Set<KSDRoute> routesInNetwork = currentStation == null
+                ? Set.of() : KSDClientData.DATA_CACHE.wayFinder.getNetwork(currentStation.id);
+        Set<KSDRoute> mtr = RailDataUtilities.getMTRRoutes(routesInNetwork);
+        Set<KSDRoute> kcr = RailDataUtilities.getKCRRoutes(routesInNetwork);
+        Set<KSDRoute> lightRail = RailDataUtilities.getLightRailRoutes(routesInNetwork);
+        switch (railMapType) {
+            case MTR -> {
+                mainRoutes.addAll(mtr);
+                otherRoutes.addAll(kcr);
+                lightRailRoutes.addAll(lightRail);
+            }
+            case KCR, LIGHT_RAIL -> {
+                mainRoutes.addAll(kcr);
+                otherRoutes.addAll(mtr);
+                lightRailRoutes.addAll(lightRail);
+            }
+        }
+    }
+
+    private void loadStations() {
+        mainStations.clear();
+        otherStations.clear();
+        lightRailStations.clear();
+        WayFinder wayFinder = KSDClientData.DATA_CACHE.wayFinder;
+        for (KSDRoute route : mainRoutes) {
+            mainStations.addAll(wayFinder.routeIdToStationsWithIndex.getOrDefault(route.id, List.of()));
+        }
+        for (KSDRoute route : otherRoutes) {
+            otherStations.addAll(wayFinder.routeIdToStationsWithIndex.getOrDefault(route.id, List.of()));
+        }
+        for (KSDRoute route : lightRailRoutes) {
+            lightRailStations.addAll(wayFinder.routeIdToStationsWithIndex.getOrDefault(route.id, List.of()));
+        }
     }
 
     // 计算线路图布局：每条线路的站点顺序、平台方向、站内分流序号与偏移
     private void loadLayout() {
         // 清空旧布局
         layouts.clear();
-        // 清空站点锚点
-        stationOrigins.clear();
         // 每条线路的 RailMapStation 列表
         Map<Long, List<RailMapStation>> railMapStationsByRoute = new HashMap<>();
         // 每个站点、每个方向对应的线路名列表（用于分配分流序号）
         Map<Long, Map<Integer, List<String>>> stationRouteDirections = new HashMap<>();
         // 线路 id → 线路标识
         Map<Long, String> routeLineKeys = new HashMap<>();
-        // 站点 id → 平台中点坐标映射（取均值作锚点）
-        Map<Long, Map<String, double[]>> platformMidsByStation = new HashMap<>();
-        // 三类线路全部使用相同的站点顺序、平台锚点、方向和分流判定。
+        // 三类线路全部使用相同的站点顺序、选区中心、方向和分流判定。
         for (KSDRoute route : getAllRoutes()) {
             // 本线路去重后的站点列表
             List<KSDStation> stationList = new ArrayList<>();
-            // 各站点对应平台中点（可能为空）
-            List<BlockPos> platformMids = new ArrayList<>();
             // 遍历线路的每个站台
             for (Route.RoutePlatform routePlatform : route.platformIds) {
                 // 由站台 id 查站点
-                KSDStation station = KSDClientData.DATA_CACHE.platformIdToStation.get(routePlatform.platformId);
+                KSDStation station = KSDClientData.DATA_CACHE.wayFinder.platformIdToStation.get(routePlatform.platformId); // 通过 WayFinder 索引平台所属车站
                 if (KSDAreaBase.nonNullCorners(station) && isStationInRouteGroup(route, station)) {
                     // 连续相同车站跳过（站内多站台或同名同色车站）
                     if (!stationList.isEmpty() && RailDataUtilities.isSameStation(stationList.get(stationList.size() - 1), station)) {
@@ -988,17 +1113,6 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                     }
                     // 加入去重站点列表
                     stationList.add(station);
-                    // 取站台数据
-                    KSDPlatform platform = DataUtilities.getPlatform(KSDClientData.PLATFORMS, routePlatform.platformId);
-                    // 平台中点，默认为空
-                    BlockPos platformMid = null;
-                    // 平台数据存在时计算中点
-                    if (platform != null) {
-                        // 取平台中心方块位置
-                        platformMid = platform.getMidPos();
-                    }
-                    // 记录平台中点
-                    platformMids.add(platformMid);
                 }
             }
             // 站点不足两个无法成线
@@ -1017,18 +1131,8 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                 RailMapStation railMapStation = new RailMapStation(stationList.get(i));
                 // 计算站点处线路的方向（45 度快照）
                 railMapStation.direction = stationDirection(stationList, i);
-                // 记录平台中点
-                railMapStation.platformMid = platformMids.get(i);
                 // 加入线路站点列表
                 railMapStations.add(railMapStation);
-                // 有平台中点时收集用于计算站点锚点
-                if (platformMids.get(i) != null) {
-                    // 取平台中点
-                    BlockPos mid = platformMids.get(i);
-                    // 按"x,z"去重记录该平台中点
-                    platformMidsByStation.computeIfAbsent(stationList.get(i).id, key -> new HashMap<>())
-                            .put(mid.getX() + "," + mid.getZ(), new double[]{mid.getX(), mid.getZ()});
-                }
                 // 按站点+方向登记该线路名
                 List<String> lineKeys = stationRouteDirections.computeIfAbsent(stationList.get(i).id, key -> new HashMap<>())
                         .computeIfAbsent(railMapStation.direction, key -> new ArrayList<>());
@@ -1039,24 +1143,6 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
             }
             // 保存该线路的布局站点列表
             railMapStationsByRoute.put(route.id, railMapStations);
-        }
-        // 计算每个站点的锚点：该站所有平台中点的平均
-        for (Map.Entry<Long, Map<String, double[]>> entry : platformMidsByStation.entrySet()) {
-            // X 坐标累加
-            double sumX = 0;
-            // Z 坐标累加
-            double sumZ = 0;
-            // 累加所有平台中点
-            for (double[] mid : entry.getValue().values()) {
-                sumX += mid[0];
-                sumZ += mid[1];
-            }
-            // 平台中点数量
-            int count = entry.getValue().size();
-            // 数量大于零才计算平均
-            if (count > 0) {
-                stationOrigins.put(entry.getKey(), new double[]{sumX / count, sumZ / count});
-            }
         }
         // 为每条线路的每个站点分配分流序号（同站同方向的线路按线路名排序）
         for (Map.Entry<Long, List<RailMapStation>> entry : railMapStationsByRoute.entrySet()) {
@@ -1080,7 +1166,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
 
     private Tuple<Double, Double> worldPosToCords(double worldX, double worldZ) {
         double cordsX = (worldX - centerX) * scale + (double) width / (double) 2.0F;
-        double cordsY = (worldZ - centerY) * scale + (double) maxHeight / (double) 2.0F;
+        double cordsY = (worldZ - centerY) * scale + (double) height / (double) 2.0F; // 使用组件高度将世界纵坐标转换为屏幕坐标
         return new Tuple<>(cordsX, cordsY);
     }
 
@@ -1122,14 +1208,14 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
     }
 
     private boolean isStationInRouteGroup(KSDRoute route, KSDStation station) {
-        if (ticketMachineScreen.mainRoutes.contains(route)) {
-            return ticketMachineScreen.mainStations.contains(station);
+        if (mainRoutes.contains(route)) {
+            return mainStations.contains(station);
         }
-        if (ticketMachineScreen.otherRoutes.contains(route)) {
-            return ticketMachineScreen.otherStations.contains(station);
+        if (otherRoutes.contains(route)) {
+            return otherStations.contains(station);
         }
-        if (ticketMachineScreen.lightRailRoutes.contains(route)) {
-            return ticketMachineScreen.lightRailStations.contains(station);
+        if (lightRailRoutes.contains(route)) {
+            return lightRailStations.contains(station);
         }
         return false;
     }
@@ -1203,11 +1289,10 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         return Math.sqrt(Math.pow(corner1.getA() - corner2.getA(), 2) + Math.pow(corner1.getB() - corner2.getB(), 2));
     }
 
-    // 线路图布局中的单个站点：记录所属站点、平台数据与站内分流信息
+    // 线路图布局中的单个站点：记录所属站点与站内分流信息
     private static final class RailMapStation {
 
         final KSDStation station;
-        BlockPos platformMid;
         int direction;
         int offsetIndex;
         int routeCount;
@@ -1236,50 +1321,60 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         }
     }
 
-    private static final class MainStationEndpoint {
+    private static final class StationRouteEndpoint {
 
-        final String lineKey;
-        final Tuple<Float, Float> center;
-        final int direction;
-        final int color;
+        final String lineKey; // 保存线路唯一标识
+        final Tuple<Float, Float> center; // 保存线路在当前车站的连接圆心
+        final int direction; // 保存线路在当前车站的折线方向
+        final int color; // 保存线路绘制颜色
 
-        MainStationEndpoint(String lineKey, Tuple<Float, Float> center, int direction, int color) {
-            this.lineKey = lineKey;
-            this.center = center;
-            this.direction = direction;
-            this.color = color;
+        StationRouteEndpoint(String lineKey, Tuple<Float, Float> center, int direction, int color) {
+            this.lineKey = lineKey; // 保存线路唯一标识
+            this.center = center; // 保存线路在当前车站的连接圆心
+            this.direction = direction; // 保存线路在当前车站的折线方向
+            this.color = color; // 保存线路绘制颜色
+        }
+    }
+
+    private static final class CapsuleBounds {
+
+        final Tuple<Float, Float> center; // 保存胶囊几何中心
+        final Tuple<Float, Float> start; // 保存胶囊长轴起点
+        final Tuple<Float, Float> end; // 保存胶囊长轴终点
+        final float radius; // 保存胶囊半宽
+        final boolean horizontal; // 保存胶囊是否水平
+        final double area; // 保存胶囊近似包围面积
+
+        CapsuleBounds(Tuple<Float, Float> center, Tuple<Float, Float> start, Tuple<Float, Float> end,
+                      float radius, boolean horizontal, double area) {
+            this.center = center; // 保存胶囊几何中心
+            this.start = start; // 保存胶囊长轴起点
+            this.end = end; // 保存胶囊长轴终点
+            this.radius = radius; // 保存胶囊半宽
+            this.horizontal = horizontal; // 保存胶囊是否水平
+            this.area = area; // 保存胶囊近似包围面积
         }
     }
 
     private static final class InterchangeCapsule {
 
-        final long stationId;
-        final Tuple<Float, Float> mainCenter;
-        final boolean horizontal;
-        final int color;
-        final List<Tuple<Float, Float>> auxiliaryCenters = new ArrayList<>();
-        final List<Tuple<Float, Float>> memberCenters = new ArrayList<>();
-        Tuple<Float, Float> start;
-        Tuple<Float, Float> end;
+        final long stationId; // 保存胶囊所属车站编号
+        final Tuple<Float, Float> mainCenter; // 保存胶囊几何中心
+        final float radius; // 保存胶囊半宽
+        final boolean horizontal; // 保存胶囊是否水平
+        final int color; // 保存胶囊绘制颜色
+        final Tuple<Float, Float> start; // 保存胶囊长轴起点
+        final Tuple<Float, Float> end; // 保存胶囊长轴终点
 
         InterchangeCapsule(long stationId, Tuple<Float, Float> mainCenter, Tuple<Float, Float> start,
-                           Tuple<Float, Float> end, boolean horizontal, int color) {
-            this.stationId = stationId;
-            this.mainCenter = mainCenter;
-            this.start = start;
-            this.end = end;
-            this.horizontal = horizontal;
-            this.color = color;
-        }
-
-        /** Returns whether a logical route endpoint belongs to this capsule. */
-        boolean containsMember(Tuple<Float, Float> center) {
-            for (Tuple<Float, Float> member : memberCenters) {
-                if (dist(member, center) < 0.001) {
-                    return true;
-                }
-            }
-            return false;
+                           Tuple<Float, Float> end, float radius, boolean horizontal, int color) {
+            this.stationId = stationId; // 保存胶囊所属车站编号
+            this.mainCenter = mainCenter; // 保存胶囊几何中心
+            this.start = start; // 保存胶囊长轴起点
+            this.end = end; // 保存胶囊长轴终点
+            this.radius = radius; // 保存胶囊半宽
+            this.horizontal = horizontal; // 保存胶囊是否水平
+            this.color = color; // 保存胶囊绘制颜色
         }
     }
 
