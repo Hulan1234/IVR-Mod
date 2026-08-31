@@ -37,10 +37,10 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         Registry.sendToPlayer(player, KSD_PACKET_OPEN_KSD_DASHBOARD_SCREEN, packet);
     }
 
-    public static void openKCRTicketMachineScreenS2C(ServerPlayer player, KCRSingleTicketMachineScreen.RailMapType railMapType, BlockPos pos) {
+    public static void openSingleTicketMachineScreenS2C(ServerPlayer player, KCRSingleTicketSystem.TicketType ticketType, BlockPos pos) {
         int balance = TicketSystem.getPlayerScore(player.getLevel(), player, "mtr_balance").getScore();
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
-        packet.writeUtf(railMapType.name());
+        packet.writeUtf(ticketType.name());
         packet.writeBlockPos(pos);
         packet.writeInt(balance);
         Registry.sendToPlayer(player, KSD_PACKET_OPEN_KCR_SINGLE_TICKET_MACHINE_SCREEN, packet);
@@ -52,6 +52,22 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         packet.writeBlockPos(pos);
         packet.writeInt(balance);
         Registry.sendToPlayer(player, KSD_PACKET_OPEN_KCR_SINGLE_TICKET_FARE_ADJUSTMENT_SCREEN, packet);
+    }
+
+    public static void openApplyOctopusScreenS2C(ServerPlayer player, BlockPos pos) {
+        int balance = TicketSystem.getPlayerScore(player.getLevel(), player, "mtr_balance").getScore();
+        FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
+        packet.writeBlockPos(pos);
+        packet.writeInt(balance);
+        Registry.sendToPlayer(player, KSD_PACKET_OPEN_APPLY_OCTOPUS_SCREEN, packet);
+    }
+
+    public static void openAddValueMachine(ServerPlayer player, BlockPos pos) {
+        int balance = TicketSystem.getPlayerScore(player.getLevel(), player, "mtr_balance").getScore();
+        FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
+        packet.writeBlockPos(pos);
+        packet.writeInt(balance);
+        Registry.sendToPlayer(player, KSD_PACKET_OPEN_ADD_VALUE_SCREEN, packet);
     }
 
     public static void sendAllInChunks(ServerPlayer player, Set<KSDStation> stations, Set<KSDPlatform> platforms, Set<KSDRoute> routes) {
@@ -126,6 +142,7 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
     public static void receiveCreateSingleTicketC2S(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
         int fare = packet.readInt();
         int amount = packet.readInt();
+        KCRSingleTicketSystem.TicketType ticketType = EnumHelper.valueOf(KCRSingleTicketSystem.TicketType.MTR, packet.readUtf());
         boolean isConcessionary = packet.readBoolean();
         boolean fcAvailable = packet.readBoolean();
         BlockPos storeBlockPos = packet.readBlockPos();
@@ -133,34 +150,26 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
             Level world = player.level;
             List<ItemStack> items = new ArrayList<>(amount);
             for (int i = 1; i <= amount; i++) {
-                items.add(KCRSingleTicketSystem.createSingleTicketItem(fare, isConcessionary, fcAvailable));
+                items.add(KCRSingleTicketSystem.createSingleTicketItem(fare, ticketType, isConcessionary, fcAvailable));
             }
-            if (world.getBlockEntity(storeBlockPos) instanceof StorableBlockEntity entity) {
-                entity.storeItems(items);
-            } else {
-                items.forEach(item -> Utilities.getInventory(player).add(item));
-            }
+            storeOrReleaseItems(world, storeBlockPos, Utilities.getInventory(player), items);
         });
     }
 
     public static void receiveAdjustSingleTicketFareC2S(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
-        ItemStack identifyItem = packet.readItem();
+        long id = packet.readLong();
         int addValue = packet.readInt();
         BlockPos storeBlockPos = packet.readBlockPos();
         minecraftServer.execute(() -> {
             Level world = player.level;
             List<ItemStack> items = new ArrayList<>();
             Inventory inventory = Utilities.getInventory(player);
-            ItemStack singleTicketItem = KCRSingleTicketSystem.findSingleTicketItem(identifyItem, inventory);
+            ItemStack singleTicketItem = KCRSingleTicketSystem.findSingleTicketItem(id, inventory);
             if (!singleTicketItem.isEmpty()) {
                 inventory.removeItem(singleTicketItem);
                 KCRSingleTicketSystem.adjustSingleTicketFare(singleTicketItem, addValue);
                 items.add(singleTicketItem);
-                if (world.getBlockEntity(storeBlockPos) instanceof StorableBlockEntity entity) {
-                    entity.storeItems(items);
-                } else {
-                    items.forEach(inventory::add);
-                }
+                storeOrReleaseItems(world, storeBlockPos, inventory, items);
             }
         });
     }
@@ -182,11 +191,7 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
                         ItemStack emeraldsStack = new ItemStack(Items.EMERALD, change);
                         items.add(emeraldsStack);
                     }
-                    if (world.getBlockEntity(storeBlockPos) instanceof StorableBlockEntity entity) {
-                        entity.storeItems(items);
-                    } else {
-                        items.forEach(inventory::add);
-                    }
+                    storeOrReleaseItems(world, storeBlockPos, inventory, items);
                     world.playSound(null, player.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1.0F, 1.0F);
                 }
                 case MTR_BALANCE -> {
@@ -198,8 +203,45 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         });
     }
 
+    public static void receiveApplyOctopusC2S(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
+        int addValue = packet.readInt();
+        boolean isConcessionary = packet.readBoolean();
+        int amount = packet.readInt();
+        minecraftServer.execute(() -> {
+            Level world = player.level;
+            KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
+            Inventory inventory = Utilities.getInventory(player);
+            if (railwayData != null) {
+                for (int i = 1; i <= amount; i++) {
+                    inventory.add(OctopusSystem.ApplyOctopusItem(addValue, isConcessionary, railwayData.jsonDataManager));
+                }
+            }
+        });
+    }
+
+    public static void receiveOctopusAddValueC2S(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
+        UUID uuid = packet.readUUID();
+        int addValue = packet.readInt();
+        Octopus.History.Source source = EnumHelper.valueOf(Octopus.History.Source.NONE, packet.readUtf());
+        minecraftServer.execute(() -> {
+            Level world = player.level;
+            KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
+            if (railwayData != null) {
+                OctopusSystem.addValue(uuid, addValue, source, railwayData.jsonDataManager, Utilities.getInventory(player));
+            }
+        });
+    }
+
     private static <T extends SerializedDataBase> void serializeData(FriendlyByteBuf packet, Collection<T> objects) {
         packet.writeInt(objects.size());
         objects.forEach((object) -> object.writePacket(packet));
+    }
+
+    private static void storeOrReleaseItems(Level world, BlockPos storeBlockPos, Inventory inventory, List<ItemStack> items) {
+        if (world.getBlockEntity(storeBlockPos) instanceof StorableBlockEntity entity) {
+            entity.storeItems(items);
+        } else {
+            items.forEach(inventory::add);
+        }
     }
 }

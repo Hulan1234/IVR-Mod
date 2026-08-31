@@ -7,12 +7,9 @@ import mtr.data.Route;
 import mtr.mappings.SelectableMapper;
 import mtr.mappings.WidgetMapper;
 import net.hulan.ksd.client.KSDClientData;
+import net.hulan.ksd.data.*;
 import net.hulan.ksd.utils.RailDataUtilities;
 import net.hulan.ksd.utils.RenderUtilities;
-import net.hulan.ksd.data.KSDAreaBase;
-import net.hulan.ksd.data.KSDRoute;
-import net.hulan.ksd.data.KSDStation;
-import net.hulan.ksd.data.WayFinder; // 引入线路可达关系和缓存索引类型
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui; // 引入界面背景填充工具
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -35,8 +32,8 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
     private double scale;
     private double centerX;
     private double centerY;
-    private boolean isLightRail;
-    private final KCRSingleTicketMachineScreen.RailMapType railMapType;
+    private final boolean isLRT;
+    private final KCRSingleTicketSystem.TicketType ticketType;
     private final Consumer<KSDStation> onClickedOnDestination;
     private final KSDStation currentStation;
     private final Set<KSDRoute> mainRoutes = new HashSet<>();
@@ -70,9 +67,9 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
     private long handCursor;
 
     public KCRSingleTicketMachineRailMap(Consumer<KSDStation> onClickedOnDestination,
-                                         KCRSingleTicketMachineScreen.RailMapType railMapType,
+                                         KCRSingleTicketSystem.TicketType ticketType,
                                          KSDStation currentStation) {
-        this.railMapType = railMapType; // 保存当前线路图类型
+        this.ticketType = ticketType; // 保存当前线路图类型
         this.onClickedOnDestination = onClickedOnDestination;
         this.currentStation = currentStation;
         Minecraft minecraftClient = Minecraft.getInstance();
@@ -85,7 +82,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
             centerY = player.getZ();
         }
         scale = 0.05F;
-        isLightRail = railMapType.equals(KCRSingleTicketMachineScreen.RailMapType.LIGHT_RAIL); // 缓存轻铁线路图标记
+        isLRT = ticketType.equals(KCRSingleTicketSystem.TicketType.LRT); // 缓存轻铁线路图标记
     }
 
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
@@ -138,7 +135,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
 
         // 先确定最终颜色，再把每个胶囊完整绘制一次，避免同深度重复叠画产生闪烁和错位。
         for (InterchangeCapsule capsule : interchangeCapsules) {
-            int color = capsule == hoveredCapsule && !isLightRail
+            int color = capsule == hoveredCapsule && !isLRT
                     ? renderUtilities.lightenColor(capsule.color) : capsule.color;
             drawInterchangeCapsule(matrices, capsule, color);
         }
@@ -161,7 +158,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                 // 判断圆是否属于被命中的车站
                 if (circle.stationId == station.id) {
                     // 用提亮后的颜色重画该圆的圆环
-                    int color = isLightRail ? ARGB_BLACK : renderUtilities.lightenColor(circle.color);
+                    int color = isLRT ? ARGB_BLACK : renderUtilities.lightenColor(circle.color);
                     renderUtilities.drawStationCircle(matrices, (float) x + (float) circle.centerX, (float) y + (float) circle.centerY,
                             RADIUS, SEGMENTS, STATION_RING_THICKNESS, color);
                 }
@@ -423,7 +420,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                 return station;
             }
         }
-        if (isLightRail) {
+        if (isLRT) {
             for (KSDStation station : lightRailStations) {
                 if (station.id == stationId) {
                     return station;
@@ -436,7 +433,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
     private Collection<KSDStation> getRenderableStations() {
         Map<Long, KSDStation> stationsById = new LinkedHashMap<>();
         mainStations.forEach(station -> stationsById.put(station.id, station));
-        if (isLightRail) {
+        if (isLRT) {
             lightRailStations.forEach(station -> stationsById.putIfAbsent(station.id, station));
         }
         return stationsById.values();
@@ -485,16 +482,15 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         Map<Long, Integer> mainRouteCountsByStation = countRoutesByStation(mainRoutes);
         Map<Long, Integer> otherRouteCountsByStation = countRoutesByStation(otherRoutes);
         Map<Long, Integer> lightRailRouteCountsByStation = countRoutesByStation(lightRailRoutes);
-        Set<Long> capsuleStationIds = new HashSet<>();
         Set<Long> specialInterchangeStationIds = new HashSet<>();
-        if (isLightRail) {
+        if (isLRT) {
             routeCountsByStation.forEach((stationId, count) -> {
                 // 轻铁图中所有多线路车站都使用胶囊站点。
                 if (count > 1) {
                     specialInterchangeStationIds.add(stationId);
                 }
             });
-        } else if (railMapType == KCRSingleTicketMachineScreen.RailMapType.KCR) {
+        } else if (ticketType == KCRSingleTicketSystem.TicketType.KCR) {
             mainRouteCountsByStation.forEach((stationId, count) -> {
                 // KCR 图中，主线路与任一辅助线路换乘时使用胶囊站点。
                 if (count > 0 && (otherRouteCountsByStation.getOrDefault(stationId, 0) > 0
@@ -503,7 +499,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                 }
             });
         }
-        capsuleStationIds.addAll(specialInterchangeStationIds);
+        Set<Long> capsuleStationIds = new HashSet<>(specialInterchangeStationIds);
         routeCountsByStation.forEach((stationId, count) -> {
             if (count > 3) {
                 capsuleStationIds.add(stationId);
@@ -519,7 +515,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                 continue;
             }
             String lineKey = RailDataUtilities.getRouteKey(route);
-            boolean mainRoute = mainRoutes.contains(route) || isLightRail && lightRailRoutes.contains(route);
+            boolean mainRoute = mainRoutes.contains(route) || isLRT && lightRailRoutes.contains(route);
             List<Tuple<Float, Float>> path = new ArrayList<>();
 
             // 先为本线路依次放置站点；候选位置只参考此前已经登记的线路和站点。
@@ -713,7 +709,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         }
         boolean preferHorizontal = maxX - minX >= maxY - minY;
         for (int axisPass = 0; axisPass < 2 && best == null; axisPass++) {
-            boolean horizontal = axisPass == 0 ? preferHorizontal : !preferHorizontal;
+            boolean horizontal = (axisPass == 0) == preferHorizontal;
             float cross = horizontal ? sumY / sameStationCenters.size() : sumX / sameStationCenters.size();
             float axisMin = horizontal ? minX : minY;
             float axisMax = horizontal ? maxX : maxY;
@@ -895,7 +891,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
     }
 
     private int getStationMarkerColor(long stationId, int fallbackColor) {
-        if (isLightRail) {
+        if (isLRT) {
             return ARGB_BLACK;
         }
         return mainStationColors.getOrDefault(stationId, fallbackColor);
@@ -1058,13 +1054,13 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
         Set<KSDRoute> mtr = RailDataUtilities.getMTRRoutes(routesInNetwork);
         Set<KSDRoute> kcr = RailDataUtilities.getKCRRoutes(routesInNetwork);
         Set<KSDRoute> lightRail = RailDataUtilities.getLightRailRoutes(routesInNetwork);
-        switch (railMapType) {
+        switch (ticketType) {
             case MTR -> {
                 mainRoutes.addAll(mtr);
                 otherRoutes.addAll(kcr);
                 lightRailRoutes.addAll(lightRail);
             }
-            case KCR, LIGHT_RAIL -> {
+            case KCR, LRT -> {
                 mainRoutes.addAll(kcr);
                 otherRoutes.addAll(mtr);
                 lightRailRoutes.addAll(lightRail);

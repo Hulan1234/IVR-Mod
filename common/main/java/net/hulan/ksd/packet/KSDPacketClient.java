@@ -10,24 +10,19 @@ import mtr.mappings.UtilitiesClient;
 import mtr.packet.PacketTrainDataBase;
 import net.hulan.ksd.KSDItems;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.data.KSDRailwayData;
-import net.hulan.ksd.data.KSDStation;
-import net.hulan.ksd.data.PaymentMethod;
-import net.hulan.ksd.sreen.KCRSingleTicketMachineScreen;
-import net.hulan.ksd.sreen.KSDDashboardScreen;
-import net.hulan.ksd.sreen.PutItemScreen;
-import net.hulan.ksd.sreen.SingleTicketFareAdjustmentScreen;
+import net.hulan.ksd.data.*;
+import net.hulan.ksd.sreen.*;
 import net.hulan.ksd.utils.DataUtilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiFunction;
 
 public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
@@ -47,7 +42,7 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
     }
 
     public static void openKCRSingleTicketMachineScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
-        KCRSingleTicketMachineScreen.RailMapType railMapType = EnumHelper.valueOf(KCRSingleTicketMachineScreen.RailMapType.MTR, packet.readUtf());
+        KCRSingleTicketSystem.TicketType ticketType = EnumHelper.valueOf(KCRSingleTicketSystem.TicketType.MTR, packet.readUtf());
         BlockPos storeBlockPos = packet.readBlockPos();
         int balance = packet.readInt();
         minecraftClient.execute(() -> {
@@ -55,7 +50,7 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
             if (!(minecraftClient.screen instanceof KCRSingleTicketMachineScreen) &&
                     current != null) {
                 UtilitiesClient.setScreen(minecraftClient, new KCRSingleTicketMachineScreen(
-                        railMapType,
+                        ticketType,
                         current,
                         storeBlockPos,
                         balance));
@@ -85,6 +80,38 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
                                         destination,
                                         balance,
                                         singleTicketItem,
+                                        storeBlockPos));
+                            }
+                        }));
+            }
+        });
+    }
+
+    public static void openApplyOctopusScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
+        BlockPos storeBlockPos = packet.readBlockPos();
+        int balance = packet.readInt();
+        minecraftClient.execute(() -> {
+            if (!(minecraftClient.screen instanceof ApplyOctopusScreen)) {
+                UtilitiesClient.setScreen(minecraftClient, new ApplyOctopusScreen(balance, storeBlockPos));
+            }
+        });
+    }
+
+    public static void openAddValueMachineScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
+        BlockPos storeBlockPos = packet.readBlockPos();
+        int balance = packet.readInt();
+        minecraftClient.execute(() -> {
+            if (!(minecraftClient.screen instanceof KCRSingleTicketMachineScreen)) {
+                UtilitiesClient.setScreen(minecraftClient, new PutItemScreen(
+                        "item.ksd.octopus",
+                        KSDItems.OCTOPUS.get(),
+                        PutItemScreen.PutMethod.INSERT,
+                        true,
+                        (octopusItem, amount) -> {
+                            if (!(minecraftClient.screen instanceof AddValueMachineScreen)) {
+                                UtilitiesClient.setScreen(minecraftClient, new AddValueMachineScreen(
+                                        balance,
+                                        octopusItem,
                                         storeBlockPos));
                             }
                         }));
@@ -141,23 +168,25 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
 
     public static void sendCreateSingleTicketC2S(int fare,
                                                  int amount,
+                                                 KCRSingleTicketSystem.TicketType ticketType,
                                                  boolean isConcessionary,
                                                  boolean firstClassAvailable,
                                                  BlockPos storeBlockPos) {
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
         packet.writeInt(fare);
         packet.writeInt(amount);
+        packet.writeUtf(ticketType.name());
         packet.writeBoolean(isConcessionary);
         packet.writeBoolean(firstClassAvailable);
         packet.writeBlockPos(storeBlockPos);
         RegistryClient.sendToServer(KSD_PACKET_CREATE_SINGLE_TICKET, packet);
     }
 
-    public static void sendAdjustSingleTicketFareC2S(ItemStack singleTicketItem,
+    public static void sendAdjustSingleTicketFareC2S(long id,
                                                      int addValue,
                                                      BlockPos storeBlockPos) {
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
-        packet.writeItem(singleTicketItem);
+        packet.writeLong(id);
         packet.writeInt(addValue);
         packet.writeBlockPos(storeBlockPos);
         RegistryClient.sendToServer(KSD_PACKET_ADJUST_SINGLE_TICKET_FARE, packet);
@@ -173,5 +202,25 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
         packet.writeInt(actualPayment);
         packet.writeBlockPos(storeBlockPos);
         RegistryClient.sendToServer(KSD_PACKET_PAYMENT, packet);
+    }
+
+    public static void sendApplyOctopusC2S(int addValue,
+                                            boolean isConcessionary,
+                                            int amount) {
+        FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
+        packet.writeInt(addValue);
+        packet.writeBoolean(isConcessionary);
+        packet.writeInt(amount);
+        RegistryClient.sendToServer(KSD_PACKET_CREATE_OCTOPUS, packet);
+    }
+
+    public static void sendOctopusAddValueC2S(UUID uuid,
+                                              int addValue,
+                                              Octopus.History.Source source) {
+        FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
+        packet.writeUUID(uuid);
+        packet.writeInt(addValue);
+        packet.writeUtf(source.name());
+        RegistryClient.sendToServer(KSD_PACKET_OCTOPUS_ADD_VALUE, packet);
     }
 }

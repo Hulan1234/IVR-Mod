@@ -62,6 +62,8 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_CREATE_SINGLE_TICKET, KSDPacketServer::receiveCreateSingleTicketC2S);
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_ADJUST_SINGLE_TICKET_FARE, KSDPacketServer::receiveAdjustSingleTicketFareC2S);
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_PAYMENT, KSDPacketServer::receivePayment);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_CREATE_OCTOPUS, KSDPacketServer::receiveApplyOctopusC2S);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_OCTOPUS_ADD_VALUE, KSDPacketServer::receiveOctopusAddValueC2S);
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_UPDATE_STATION,
                 (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(
                         minecraftServer,

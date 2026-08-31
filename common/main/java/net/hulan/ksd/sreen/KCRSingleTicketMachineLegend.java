@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.data.IGui;
 import mtr.mappings.SelectableMapper;
 import mtr.mappings.WidgetMapper;
+import net.hulan.ksd.data.KCRSingleTicketSystem;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.utils.RailDataUtilities;
 import net.hulan.ksd.utils.RenderUtilities;
@@ -88,7 +89,7 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
             }
             rows.add(new LegendRow(getMainRouteColor(r), r.name, r, true));
         }
-        switch (ticketMachineScreen.railMapType) {
+        switch (ticketMachineScreen.ticketType) {
             case MTR -> {
                 rows.add(new LegendRow(OTHER_NETWORK_COLOR, "九廣鐵路|KCR", null, false));
                 rows.add(new LegendRow(ORANGE_NETWORK_COLOR, "輕鐵|Light Rail", null, false));
@@ -97,7 +98,7 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
                 rows.add(new LegendRow(OTHER_NETWORK_COLOR, "地鐵|MTR", null, false));
                 rows.add(new LegendRow(ORANGE_NETWORK_COLOR, "輕鐵|Light Rail", null, false));
             }
-            case LIGHT_RAIL -> {
+            case LRT -> {
                 rows.add(new LegendRow(OTHER_NETWORK_COLOR, "九廣鐵路|KCR", null, false));
                 rows.add(new LegendRow(OTHER_NETWORK_COLOR, "地鐵|MTR", null, false));
             }
@@ -106,7 +107,7 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
     }
 
     private int getMainRouteColor(KSDRoute route) {
-        if (ticketMachineScreen.railMapType == KCRSingleTicketMachineScreen.RailMapType.LIGHT_RAIL) {
+        if (ticketMachineScreen.ticketType == KCRSingleTicketSystem.TicketType.LRT) {
             return ORANGE_NETWORK_COLOR;
         }
         return argb(route.color);

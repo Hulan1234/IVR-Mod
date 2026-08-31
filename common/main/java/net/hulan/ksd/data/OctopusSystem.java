@@ -11,27 +11,32 @@ import java.util.UUID;
 
 public class OctopusSystem {
 
-    public static Octopus createOctopus(int addValue, JSONDataManager jsonDataManager) {
-        Octopus octopus = new Octopus();
-        octopus.addBalance(addValue, Octopus.History.TransactionType.ADD_VALUE);
+    public static final int BASE_PRICE = 99;
+
+    public static Octopus ApplyOctopus(int addValue, boolean isConcessionary, JSONDataManager jsonDataManager) {
+        Octopus octopus = new Octopus(isConcessionary);
+        octopus.addBalance(addValue, Octopus.History.Source.ADD_VALUE);
         jsonDataManager.octopuses.add(octopus);
         return octopus;
     }
 
-    public static ItemStack createOctopusItem(int addValue, JSONDataManager jsonDataManager) {
-        Octopus octopus = createOctopus(addValue, jsonDataManager);
+    public static ItemStack ApplyOctopusItem(int addValue, boolean isConcessionary, JSONDataManager jsonDataManager) {
+        Octopus octopus = ApplyOctopus(addValue, isConcessionary, jsonDataManager);
         ItemStack octopusItem = new ItemStack(KSDItems.OCTOPUS.get());
         CompoundTag octopusTag = octopusItem.getOrCreateTag();
-        octopusTag.putUUID("uuid", octopus.uuid);
+        octopus.toNBT(octopusTag);
         return octopusItem;
     }
 
-    public static void addValue(ItemStack octopusItem, int addValue, JSONDataManager jsonDataManager, Octopus.History.TransactionType source) {
-        CompoundTag octopusTag = octopusItem.getOrCreateTag();
-        UUID uuid = octopusTag.getUUID("uuid");
-        Octopus octopus = jsonDataManager.getOctopus(uuid);
-        if (octopus != null) {
-            octopus.addBalance(addValue, source);
+    public static void addValue(UUID uuid, int addValue, Octopus.History.Source source, JSONDataManager jsonDataManager, Inventory inventory) {
+        ItemStack octopusItem = findOctopusItem(uuid, inventory);
+        if (octopusItem != null) {
+            CompoundTag octopusTag = octopusItem.getOrCreateTag();
+            Octopus octopus = jsonDataManager.getOctopus(uuid);
+            if (octopus != null) {
+                octopus.addBalance(addValue, source);
+                octopus.toNBT(octopusTag);
+            }
         }
     }
 
@@ -45,13 +50,14 @@ public class OctopusSystem {
         return "";
     }
 
-    public static ItemStack findOctopusItem(ItemStack identifyItem, Inventory inventory) {
+    public static ItemStack findOctopusItem(UUID uuid, Inventory inventory) {
         return Utilities.getInstance().findFilteredItem(inventory, item -> {
+            if (!(item.getItem() == KSDItems.OCTOPUS.get())) {
+                return false;
+            }
             CompoundTag itemTag = item.getOrCreateTag();
-            CompoundTag identifyItemTag = identifyItem.getOrCreateTag();
             UUID itemUUID = itemTag.getUUID("uuid");
-            UUID identifyItemUUID = identifyItemTag.getUUID("uuid");
-            return item.getItem() instanceof ItemOctopus && itemUUID.equals(identifyItemUUID);
+            return itemUUID.equals(uuid);
         });
     }
 }

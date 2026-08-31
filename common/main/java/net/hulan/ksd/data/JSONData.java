@@ -1,7 +1,5 @@
 package net.hulan.ksd.data;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonWriter;
 
 import java.io.IOException;
@@ -10,7 +8,7 @@ import java.util.function.Supplier;
 
 public abstract class JSONData {
 
-    public abstract void readFromJson(JsonObject json) throws JsonSyntaxException;
+    protected static final String KEY_UUID = "uuid";
 
     public abstract void writeToJson(JsonWriter writer) throws IOException;
 

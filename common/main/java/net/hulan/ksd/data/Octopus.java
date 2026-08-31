@@ -1,11 +1,13 @@
 package net.hulan.ksd.data;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonWriter;
 import mtr.data.EnumHelper;
 import mtr.mappings.Text;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,44 +25,53 @@ public class Octopus extends JSONData implements PrintableData {
 
     public final UUID uuid;
     public int balance;
-    public boolean isConcessionary;
-    public List<History> histories;
-    private static final String KEY_UUID = "uuid";
+    public final boolean isConcessionary;
+    public final List<History> histories = new ArrayList<>();
     private static final String KEY_BALANCE = "balance";
-    private static final String KEY_HISTORY = "histories";
+    private static final String KEY_IS_CONCESSIONARY = "is_concessionary";
+    private static final String KEY_HISTORIES = "histories";
 
-    public Octopus(String id) {
-        this.uuid = parseId(id, UUID::fromString, UUID::randomUUID);
-    }
-
-    public Octopus() {
-        uuid = UUID.randomUUID();
-        histories = new ArrayList<>();
-    }
-
-    @Override
-    public void readFromJson(JsonObject json) throws JsonSyntaxException {
-        balance = json.get(KEY_BALANCE).getAsInt();
-        JsonObject historyObjects = json.get(KEY_HISTORY).getAsJsonObject();
-        histories = new ArrayList<>(historyObjects.size());
-        for (String key : historyObjects.keySet()) {
-            History history = new History(key);
-            JsonObject historyObject = historyObjects.get(key).getAsJsonObject();
-            history.readFromJson(historyObject);
-            histories.add(history);
+    public Octopus(JsonObject octopusObject) {
+        uuid = UUID.fromString(octopusObject.get(KEY_UUID).getAsString());
+        balance = octopusObject.get(KEY_BALANCE).getAsInt();
+        isConcessionary = octopusObject.get(KEY_IS_CONCESSIONARY).getAsBoolean();
+        JsonArray historyArray = octopusObject.get(KEY_HISTORIES).getAsJsonArray();
+        for (JsonElement historyElement : historyArray) {
+            histories.add(new History(historyElement.getAsJsonObject()));
         }
+        histories.sort(Comparator.comparingLong(h -> h.time));
+    }
+
+    public Octopus(boolean isConcessionary) {
+        uuid = UUID.randomUUID();
+        this.isConcessionary = isConcessionary;
     }
 
     @Override
     public void writeToJson(JsonWriter writer) throws IOException {
+        writer.name(KEY_UUID).value(uuid.toString());
         writer.name(KEY_BALANCE).value(balance);
-        writer.name(KEY_HISTORY).beginObject();
+        writer.name(KEY_IS_CONCESSIONARY).value(isConcessionary);
+        writer.name(KEY_HISTORIES).beginArray();
         for (History history : histories) {
-            writer.name(history.getId()).beginObject();
+            writer.beginObject();
             history.writeToJson(writer);
             writer.endObject();
         }
-        writer.endObject();
+        writer.endArray();
+    }
+
+    public void toNBT(CompoundTag tag) {
+        tag.putUUID(KEY_UUID, uuid);
+        tag.putInt(KEY_BALANCE, balance);
+        tag.putBoolean(KEY_IS_CONCESSIONARY, isConcessionary);
+        ListTag historyTags = new ListTag();
+        histories.forEach(history -> {
+            CompoundTag historyTag = new CompoundTag();
+            history.toNBT(historyTag);
+            historyTags.add(historyTag);
+        });
+        tag.put(KEY_HISTORIES, historyTags);
     }
 
     @Override
@@ -92,12 +103,12 @@ public class Octopus extends JSONData implements PrintableData {
         return printed.toString();
     }
 
-    public void addBalance(int balance, History.TransactionType source) {
+    public void addBalance(int balance, History.Source source) {
         this.balance += balance;
         addHistory(balance, source);
     }
 
-    public void addHistory(int change, History.TransactionType source) {
+    private void addHistory(int change, History.Source source) {
         History history = new History(uuid, change, source);
         histories.sort(Comparator.comparingLong(h -> h.time));
         if (histories.size() >= 50) {
@@ -106,45 +117,43 @@ public class Octopus extends JSONData implements PrintableData {
         histories.add(history);
     }
 
-    public void toNBT(CompoundTag tag) {
-        tag.putUUID(KEY_UUID, uuid);
-        tag.putInt(KEY_BALANCE, balance);
-        tag.putBoolean(KEY_HISTORY, isConcessionary);
-    }
-
     public static class History extends JSONData implements PrintableData {
 
         public final UUID cardUUID;
         public long time;
-        public TransactionType transactionType;
         public long count;
+        public Source source;
         private static final String KEY_TIME = "time";
         private static final String KEY_AMOUNT = "amount";
-        private static final String KEY_TRANSACTION_TYPE = "transaction_type";
+        private static final String KEY_SOURCE = "source";
 
-        public History(String id) {
-            this.cardUUID = parseId(id, UUID::fromString, UUID::randomUUID);
+        public History(JsonObject historyObject) {
+            cardUUID = UUID.fromString(historyObject.get(KEY_UUID).getAsString());
+            time = historyObject.get(KEY_TIME).getAsLong();
+            count = historyObject.get(KEY_AMOUNT).getAsLong();
+            source = EnumHelper.valueOf(Source.NONE, historyObject.get(KEY_SOURCE).getAsString());
         }
 
-        public History(UUID cardUUID, long count, TransactionType transactionType) {
+        public History(UUID cardUUID, long count, Source source) {
             this.cardUUID = cardUUID;
             time = System.currentTimeMillis();
             this.count = count;
-            this.transactionType = transactionType;
-        }
-
-        @Override
-        public void readFromJson(JsonObject json) throws JsonSyntaxException {
-            time = json.get(KEY_TIME).getAsLong();
-            transactionType = EnumHelper.valueOf(TransactionType.NONE, json.get(KEY_TRANSACTION_TYPE).getAsString());
-            count = json.get(KEY_AMOUNT).getAsLong();
+            this.source = source;
         }
 
         @Override
         public void writeToJson(JsonWriter writer) throws IOException {
+            writer.name(KEY_UUID).value(cardUUID.toString());
             writer.name(KEY_TIME).value(time);
-            writer.name(KEY_TRANSACTION_TYPE).value(transactionType.name());
             writer.name(KEY_AMOUNT).value(count);
+            writer.name(KEY_SOURCE).value(source.name());
+        }
+
+        public void toNBT(CompoundTag tag) {
+            tag.putUUID(KEY_UUID, cardUUID);
+            tag.putLong(KEY_TIME, time);
+            tag.putLong(KEY_AMOUNT, count);
+            tag.putString(KEY_SOURCE, source.name());
         }
 
         @Override
@@ -169,18 +178,18 @@ public class Octopus extends JSONData implements PrintableData {
         public String getPrintedData() {
             return Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofLocalizedTime(FormatStyle.FULL)) +
                     " " +
-                    transactionType.getSerializedName() +
+                    source.getSerializedName() +
                     " " +
                     count;
         }
 
-        public enum TransactionType implements StringRepresentable {
+        public enum Source implements StringRepresentable {
 
             NONE,
             ADD_VALUE,
             MTR,
             KCR,
-            LIGHT_RAIL,
+            LRT,
             BUS,
             TAXI,
             SHOP,

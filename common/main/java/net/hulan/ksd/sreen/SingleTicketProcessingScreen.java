@@ -3,84 +3,59 @@ package net.hulan.ksd.sreen;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.client.IDrawing;
 import mtr.data.IGui;
-import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
 import mtr.screen.WidgetBetterCheckbox;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.data.KCRTicketSystem;
-import net.hulan.ksd.data.KSDStation;
-import net.hulan.ksd.data.PaymentMethod;
-import net.hulan.ksd.data.WayFinder;
+import net.hulan.ksd.data.*;
 import net.hulan.ksd.packet.KSDPacketClient;
 import net.hulan.ksd.utils.RailDataUtilities;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
+public class SingleTicketProcessingScreen extends PaymentScreen implements IGui {
 
     private final KSDStation current;
     private final KSDStation destination;
-    private PaymentMethod paymentMethod;
     private int fare;
     private int amount;
-    private int total;
-    private boolean failed;
-    private MutableComponent failedMessage;
-    private final int mtrBalance;
     private final KCRSingleTicketMachineScreen ticketMachineScreen;
-    private final Button buttonPaymentMethod;
     private final WidgetBetterCheckbox buttonIsConcessionary;
     private final WidgetBetterCheckbox buttonFCAvailable;
-    private final Button buttonConfirm;
-    private final Button buttonCancel;
     private final List<Button> amountButtons = new ArrayList<>(10);
-    private static final int PADDING = 50;
-    private static final int RGB_RED = 0xFF0000;
 
     protected SingleTicketProcessingScreen(@NotNull KSDStation current, @NotNull KSDStation destination, int mtrBalance, KCRSingleTicketMachineScreen ticketMachineScreen) {
-        super(Text.literal(""));
+        super(mtrBalance, ticketMachineScreen, ticketMachineScreen.machinePos);
         this.current = current;
         this.destination = destination;
         this.ticketMachineScreen = ticketMachineScreen;
-        buttonPaymentMethod = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_value"), button -> setPaymentMethod(paymentMethod.next()));
         buttonIsConcessionary = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.is_concessionary"), this::setIsConcessionary);
         buttonFCAvailable = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.fc_available"), this::setFCAvailable);
-        buttonConfirm = UtilitiesClient.newButton(Text.translatable("gui.ksd.confirm"), button -> process(true));
-        buttonCancel = UtilitiesClient.newButton(Text.translatable("gui.ksd.cancel"), button -> process(false));
         for (int i = 0; i < 10; i++) {
             final int amount = i + 1;
             amountButtons.add(UtilitiesClient.newButton(Text.literal(String.valueOf(amount)), button -> setAmount(amount)));
         }
-        this.mtrBalance = mtrBalance;
     }
 
     protected void init() {
-        IDrawing.setPositionAndWidth(buttonPaymentMethod,width / 2 - 100, height / 2 + 20, 202);
+        super.init();
         IDrawing.setPositionAndWidth(buttonIsConcessionary,width / 2 - 100, height / 2 - 60, 100);
         IDrawing.setPositionAndWidth(buttonFCAvailable,width / 2, height / 2 - 60, 100);
-        IDrawing.setPositionAndWidth(buttonConfirm, width / 2 - PADDING - 100, height / 2 + 102, 100);
-        IDrawing.setPositionAndWidth(buttonCancel, width / 2 + PADDING, height / 2 + 102, 100);
         for (int i = 0; i < 10; i++) {
             Button button = amountButtons.get(i);
             IDrawing.setPositionAndWidth(button, width / 2 + (i - 5) * 20, height / 2, 20);
             addDrawableChild(button);
         }
-        addDrawableChild(buttonPaymentMethod);
         addDrawableChild(buttonIsConcessionary);
         addDrawableChild(buttonFCAvailable);
-        addDrawableChild(buttonConfirm);
-        addDrawableChild(buttonCancel);
         setAmount(1);
-        setPaymentMethod(PaymentMethod.EMERALDS);
         setIsConcessionary(false);
     }
 
@@ -91,54 +66,58 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
     }
 
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
-        renderBackground(matrices);
-        Gui.fill(matrices, width / 2 - 220, height / 2 - 145, width / 2 + 220, height / 2 + 145, 0xFFC6C6C6);
-        Gui.fill(matrices, width / 2 - 216, height / 2 - 141, width / 2 + 216, height / 2 + 141, 0xFF4A4A4A);
+        super.render(matrices, mouseX, mouseY, delta);
         drawCenteredString(matrices, Minecraft.getInstance().font, getCurrentText(), width / 2, height / 2 - 120, ARGB_WHITE);
         drawCenteredString(matrices, Minecraft.getInstance().font, getDestinationText(), width / 2, height / 2 - 100, ARGB_WHITE);
         drawCenteredString(matrices, Minecraft.getInstance().font, getFareText(), width / 2, height / 2 - 80, ARGB_WHITE);
         if (buttonFCAvailable.selected()) {
-            drawCenteredString(matrices, Minecraft.getInstance().font, getWarningMessage(), width / 2, height / 2 - 40, RGB_RED | ARGB_BLACK);
+            drawCenteredString(matrices, Minecraft.getInstance().font, getWarningMessage(), width / 2, height / 2 - 36, RGB_RED | ARGB_BLACK);
         }
-        drawCenteredString(matrices, Minecraft.getInstance().font, getAmountText(), width / 2, height / 2 - 20, ARGB_WHITE);
-        drawCenteredString(matrices, Minecraft.getInstance().font, getTotalText(), width / 2, height / 2 + 42, ARGB_WHITE);
-        drawCenteredString(matrices, Minecraft.getInstance().font, getPayingText(), width / 2, height / 2 + 62, ARGB_WHITE);
-        if (failed) {
-            drawCenteredString(matrices, Minecraft.getInstance().font, getFailedText(), width / 2, height / 2 + 82, RGB_RED | ARGB_BLACK);
-        }
-        super.render(matrices, mouseX, mouseY, delta);
+        drawCenteredString(matrices, Minecraft.getInstance().font, getAmountText(), width / 2, height / 2 - 16, ARGB_WHITE);
     }
 
-    public boolean isPauseScreen() {
-        return false;
+    void countTotal() {
+        WayFinder wayFinder = KSDClientData.DATA_CACHE.wayFinder;
+        fare = KCRTicketSystem.getFare(wayFinder, current, destination, buttonIsConcessionary.selected(), buttonFCAvailable.selected());
+        total = fare * amount;
+        super.countTotal();
     }
 
-    private void setPaymentMethod(PaymentMethod paymentMethod) {
-        this.paymentMethod = paymentMethod;
-        buttonPaymentMethod.setMessage(Text.translatable(String.format("gui.ksd.payment_method_%s", paymentMethod).toLowerCase()));
-        failed = false;
+    void extraAction() {
+        KSDPacketClient.sendCreateSingleTicketC2S(
+                fare,
+                amount,
+                ticketMachineScreen.ticketType,
+                buttonIsConcessionary.selected(),
+                buttonFCAvailable.selected(),
+                ticketMachineScreen.machinePos);
+    }
+
+    void payWithOctopus(UUID uuid) {
+        KSDPacketClient.sendOctopusAddValueC2S(
+                uuid,
+                -total,
+                switch (ticketMachineScreen.ticketType) {
+                    case MTR -> Octopus.History.Source.MTR;
+                    case KCR -> Octopus.History.Source.KCR;
+                    case LRT -> Octopus.History.Source.LRT;
+                });
+        extraAction();
     }
 
     private void setAmount(int amount) {
         this.amount = Mth.clamp(amount, 1, 10);
-        calculateFare();
+        countTotal();
     }
 
     private void setIsConcessionary(boolean isConcessionary) {
         buttonIsConcessionary.setChecked(isConcessionary);
-        calculateFare();
+        countTotal();
     }
 
     private void setFCAvailable(boolean firstClassAvailable) {
         buttonFCAvailable.setChecked(firstClassAvailable);
-        calculateFare();
-    }
-
-    private void calculateFare() {
-        WayFinder wayFinder = KSDClientData.DATA_CACHE.wayFinder;
-        fare = KCRTicketSystem.getFare(wayFinder, current, destination, buttonIsConcessionary.selected(), buttonFCAvailable.selected());
-        total = fare * amount;
-        failed = false;
+        countTotal();
     }
 
     private MutableComponent getCurrentText() {
@@ -161,88 +140,5 @@ public class SingleTicketProcessingScreen extends ScreenMapper implements IGui {
 
     private MutableComponent getAmountText() {
         return Text.translatable("gui.ksd.amount");
-    }
-
-    private MutableComponent getTotalText() {
-        return Text.translatable("gui.ksd.total", String.valueOf(total));
-    }
-
-    private MutableComponent getPayingText() {
-        return Text.translatable("gui.ksd.paying", switch (paymentMethod) {
-            case EMERALDS -> Text.translatable("gui.ksd.emeralds", (int) Math.ceil((double) total / 16)).getString();
-            case MTR_BALANCE, OCTOPUS -> Text.translatable("gui.ksd.hkd", total).getString();
-        });
-    }
-
-    private MutableComponent getFailedText() {
-        return Text.translatable("gui.ksd.failed", failedMessage);
-    }
-
-    private void process(boolean confirm) {
-        if (confirm) {
-            switch (paymentMethod) {
-                case EMERALDS -> {
-                    final int emeraldCount = KCRTicketSystem.getEmeraldCount(total);
-                    if (minecraft != null) {
-                        UtilitiesClient.setScreen(minecraft, new PutItemScreen(
-                                "item.minecraft.emerald",
-                                Items.EMERALD,
-                                emeraldCount,
-                                PutItemScreen.PutMethod.PUT,
-                                false,
-                                (itemStack, count) -> {
-                                    KSDPacketClient.sendPaymentC2S(
-                                            PaymentMethod.EMERALDS,
-                                            emeraldCount,
-                                            count,
-                                            ticketMachineScreen.machinePos);
-                                    KSDPacketClient.sendCreateSingleTicketC2S(
-                                            fare,
-                                            amount,
-                                            buttonIsConcessionary.selected(),
-                                            buttonFCAvailable.selected(),
-                                            ticketMachineScreen.machinePos);
-                                    if (minecraft != null) {
-                                        UtilitiesClient.setScreen(minecraft, null);
-                                    }
-                                }));
-                    }
-                }
-                case MTR_BALANCE -> {
-                    if (mtrBalance < 0) {
-                        failed = true;
-                        failedMessage = Text.translatable("gui.ksd.insufficient_mtr_balance");
-                    } else {
-                        failed = false;
-                        KSDPacketClient.sendPaymentC2S(
-                                PaymentMethod.MTR_BALANCE,
-                                total,
-                                total,
-                                ticketMachineScreen.machinePos);
-                        KSDPacketClient.sendCreateSingleTicketC2S(
-                                fare,
-                                amount,
-                                buttonIsConcessionary.selected(),
-                                buttonFCAvailable.selected(),
-                                ticketMachineScreen.machinePos);
-                        if (minecraft != null) {
-                            UtilitiesClient.setScreen(minecraft, null);
-                        }
-                    }
-                }
-                case OCTOPUS -> {
-                    failed = true;
-                    failedMessage = Text.translatable("gui.ksd.no_octopus");
-                }
-            }
-        } else {
-            if (minecraft != null) {
-                UtilitiesClient.setScreen(minecraft, ticketMachineScreen);
-            }
-        }
-    }
-
-    public static boolean isEnglish() {
-        return Minecraft.getInstance().options.languageCode.startsWith("en");
     }
 }

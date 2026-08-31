@@ -36,7 +36,7 @@ public class BlockTicketProcessorEnquiryMixin {
             } else if (itemInHand.getItem() instanceof ItemOctopus) {
                 KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
                 if (railwayData != null) {
-                    player.displayClientMessage(Text.literal(OctopusSystem.readPrintableData(itemInHand, railwayData.jsonDataManager)), true);
+                    player.displayClientMessage(Text.literal(OctopusSystem.readPrintableData(itemInHand, railwayData.jsonDataManager)), false);
                     world.playSound(null, pos, SoundEvents.TICKET_PROCESSOR_ENTRY, SoundSource.BLOCKS, 1.0F, 1.0F);
                     cir.setReturnValue(InteractionResult.SUCCESS);
                 }

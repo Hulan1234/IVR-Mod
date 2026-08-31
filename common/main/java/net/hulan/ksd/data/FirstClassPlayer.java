@@ -14,8 +14,9 @@ public final class FirstClassPlayer extends JSONData {
     public FirstClassValidationSystem.FirstClassState state;
     private static final String KEY_STATE = "state";
 
-    public FirstClassPlayer(String id) {
-        uuid = parseId(id, UUID::fromString, UUID::randomUUID);
+    public FirstClassPlayer(JsonObject fcpObject) {
+        uuid = UUID.fromString(fcpObject.get(KEY_UUID).getAsString());
+        state = EnumHelper.valueOf(FirstClassValidationSystem.FirstClassState.MTR, fcpObject.get(KEY_STATE).getAsString());
     }
 
     public FirstClassPlayer(UUID uuid) {
@@ -24,12 +25,8 @@ public final class FirstClassPlayer extends JSONData {
     }
 
     @Override
-    public void readFromJson(JsonObject json) throws JsonSyntaxException {
-        state = EnumHelper.valueOf(FirstClassValidationSystem.FirstClassState.MTR, json.get(KEY_STATE).getAsString());
-    }
-
-    @Override
     public void writeToJson(JsonWriter writer) throws IOException {
+        writer.name(KEY_UUID).value(uuid.toString());
         writer.name(KEY_STATE).value(state.name());
     }
 

@@ -59,16 +59,13 @@ public class JSONDataManager {
         return DataUtilities.getOrNull(octopuses, o -> o.uuid.equals(uuid));
     }
 
-    private <T extends JSONData> void loadData(Path path, Function<String, T> instance, Consumer<T> storeData) {
+    private <T extends JSONData> void loadData(Path path, Function<JsonObject, T> instance, Consumer<T> storeData) {
         try (Stream<Path> dataPathStream = Files.list(path)) {
             dataPathStream.forEach(dataPath -> {
                 try (JsonReader reader = new JsonReader(Files.newBufferedReader(dataPath))) {
                     JsonElement jsonElement = JsonParser.parseReader(reader);
                     if (!jsonElement.isJsonObject()) return;
-                    JsonObject jsonObject = jsonElement.getAsJsonObject();
-                    String id = jsonObject.keySet().iterator().next();
-                    T data = instance.apply(id);
-                    data.readFromJson(jsonObject.getAsJsonObject(id));
+                    T data = instance.apply(jsonElement.getAsJsonObject());
                     storeData.accept(data);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -86,9 +83,7 @@ public class JSONDataManager {
             try (JsonWriter writer = new JsonWriter(Files.newBufferedWriter(filePath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
                 writer.setIndent("  ");
                 writer.beginObject();
-                writer.name(id).beginObject();
                 data.writeToJson(writer);
-                writer.endObject();
                 writer.endObject();
             } catch (IOException e) {
                 e.printStackTrace();

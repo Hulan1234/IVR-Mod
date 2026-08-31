@@ -19,6 +19,8 @@ public class KSDClientMain implements ClientModInitializer, KSDPacket {
         RegistryClient.registerNetworkReceiver(KSD_PACKET_OPEN_KSD_DASHBOARD_SCREEN, (packet) -> KSDPacketClient.openKSDDashboardScreenS2C(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(KSD_PACKET_OPEN_KCR_SINGLE_TICKET_MACHINE_SCREEN, (packet) -> KSDPacketClient.openKCRSingleTicketMachineScreenS2C(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(KSD_PACKET_OPEN_KCR_SINGLE_TICKET_FARE_ADJUSTMENT_SCREEN, (packet) -> KSDPacketClient.openKCRSingleTicketFareAdjustmentScreenS2C(Minecraft.getInstance(), packet));
+        RegistryClient.registerNetworkReceiver(KSD_PACKET_OPEN_APPLY_OCTOPUS_SCREEN, (packet) -> KSDPacketClient.openApplyOctopusScreenS2C(Minecraft.getInstance(), packet));
+        RegistryClient.registerNetworkReceiver(KSD_PACKET_OPEN_ADD_VALUE_SCREEN, (packet) -> KSDPacketClient.openAddValueMachineScreenS2C(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(KSD_PACKET_CHUNK_S2C, (packet) -> KSDPacketClient.receiveChunk(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(KSD_PACKET_UPDATE_STATION, (packet) -> KSDPacketClient.receiveUpdateOrDeleteS2C(
                 Minecraft.getInstance(),

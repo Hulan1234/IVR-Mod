@@ -6,7 +6,7 @@ import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.data.KSDRailwayData;
+import net.hulan.ksd.data.KCRSingleTicketSystem;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
 import net.hulan.ksd.utils.RailDataUtilities;
@@ -22,7 +22,7 @@ import java.util.Set;
 
 public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
 
-    public final RailMapType railMapType;
+    public final KCRSingleTicketSystem.TicketType ticketType;
     private final KSDStation current;
     public final BlockPos machinePos;
     private final int balance;
@@ -45,13 +45,13 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
     private static final int RGB_HEADER_BLUE = 0x004684;
     private static final int LEGEND_WIDTH = 100;
 
-    public KCRSingleTicketMachineScreen(RailMapType railMapType, @NotNull KSDStation current, BlockPos machinePos, int balance) {
+    public KCRSingleTicketMachineScreen(KCRSingleTicketSystem.TicketType ticketType, @NotNull KSDStation current, BlockPos machinePos, int balance) {
         super(Text.literal(""));
-        this.railMapType = railMapType;
+        this.ticketType = ticketType;
         this.current = current;
         this.machinePos = machinePos;
         this.balance = balance;
-        railMap = new KCRSingleTicketMachineRailMap(this::onClickedOnDestination, railMapType, current);
+        railMap = new KCRSingleTicketMachineRailMap(this::onClickedOnDestination, ticketType, current);
         legend = new KCRSingleTicketMachineLegend(this);
     }
 
@@ -91,7 +91,7 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
         Set<KSDRoute> mtr = RailDataUtilities.getMTRRoutes(routesInNetwork);
         Set<KSDRoute> kcr = RailDataUtilities.getKCRRoutes(routesInNetwork);
         Set<KSDRoute> lightRails = RailDataUtilities.getLightRailRoutes(routesInNetwork);
-        switch (railMapType) {
+        switch (ticketType) {
             case MTR -> {
                 mainRoutes.addAll(mtr);
                 otherRoutes.addAll(kcr);
@@ -102,7 +102,7 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
                 otherRoutes.addAll(mtr);
                 lightRailRoutes.addAll(lightRails);
             }
-            case LIGHT_RAIL -> {
+            case LRT -> {
                 mainRoutes.addAll(lightRails);
                 otherRoutes.addAll(kcr);
                 otherRoutes.addAll(mtr);
@@ -142,11 +142,5 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
     static {
         RMH_CHI_WIDTH = RenderUtilities.getInstance().getTextWidth(RMH_CHI, RMH_CHI_HEIGHT / Minecraft.getInstance().font.lineHeight);
         RMH_ENG_WIDTH = RenderUtilities.getInstance().getTextWidth(RMH_ENG, RMH_ENG_HEIGHT / Minecraft.getInstance().font.lineHeight);
-    }
-
-    public enum RailMapType {
-        MTR,
-        KCR,
-        LIGHT_RAIL,
     }
 }

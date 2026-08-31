@@ -4,12 +4,12 @@
 	"parent": "block/block",
 	"texture_size": [817, 1054],
 	"textures": {
-		"2": "KCR_Add_value",
-		"3": "KCR_Add_value_content",
-		"4": "mtr:block/KCR_Ticket_vending_texture",
-		"6": "KCR_Add_value_bottom",
-		"7": "KCR_Add_value_inner",
-		"particle": "KCR_Add_value_content"
+		"2": "ivr:block/kcr_add_value",
+		"3": "ivr:block/kcr_add_value_content",
+		"4": "ivr:block/kcr_single_ticket_vending_texture",
+		"6": "ivr:block/kcr_add_value_bottom",
+		"7": "ivr:block/kcr_add_value_inner",
+		"particle": "ivr:block/kcr_add_value_content"
 	},
 	"elements": [
 		{

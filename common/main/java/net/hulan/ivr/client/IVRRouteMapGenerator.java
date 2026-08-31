@@ -430,11 +430,21 @@ public class IVRRouteMapGenerator implements IGui {
                     rawHeight = rawHeightTotal;
                     extraPadding = 0;
                     yOffset = rawHeightPart;
-                    final TextureSize textureSize = getTextureSize(rawWidth, rawHeight, aspectRatio); // 计算路线图纹理尺寸和缩放比例。
-                    final int width = textureSize.width; // 获取路线图纹理宽度。
-                    final int height = textureSize.height; // 获取路线图纹理高度。
-                    final float widthScale = textureSize.widthScale; // 获取路线图横向绘制比例。
-                    final float heightScale = textureSize.heightScale; // 获取路线图纵向绘制比例。
+                    final int height;
+                    final int width;
+                    final float widthScale;
+                    final float heightScale;
+                    if (rawWidth / rawHeight > aspectRatio) {
+                        width = Math.round(rawWidth * scale);
+                        height = Math.round(width / aspectRatio);
+                        widthScale = 1;
+                        heightScale = height / rawHeight / scale;
+                    } else {
+                        height = Math.round(rawHeight * scale);
+                        width = Math.round(height * aspectRatio);
+                        heightScale = 1;
+                        widthScale = width / rawWidth / scale;
+                    }
                     if (width > 0 && height > 0) {
                         final NativeImage nativeImage = new NativeImage(NativeImage.Format.RGBA, width, height, false);
                         nativeImage.fillRect(0, 0, width, height, ARGB_WHITE);
@@ -676,11 +686,21 @@ public class IVRRouteMapGenerator implements IGui {
                         extraPadding = 0;
                         yOffset = rawHeightPart;
                     }
-                    final TextureSize textureSize = getTextureSize(rawWidth, rawHeight, aspectRatio); // 计算路线牌纹理尺寸和缩放比例。
-                    final int width = textureSize.width; // 获取路线牌纹理宽度。
-                    final int height = textureSize.height; // 获取路线牌纹理高度。
-                    final float widthScale = textureSize.widthScale; // 获取路线牌横向绘制比例。
-                    final float heightScale = textureSize.heightScale; // 获取路线牌纵向绘制比例。
+                    final int height;
+                    final int width;
+                    final float widthScale;
+                    final float heightScale;
+                    if (rawWidth / rawHeight > aspectRatio) {
+                        width = Math.round(rawWidth * scale);
+                        height = Math.round(width / aspectRatio);
+                        widthScale = 1;
+                        heightScale = height / rawHeight / scale;
+                    } else {
+                        height = Math.round(rawHeight * scale);
+                        width = Math.round(height * aspectRatio);
+                        heightScale = 1;
+                        widthScale = width / rawWidth / scale;
+                    }
                     if (width > 0 && height > 0) {
                         final NativeImage nativeImage = new NativeImage(NativeImage.Format.RGBA, width, height, false);
                         nativeImage.fillRect(0, 0, width, height, ARGB_WHITE);
@@ -889,35 +909,6 @@ public class IVRRouteMapGenerator implements IGui {
         IDrawing.drawTexture(matrices, vertexConsumer, Math.max(x, 0.0F), 0.0F, (float)imageWidth * scale + Math.min(x, 0.0F), availableHeight, Math.max(-x, 0.0F) / (float)imageWidth / scale, (float)row / (float)rows, 1.0F, (float)(row + 1) / (float)rows, Direction.UP, -1, 15728880);
     }
 
-    private static TextureSize getTextureSize(float rawWidth, float rawHeight, float aspectRatio) {
-        if (rawWidth <= 0.0F || rawHeight <= 0.0F || aspectRatio <= 0.0F) { // 检查原始尺寸和宽高比是否有效。
-            return new TextureSize(0, 0, 0.0F, 0.0F); // 返回无效尺寸标记。
-        }
-        int width; // 保存目标纹理宽度。
-        int height; // 保存目标纹理高度。
-        float widthScale; // 保存路线图横向缩放比例。
-        float heightScale; // 保存路线图纵向缩放比例。
-        if (rawWidth / rawHeight > aspectRatio) { // 根据目标宽高比选择以宽度或高度为基准缩放。
-            width = Math.round(rawWidth * scale); // 按原始宽度计算纹理宽度。
-            height = Math.round(width / aspectRatio); // 根据宽高比计算纹理高度。
-            widthScale = 1.0F; // 保持横向原始比例。
-            heightScale = (float) height / rawHeight / scale; // 计算纵向缩放比例。
-        } else {
-            height = Math.round(rawHeight * scale); // 按原始高度计算纹理高度。
-            width = Math.round(height * aspectRatio); // 根据宽高比计算纹理宽度。
-            heightScale = 1.0F; // 保持纵向原始比例。
-            widthScale = (float) width / rawWidth / scale; // 计算横向缩放比例。
-        }
-        final float downscale = Math.min(1.0F, Math.min( // 计算不超过最大纹理尺寸的缩放比例。
-                (float) MAX_DYNAMIC_TEXTURE_SIZE / Math.max(1, width),
-                (float) MAX_DYNAMIC_TEXTURE_SIZE / Math.max(1, height)));
-        return new TextureSize( // 返回尺寸和对应的路线图缩放比例。
-                Math.max(1, Math.round(width * downscale)), // 计算限制后的纹理宽度。
-                Math.max(1, Math.round(height * downscale)), // 计算限制后的纹理高度。
-                widthScale * downscale, // 计算限制后的横向绘制比例。
-                heightScale * downscale); // 计算限制后的纵向绘制比例。
-    }
-
     private static void setup(List<Map<Integer, StationPosition>> stationPositions, List<List<Long>> stationsIdLists, int[] colorIndices, float[] bounds, boolean passed, boolean reverse) {
         int passedMultiplier = passed ? -1 : 1;
         int reverseMultiplier = reverse ? -1 : 1;
@@ -978,21 +969,6 @@ public class IVRRouteMapGenerator implements IGui {
 
     private static float getLineOffset(int routeIndex, int[] colorIndices) {
         return (float)lineSpacing / (float)scale * ((float)colorIndices[routeIndex] - (float)colorIndices[colorIndices.length - 1] / 2.0F);
-    }
-
-    private static final class TextureSize {
-
-        private final int width; // 保存纹理宽度。
-        private final int height; // 保存纹理高度。
-        private final float widthScale; // 保存横向绘制缩放比例。
-        private final float heightScale; // 保存纵向绘制缩放比例。
-
-        private TextureSize(int width, int height, float widthScale, float heightScale) {
-            this.width = width; // 保存计算后的宽度。
-            this.height = height; // 保存计算后的高度。
-            this.widthScale = widthScale; // 保存计算后的横向比例。
-            this.heightScale = heightScale; // 保存计算后的纵向比例。
-        }
     }
 
     private static List<Integer> getRouteStream(long platformId, BiConsumer<KSDRoute, Integer> nonTerminatingCallback) {

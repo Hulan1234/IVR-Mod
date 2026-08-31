@@ -6,7 +6,9 @@ public class CommandManager {
 
     public static void registerCommands() {
         Utilities utilities = Utilities.getInstance();
-        utilities.registerCommand(CommandTest.register());
+        utilities.registerCommand(CommandSingleTicketMachine.register());
         utilities.registerCommand(CommandAdjustFare.register());
+        utilities.registerCommand(CommandApplyOctopus.register());
+        utilities.registerCommand(CommandAddValueMachine.register());
     }
 }

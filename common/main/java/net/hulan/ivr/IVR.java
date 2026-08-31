@@ -117,6 +117,7 @@ public class IVR implements ModInitializer, IVRPacket, IVRBlocks, IVRBlockEntity
         registerBlockItem.accept("kcr_single_ticket_machine_mtr_wall", KCR_SINGLE_TICKET_MACHINE_MTR_WALL, IVR_);
         registerBlockItem.accept("kcr_single_ticket_machine_kcr_wall", KCR_SINGLE_TICKET_MACHINE_KCR_WALL, IVR_);
         registerBlockItem.accept("kcr_single_ticket_machine_light_rail_wall", KCR_SINGLE_TICKET_MACHINE_LIGHT_RAIL_WALL, IVR_);
+        registerBlockItem.accept("kcr_add_value_machine", KCR_ADD_VALUE_MACHINE_WALL, IVR_);
         registerBlockEntityType.accept("classical_sign_1_even", CLASSICAL_SIGN_1_EVEN_TILE_ENTITY);
         registerBlockEntityType.accept("classical_sign_1_odd", CLASSICAL_SIGN_1_ODD_TILE_ENTITY);
         registerBlockEntityType.accept("classical_sign_2_even", CLASSICAL_SIGN_2_EVEN_TILE_ENTITY);
@@ -164,6 +165,7 @@ public class IVR implements ModInitializer, IVRPacket, IVRBlocks, IVRBlockEntity
         registerBlockEntityType.accept("kcr_single_ticket_machine_mtr_wall", KCR_SINGLE_TICKET_MACHINE_MTR_WALL_TILE_ENTITY);
         registerBlockEntityType.accept("kcr_single_ticket_machine_kcr_wall", KCR_SINGLE_TICKET_MACHINE_KCR_WALL_TILE_ENTITY);
         registerBlockEntityType.accept("kcr_single_ticket_machine_light_rail_wall", KCR_SINGLE_TICKET_MACHINE_LIGHT_RAIL_WALL_TILE_ENTITY);
+        registerBlockEntityType.accept("kcr_add_value_machine", KCR_ADD_VALUE_MACHINE_WALL_TILE_ENTITY);
         registerBlockEntityType.accept("modern_route_sign", MODERN_ROUTE_SIGN_TILE_ENTITY);
         mtr.Registry.registerNetworkReceiver(PACKET_CLASSICAL_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveClassicalSignIdsC2S);
         mtr.Registry.registerNetworkReceiver(PACKET_CLASSICAL_1ODD_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveClassicalSign1OddIdsC2S);
