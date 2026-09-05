@@ -2,7 +2,6 @@ package net.hulan.ksd.sreen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.client.IDrawing;
-import mtr.data.IGui;
 import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
@@ -20,7 +19,7 @@ import net.minecraft.world.item.Items;
 
 import java.util.UUID;
 
-public abstract class PaymentScreen extends ScreenMapper implements IGui {
+public abstract class PaymentScreen extends ScreenMapper implements KSDGui {
 
     int total;
     boolean failed;
@@ -32,8 +31,6 @@ public abstract class PaymentScreen extends ScreenMapper implements IGui {
     private final Button buttonPaymentMethod;
     private final Button buttonConfirm;
     private final Button buttonCancel;
-    static final int PADDING = 50;
-    static final int RGB_RED = 0xFF0000;
 
     protected PaymentScreen(int mtrBalance, ScreenMapper parent, BlockPos storeBlockPos) {
         super(Text.literal(""));
@@ -47,8 +44,8 @@ public abstract class PaymentScreen extends ScreenMapper implements IGui {
 
     protected void init() {
         IDrawing.setPositionAndWidth(buttonPaymentMethod,width / 2 - 100, height / 2 + 20, 202);
-        IDrawing.setPositionAndWidth(buttonConfirm, width / 2 - PADDING - 100, height / 2 + 102, 100);
-        IDrawing.setPositionAndWidth(buttonCancel, width / 2 + PADDING, height / 2 + 102, 100);
+        IDrawing.setPositionAndWidth(buttonConfirm, width / 2 - PAYING_PADDING - 100, height / 2 + 102, 100);
+        IDrawing.setPositionAndWidth(buttonCancel, width / 2 + PAYING_PADDING, height / 2 + 102, 100);
         addDrawableChild(buttonPaymentMethod);
         addDrawableChild(buttonConfirm);
         addDrawableChild(buttonCancel);
@@ -57,14 +54,24 @@ public abstract class PaymentScreen extends ScreenMapper implements IGui {
 
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
         renderBackground(matrices);
-        Gui.fill(matrices, width / 2 - 220, height / 2 - 145, width / 2 + 220, height / 2 + 145, 0xFFC6C6C6);
-        Gui.fill(matrices, width / 2 - 216, height / 2 - 141, width / 2 + 216, height / 2 + 141, 0xFF4A4A4A);
+        renderPaymentBackground(matrices, width, height, 440, 290);
         drawCenteredString(matrices, Minecraft.getInstance().font, getTotalText(), width / 2, height / 2 + 42, ARGB_WHITE);
         drawCenteredString(matrices, Minecraft.getInstance().font, getNeedToPayText(), width / 2, height / 2 + 62, ARGB_WHITE);
         if (failed) {
             drawCenteredString(matrices, Minecraft.getInstance().font, getFailedText(), width / 2, height / 2 + 82, RGB_RED | ARGB_BLACK);
         }
         super.render(matrices, mouseX, mouseY, delta);
+    }
+
+    static void renderPaymentBackground(PoseStack matrices, int screenWidth, int screenHeight, int panelWidth, int panelHeight) {
+        panelWidth = Math.max(8, panelWidth);
+        panelHeight = Math.max(8, panelHeight);
+        final int left = screenWidth / 2 - panelWidth / 2;
+        final int top = screenHeight / 2 - panelHeight / 2;
+        final int right = left + panelWidth;
+        final int bottom = top + panelHeight;
+        Gui.fill(matrices, left, top, right, bottom, 0xFFC6C6C6);
+        Gui.fill(matrices, left + 4, top + 4, right - 4, bottom - 4, 0xFF4A4A4A);
     }
 
     public boolean isPauseScreen() {

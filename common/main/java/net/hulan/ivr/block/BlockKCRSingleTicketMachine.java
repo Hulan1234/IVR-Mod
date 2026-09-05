@@ -59,7 +59,7 @@ public class BlockKCRSingleTicketMachine extends BlockDirectionalMapper implemen
         BlockPos leftBottomPos = getLeftBottomPos(blockState, pos);
         if (!world.isClientSide) {
             if (!isLeftBottom(blockState) || (isLeftBottom(blockState) && !IBlock.getStatePropertySafe(blockState, STORED))) {
-                KSDPacketServer.openSingleTicketMachineScreenS2C((ServerPlayer) player, ticketType, leftBottomPos);
+                KSDPacketServer.openSTMachineScreenS2C((ServerPlayer) player, ticketType, leftBottomPos);
             } else {
                 BlockEntity entity = world.getBlockEntity(leftBottomPos);
                 if (entity instanceof TileEntityKCRSingleTicketMachine stmEntity) {

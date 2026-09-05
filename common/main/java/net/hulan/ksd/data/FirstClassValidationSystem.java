@@ -200,7 +200,7 @@ public final class FirstClassValidationSystem {
     }
 
     private static boolean hasFCService(@Nullable KSDRoute route) {
-        return route != null && route.routeType.equals(Utilities.KCR_CLASSICAL) && route.hasFirstClassService;
+        return route != null && route.routeType.equals(Utilities.KCR) && route.hasFirstClassService;
     }
 
     private static void playSoundAndSendMessage(Level world, BlockPos pos, Player player, String message) {

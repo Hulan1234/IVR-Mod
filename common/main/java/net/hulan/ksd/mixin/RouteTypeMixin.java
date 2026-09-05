@@ -25,10 +25,8 @@ public class RouteTypeMixin {
     @Inject(method = "<clinit>", at = @At("RETURN"))
     private static void registerEnum(CallbackInfo ci) {
         List<RouteType> values = new ArrayList<>(Arrays.asList(RouteType.values()));
-        RouteType kcrClassical = createInstance("KCR_CLASSICAL", values.size());
+        RouteType kcrClassical = createInstance("KCR", values.size());
         values.add(kcrClassical);
-        RouteType kcrModern = createInstance("KCR_MODERN", values.size());
-        values.add(kcrModern);
         $VALUES = values.toArray(new RouteType[0]);
     }
 

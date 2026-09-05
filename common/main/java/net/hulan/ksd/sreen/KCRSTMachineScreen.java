@@ -1,7 +1,6 @@
 package net.hulan.ksd.sreen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import mtr.data.IGui;
 import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
@@ -20,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashSet;
 import java.util.Set;
 
-public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
+public class KCRSTMachineScreen extends ScreenMapper implements KSDGui {
 
     public final KCRSingleTicketSystem.TicketType ticketType;
     private final KSDStation current;
@@ -32,27 +31,21 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
     final Set<KSDStation> mainStations = new HashSet<>();
     final Set<KSDStation> otherStations = new HashSet<>();
     final Set<KSDStation> lightRailStations = new HashSet<>();
-    private final KCRSingleTicketMachineRailMap railMap;
-    private final KCRSingleTicketMachineLegend legend;
+    private final KCRSTMachineRailMap railMap;
+    private final KCRSTMMachineLegend legend;
     private static final String RMH_CHI = "路線圖";
     private static final String RMH_ENG = "System Map";
-    private static final int RMH_HEADER_HEIGHT = 50;
-    private static final int RMH_PADDING = 10;
     private static final float RMH_CHI_WIDTH;
-    private static final float RMH_CHI_HEIGHT = 40F;
     private static final float RMH_ENG_WIDTH;
-    private static final float RMH_ENG_HEIGHT = 20F;
-    private static final int RGB_HEADER_BLUE = 0x004684;
-    private static final int LEGEND_WIDTH = 100;
 
-    public KCRSingleTicketMachineScreen(KCRSingleTicketSystem.TicketType ticketType, @NotNull KSDStation current, BlockPos machinePos, int balance) {
+    public KCRSTMachineScreen(KCRSingleTicketSystem.TicketType ticketType, @NotNull KSDStation current, BlockPos machinePos, int balance) {
         super(Text.literal(""));
         this.ticketType = ticketType;
         this.current = current;
         this.machinePos = machinePos;
         this.balance = balance;
-        railMap = new KCRSingleTicketMachineRailMap(this::onClickedOnDestination, ticketType, current);
-        legend = new KCRSingleTicketMachineLegend(this);
+        railMap = new KCRSTMachineRailMap(this::onClickedOnDestination, ticketType, current);
+        legend = new KCRSTMMachineLegend(this);
     }
 
     protected void init() {
@@ -79,7 +72,7 @@ public class KCRSingleTicketMachineScreen extends ScreenMapper implements IGui {
 
     public void onClickedOnDestination(KSDStation destination) {
         if (minecraft != null) {
-            UtilitiesClient.setScreen(minecraft, new SingleTicketProcessingScreen(current, destination, balance, this));
+            UtilitiesClient.setScreen(minecraft, new STProcessingScreen(current, destination, balance, this));
         }
     }
 

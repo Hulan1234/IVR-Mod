@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-public class SingleTicketFareAdjustmentScreen extends PaymentScreen implements IGui {
+public class STFareAdjustmentScreen extends PaymentScreen implements IGui {
 
     private final KSDStation current;
     private final KSDStation destination;
@@ -32,7 +32,7 @@ public class SingleTicketFareAdjustmentScreen extends PaymentScreen implements I
     private final WidgetBetterCheckbox buttonIsConcessionary;
     private final WidgetBetterCheckbox buttonFCAvailable;
 
-    public SingleTicketFareAdjustmentScreen(@NotNull KSDStation current, @NotNull KSDStation destination, int mtrBalance, ItemStack singleTicketItem, BlockPos storeBlockPos) {
+    public STFareAdjustmentScreen(@NotNull KSDStation current, @NotNull KSDStation destination, int mtrBalance, ItemStack singleTicketItem, BlockPos storeBlockPos) {
         super(mtrBalance, null, storeBlockPos);
         this.current = current;
         this.destination = destination;
@@ -70,7 +70,7 @@ public class SingleTicketFareAdjustmentScreen extends PaymentScreen implements I
     }
 
     void extraAction() {
-        KSDPacketClient.sendAdjustSingleTicketFareC2S(
+        KSDPacketClient.sendAdjustSTFareC2S(
                 singleTicketId,
                 actualFare - originFare,
                 storeBlockPos);
@@ -98,7 +98,7 @@ public class SingleTicketFareAdjustmentScreen extends PaymentScreen implements I
         actualFare = KCRTicketSystem.getFare(wayFinder, current, destination, isConcessionary, fcAvailable);
         ticketTypeText = ticketType;
         expired = KCRTicketSystem.isExpired(expireTime);
-        expiredFare = KCRSingleTicketSystem.getExpiredFare(expireTime);
+        expiredFare = KCRTicketSystem.getExpiredFare(expireTime);
         setIsConcessionary(isConcessionary);
         setFCAvailable(fcAvailable);
         countTotal();

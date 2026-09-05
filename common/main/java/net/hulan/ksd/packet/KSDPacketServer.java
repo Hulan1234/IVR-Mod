@@ -7,7 +7,6 @@ import mtr.mappings.Utilities;
 import mtr.packet.PacketTrainDataBase;
 import net.hulan.ivr.block.StorableBlockEntity;
 import net.hulan.ksd.data.*;
-import net.hulan.ksd.sreen.KCRSingleTicketMachineScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -37,27 +36,25 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         Registry.sendToPlayer(player, KSD_PACKET_OPEN_KSD_DASHBOARD_SCREEN, packet);
     }
 
-    public static void openSingleTicketMachineScreenS2C(ServerPlayer player, KCRSingleTicketSystem.TicketType ticketType, BlockPos pos) {
+    public static void openSTMachineScreenS2C(ServerPlayer player, KCRSingleTicketSystem.TicketType ticketType, BlockPos pos) {
         int balance = TicketSystem.getPlayerScore(player.getLevel(), player, "mtr_balance").getScore();
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
         packet.writeUtf(ticketType.name());
         packet.writeBlockPos(pos);
         packet.writeInt(balance);
-        Registry.sendToPlayer(player, KSD_PACKET_OPEN_KCR_SINGLE_TICKET_MACHINE_SCREEN, packet);
+        Registry.sendToPlayer(player, KSD_PACKET_OPEN_KCR_ST_MACHINE_SCREEN, packet);
     }
 
-    public static void openSingleTicketAdjustmentScreenS2C(ServerPlayer player, BlockPos pos) {
+    public static void openSTAdjustmentScreenS2C(ServerPlayer player) {
         int balance = TicketSystem.getPlayerScore(player.getLevel(), player, "mtr_balance").getScore();
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
-        packet.writeBlockPos(pos);
         packet.writeInt(balance);
-        Registry.sendToPlayer(player, KSD_PACKET_OPEN_KCR_SINGLE_TICKET_FARE_ADJUSTMENT_SCREEN, packet);
+        Registry.sendToPlayer(player, KSD_PACKET_OPEN_KCR_ST_FARE_ADJUSTMENT_SCREEN, packet);
     }
 
-    public static void openApplyOctopusScreenS2C(ServerPlayer player, BlockPos pos) {
+    public static void openApplyOctopusScreenS2C(ServerPlayer player) {
         int balance = TicketSystem.getPlayerScore(player.getLevel(), player, "mtr_balance").getScore();
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
-        packet.writeBlockPos(pos);
         packet.writeInt(balance);
         Registry.sendToPlayer(player, KSD_PACKET_OPEN_APPLY_OCTOPUS_SCREEN, packet);
     }
@@ -139,7 +136,7 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         }
     }
 
-    public static void receiveCreateSingleTicketC2S(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
+    public static void receiveCreateSTC2S(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
         int fare = packet.readInt();
         int amount = packet.readInt();
         KCRSingleTicketSystem.TicketType ticketType = EnumHelper.valueOf(KCRSingleTicketSystem.TicketType.MTR, packet.readUtf());
@@ -156,7 +153,7 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         });
     }
 
-    public static void receiveAdjustSingleTicketFareC2S(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
+    public static void receiveAdjustSTFareC2S(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
         long id = packet.readLong();
         int addValue = packet.readInt();
         BlockPos storeBlockPos = packet.readBlockPos();

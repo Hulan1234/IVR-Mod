@@ -32,7 +32,7 @@ public class CommandSingleTicketMachine {
         CommandSourceStack source = context.getSource();
         Entity entity = source.getEntity();
         if (entity instanceof ServerPlayer player) {
-            KSDPacketServer.openSingleTicketMachineScreenS2C(player, ticketType, player.blockPosition());
+            KSDPacketServer.openSTMachineScreenS2C(player, ticketType, player.blockPosition());
         }
     }
 }

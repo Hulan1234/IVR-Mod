@@ -20,22 +20,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class SingleTicketProcessingScreen extends PaymentScreen implements IGui {
+public class STProcessingScreen extends PaymentScreen implements IGui {
 
     private final KSDStation current;
     private final KSDStation destination;
     private int fare;
     private int amount;
-    private final KCRSingleTicketMachineScreen ticketMachineScreen;
+    private final KCRSTMachineScreen stmMachineScreen;
     private final WidgetBetterCheckbox buttonIsConcessionary;
     private final WidgetBetterCheckbox buttonFCAvailable;
     private final List<Button> amountButtons = new ArrayList<>(10);
 
-    protected SingleTicketProcessingScreen(@NotNull KSDStation current, @NotNull KSDStation destination, int mtrBalance, KCRSingleTicketMachineScreen ticketMachineScreen) {
-        super(mtrBalance, ticketMachineScreen, ticketMachineScreen.machinePos);
+    protected STProcessingScreen(@NotNull KSDStation current, @NotNull KSDStation destination, int mtrBalance, KCRSTMachineScreen stmMachineScreen) {
+        super(mtrBalance, stmMachineScreen, stmMachineScreen.machinePos);
         this.current = current;
         this.destination = destination;
-        this.ticketMachineScreen = ticketMachineScreen;
+        this.stmMachineScreen = stmMachineScreen;
         buttonIsConcessionary = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.is_concessionary"), this::setIsConcessionary);
         buttonFCAvailable = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.fc_available"), this::setFCAvailable);
         for (int i = 0; i < 10; i++) {
@@ -57,6 +57,7 @@ public class SingleTicketProcessingScreen extends PaymentScreen implements IGui 
         addDrawableChild(buttonFCAvailable);
         setAmount(1);
         setIsConcessionary(false);
+        setFCAvailable(false);
     }
 
     public void tick() {
@@ -84,20 +85,20 @@ public class SingleTicketProcessingScreen extends PaymentScreen implements IGui 
     }
 
     void extraAction() {
-        KSDPacketClient.sendCreateSingleTicketC2S(
+        KSDPacketClient.sendCreateSTC2S(
                 fare,
                 amount,
-                ticketMachineScreen.ticketType,
+                stmMachineScreen.ticketType,
                 buttonIsConcessionary.selected(),
                 buttonFCAvailable.selected(),
-                ticketMachineScreen.machinePos);
+                stmMachineScreen.machinePos);
     }
 
     void payWithOctopus(UUID uuid) {
         KSDPacketClient.sendOctopusAddValueC2S(
                 uuid,
                 -total,
-                switch (ticketMachineScreen.ticketType) {
+                switch (stmMachineScreen.ticketType) {
                     case MTR -> Octopus.History.Source.MTR;
                     case KCR -> Octopus.History.Source.KCR;
                     case LRT -> Octopus.History.Source.LRT;

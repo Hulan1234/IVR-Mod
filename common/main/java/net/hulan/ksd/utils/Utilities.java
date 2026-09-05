@@ -13,7 +13,6 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.world.item.Items;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
@@ -22,8 +21,7 @@ import java.util.function.Predicate;
 public abstract class Utilities {
 
     public static final long EXPIRE_TIME = TimeUnit.MINUTES.toMillis(150);
-    public static final RouteType KCR_CLASSICAL = EnumHelper.valueOf(RouteType.NORMAL, "KCR_CLASSICAL");
-    public static final RouteType KCR_MODERN = EnumHelper.valueOf(RouteType.NORMAL, "KCR_MODERN");
+    public static final RouteType KCR = EnumHelper.valueOf(RouteType.NORMAL, "KCR");
     private static Utilities instance;
     
     public static Utilities getInstance() {

@@ -15,7 +15,7 @@ public class CommandApplyOctopus {
                     CommandSourceStack source = context.getSource();
                     Entity entity = source.getEntity();
                     if (entity instanceof ServerPlayer player) {
-                        KSDPacketServer.openApplyOctopusScreenS2C(player, player.blockPosition());
+                        KSDPacketServer.openApplyOctopusScreenS2C(player);
                     }
                     return 0;
                 }));

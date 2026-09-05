@@ -66,7 +66,7 @@ public class RailDataUtilities {
     }
 
     public static boolean isKCRRoute(KSDRoute route) {
-        return route.routeType.equals(Utilities.KCR_CLASSICAL) || route.routeType.equals(Utilities.KCR_MODERN);
+        return route.routeType.equals(Utilities.KCR);
     }
 
     public static boolean isLightRailRoute(KSDRoute route) {
@@ -74,6 +74,6 @@ public class RailDataUtilities {
     }
 
     public static boolean hasFirstClassService(KSDRoute route) {
-        return route.routeType.equals(Utilities.KCR_CLASSICAL) && route.hasFirstClassService;
+        return route.routeType.equals(Utilities.KCR) && route.hasFirstClassService;
     }
 }

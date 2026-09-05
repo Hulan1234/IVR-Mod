@@ -1,7 +1,6 @@
 package net.hulan.ksd.sreen;
 
 import com.mojang.blaze3d.vertex.*;
-import mtr.data.IGui;
 import mtr.data.RailwayData;
 import mtr.data.Route;
 import mtr.mappings.SelectableMapper;
@@ -23,7 +22,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMapper, GuiEventListener, IGui {
+public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiEventListener, KSDGui {
 
     private int x;
     private int y;
@@ -42,19 +41,6 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
     private final Set<KSDStation> mainStations = new HashSet<>();
     private final Set<KSDStation> otherStations = new HashSet<>();
     private final Set<KSDStation> lightRailStations = new HashSet<>();
-
-    private static final double SCALE_UPPER_LIMIT = 64F;
-    private static final double SCALE_LOWER_LIMIT = 0.0078125F;
-    private static final float RADIUS = 5F;
-    private static final int RADIUS_PADDING = 8;
-    private static final int SEGMENTS = 64;
-    private static final float LINE_WIDTH = 5.0F;
-    private static final float STATION_RING_THICKNESS = 1.5F;
-    private static final int LIGHT_RAIL_COLOR = 0xFFF98C2B;
-    // 站名文字缩放倍数：原版字体行高 9 像素，1.2 倍约等于原动态贴图（10 像素高）的显示效果
-    private static final float STATION_NAME_SCALE = 1.2F;
-    // 站名英文行缩放倍数（小号，置于中文行下方）
-    private static final float STATION_EN_SCALE = 0.7F;
     private final Map<Long, List<RailMapStation>> layouts = new HashMap<>();
     private final List<StationCircle> stationCircles = new ArrayList<>();
     private final List<InterchangeCapsule> interchangeCapsules = new ArrayList<>();
@@ -66,9 +52,9 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
     private boolean lastHovering;
     private long handCursor;
 
-    public KCRSingleTicketMachineRailMap(Consumer<KSDStation> onClickedOnDestination,
-                                         KCRSingleTicketSystem.TicketType ticketType,
-                                         KSDStation currentStation) {
+    public KCRSTMachineRailMap(Consumer<KSDStation> onClickedOnDestination,
+                               KCRSingleTicketSystem.TicketType ticketType,
+                               KSDStation currentStation) {
         this.ticketType = ticketType; // 保存当前线路图类型
         this.onClickedOnDestination = onClickedOnDestination;
         this.currentStation = currentStation;
@@ -684,7 +670,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                                                       Map<Long, List<Tuple<Float, Float>>> centersByStation) {
         List<Tuple<Float, Float>> sameStationCenters = centersByStation.get(stationId);
         if (sameStationCenters == null || sameStationCenters.isEmpty()) {
-            return chooseFreeStationPosition(preferred, stationId, direction, centersByStation, null);
+            return findFreeStationPos(preferred, stationId, direction, centersByStation, null);
         }
 
         Tuple<Float, Float> best = null; // 保存当前评分最低的候选圆心
@@ -719,7 +705,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                     float axis = sign < 0 ? (float) (axisMin - distance) : (float) (axisMax + distance);
                     Tuple<Float, Float> candidate = horizontal
                             ? new Tuple<>(axis, cross) : new Tuple<>(cross, axis);
-                    if (!isSameStationCandidateValid(candidate, sameStationCenters, spacing)) {
+                    if (!checkIsOverlapped(candidate, sameStationCenters, spacing)) {
                         continue;
                     }
                     double score = stationPositionScore(candidate, preferred, stationId, centersByStation, sameStationCenters);
@@ -739,7 +725,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                     for (boolean horizontal : new boolean[]{true, false}) {
                         for (int sign : new int[]{-1, 1}) {
                             Tuple<Float, Float> candidate = offsetByAxis(center, distance, horizontal, sign);
-                            if (!isSameStationCandidateValid(candidate, sameStationCenters, spacing)) {
+                            if (!checkIsOverlapped(candidate, sameStationCenters, spacing)) {
                                 continue;
                             }
                             double score = stationPositionScore(candidate, preferred, stationId, centersByStation, sameStationCenters);
@@ -760,7 +746,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
             for (int ring = 1; ring <= maxRing; ring++) { // 从已有圆心向外逐层搜索相切位置
                 for (int sign : new int[]{-1, 1}) {
                     Tuple<Float, Float> candidate = offsetByRouteDirection(center, direction, spacing * ring, true, sign); // 沿线路法线生成候选圆心
-                    if (!isSameStationCandidateValid(candidate, sameStationCenters, spacing)) { // 过滤会造成同站圆圈重叠的候选位置
+                    if (!checkIsOverlapped(candidate, sameStationCenters, spacing)) { // 过滤会造成同站圆圈重叠的候选位置
                         continue; // 跳过不满足相切间距的候选位置
                     }
                     double score = stationPositionScore(candidate, preferred, stationId, centersByStation, sameStationCenters); // 评估候选位置的整体避让代价
@@ -775,7 +761,7 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
             return best;
         }
         return directionalBest == null
-                ? chooseFreeStationPosition(preferred, stationId, direction, centersByStation, sameStationCenters)
+                ? findFreeStationPos(preferred, stationId, direction, centersByStation, sameStationCenters)
                 : directionalBest; // 无法相切时回退到通用避让算法
     }
 
@@ -786,9 +772,9 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
                 : new Tuple<>(center.getA(), (float) (center.getB() + sign * distance));
     }
 
-    private static boolean isSameStationCandidateValid(Tuple<Float, Float> candidate,
-                                                       List<Tuple<Float, Float>> sameStationCenters,
-                                                       double spacing) {
+    private static boolean checkIsOverlapped(Tuple<Float, Float> candidate,
+                                             List<Tuple<Float, Float>> sameStationCenters,
+                                             double spacing) {
         for (Tuple<Float, Float> center : sameStationCenters) { // 检查候选圆心与同站已有圆心的距离
             if (dist(candidate, center) < spacing - 0.001) { // 判断两个圆圈是否会发生重叠
                 return false; // 拒绝小于直径的候选间距
@@ -798,9 +784,9 @@ public class KCRSingleTicketMachineRailMap implements WidgetMapper, SelectableMa
     }
 
     /** Finds a free location, preferring route-normal movement over movement along the route. */
-    private Tuple<Float, Float> chooseFreeStationPosition(Tuple<Float, Float> preferred, long stationId, int direction,
-                                                          Map<Long, List<Tuple<Float, Float>>> centersByStation,
-                                                          List<Tuple<Float, Float>> sameStationCenters) {
+    private Tuple<Float, Float> findFreeStationPos(Tuple<Float, Float> preferred, long stationId, int direction,
+                                                   Map<Long, List<Tuple<Float, Float>>> centersByStation,
+                                                   List<Tuple<Float, Float>> sameStationCenters) {
         Tuple<Float, Float> best = preferred;
         double bestScore = stationPositionScore(preferred, preferred, stationId, centersByStation, sameStationCenters);
 

@@ -1,7 +1,6 @@
 package net.hulan.ksd.sreen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import mtr.data.IGui;
 import mtr.mappings.SelectableMapper;
 import mtr.mappings.WidgetMapper;
 import net.hulan.ksd.data.KCRSingleTicketSystem;
@@ -16,43 +15,19 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMapper, GuiEventListener, IGui {
+public class KCRSTMMachineLegend implements WidgetMapper, SelectableMapper, GuiEventListener, KSDGui {
 
     private int x;
     private int y;
     private int width;
     private int height;
     private final List<LegendRow> rows = new ArrayList<>();
-    private final KCRSingleTicketMachineScreen ticketMachineScreen;
+    private final KCRSTMachineScreen ticketMachineScreen;
     private float scrollOffset;
     private boolean dragging;
     private float dragGrabOffsetY;
-    // 面板内边距
-    private static final int PADDING = 8;
-    // 行高（中文 1.0 倍 + 英文 0.65 倍 + 行距，约 18.5 像素，留余量）
-    private static final int ROW_HEIGHT = 24;
-    // 行内图像区宽度
-    private static final int IMAGE_SIZE = 16;
-    // 图像与文字之间的间距
-    private static final int IMAGE_TEXT_GAP = 12;
-    // 滑动条轨道宽度
-    private static final int TRACK_WIDTH = 6;
-    // 滑块最小高度
-    private static final int THUMB_MIN_HEIGHT = 20;
-    // 站点圆半径（与铁路图一致）
-    private static final float RADIUS = 5.0F;
-    // 圆环厚度
-    private static final float RING_THICKNESS = 1.5F;
-    // 圆两侧短线长度（小于半径 5）
-    private static final float STUB_LENGTH = 3.0F;
-    // 线路名中文行缩放
-    private static final float CN_SCALE = 1.0F;
-    // 线路名英文行缩放
-    private static final float EN_SCALE = 0.65F;
-    private static final int OTHER_NETWORK_COLOR = 0xFF808080;
-    private static final int ORANGE_NETWORK_COLOR = 0xFFF98C2B;
 
-    public KCRSingleTicketMachineLegend(KCRSingleTicketMachineScreen ticketMachineScreen) {
+    public KCRSTMMachineLegend(KCRSTMachineScreen ticketMachineScreen) {
         this.ticketMachineScreen = ticketMachineScreen;
     }
 
@@ -63,12 +38,12 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
         int startRow = (int) (scrollOffset / ROW_HEIGHT);
         for (int i = startRow; i < rows.size(); i++) {
             // 该行顶边在面板内的纵坐标
-            float rowY = y + PADDING + i * ROW_HEIGHT - scrollOffset;
+            float rowY = y + LEGEND_PADDING + i * ROW_HEIGHT - scrollOffset;
             // 超出面板底部时结束绘制
             if (rowY > y + height) {
                 break;
             }
-            drawLegendRow(matrices, renderUtilities, rows.get(i), x + PADDING, rowY);
+            drawLegendRow(matrices, renderUtilities, rows.get(i), x + LEGEND_PADDING, rowY);
         }
         // 黑边（最后画，盖住越界的行）
         drawBorder(matrices, renderUtilities);
@@ -103,7 +78,7 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
                 rows.add(new LegendRow(OTHER_NETWORK_COLOR, "地鐵|MTR", null, false));
             }
         }
-        height = Math.min(rows.size() * ROW_HEIGHT + PADDING * 2, maxHeight);
+        height = Math.min(rows.size() * ROW_HEIGHT + LEGEND_PADDING * 2, maxHeight);
     }
 
     private int getMainRouteColor(KSDRoute route) {
@@ -145,7 +120,7 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
     // 绘制滑动条：右侧轨道 + 滑块
     private void drawScrollbar(PoseStack matrices, RenderUtilities renderUtilities) {
         // 轨道
-        renderUtilities.drawFilledRectangle(matrices, trackX(), y + PADDING, trackX() + TRACK_WIDTH, y + height - PADDING, 0xFFCCCCCC);
+        renderUtilities.drawFilledRectangle(matrices, trackX(), y + LEGEND_PADDING, trackX() + TRACK_WIDTH, y + height - LEGEND_PADDING, 0xFFCCCCCC);
         // 滑块（拖动时加深）
         int thumbColor = dragging ? 0xFF404040 : 0xFF808080;
         renderUtilities.drawFilledRectangle(matrices, trackX(), thumbY(), trackX() + TRACK_WIDTH, thumbY() + thumbHeight(), thumbColor);
@@ -184,7 +159,7 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
         if (dragging) {
             if (maxScrollOffset() > 0) {
                 // 滑块顶边相对轨道顶部的比例换算成滚动偏移
-                float thumbTop = (float) mouseY - dragGrabOffsetY - y - PADDING;
+                float thumbTop = (float) mouseY - dragGrabOffsetY - y - LEGEND_PADDING;
                 float ratio = thumbTop / (visibleHeight() - thumbHeight());
                 scrollOffset = Mth.clamp(ratio * maxScrollOffset(), 0, maxScrollOffset());
             }
@@ -222,7 +197,7 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
 
     // 内容可视高度（不含上下内边距）
     private int visibleHeight() {
-        return height - PADDING * 2;
+        return height - LEGEND_PADDING * 2;
     }
 
     // 内容总高度
@@ -237,7 +212,7 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
 
     // 轨道 X 坐标
     private float trackX() {
-        return x + width - PADDING - TRACK_WIDTH;
+        return x + width - LEGEND_PADDING - TRACK_WIDTH;
     }
 
     // 滑块高度：按可见/内容比例计算，带最小高度
@@ -247,7 +222,7 @@ public class KCRSingleTicketMachineLegend implements WidgetMapper, SelectableMap
 
     // 滑块顶部 Y 坐标
     private float thumbY() {
-        return y + PADDING + (visibleHeight() - thumbHeight()) * (scrollOffset / maxScrollOffset());
+        return y + LEGEND_PADDING + (visibleHeight() - thumbHeight()) * (scrollOffset / maxScrollOffset());
     }
 
     // 把 RGB 颜色补全为不透明的 ARGB

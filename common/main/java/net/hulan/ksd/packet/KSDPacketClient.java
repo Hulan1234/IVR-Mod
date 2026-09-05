@@ -8,14 +8,13 @@ import mtr.data.NameColorDataBase;
 import mtr.data.TransportMode;
 import mtr.mappings.UtilitiesClient;
 import mtr.packet.PacketTrainDataBase;
-import net.hulan.ksd.KSDItems;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.data.*;
+import net.hulan.ksd.data.KCRSingleTicketSystem;
+import net.hulan.ksd.data.Octopus;
+import net.hulan.ksd.data.PaymentMethod;
 import net.hulan.ksd.sreen.*;
-import net.hulan.ksd.utils.DataUtilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 
@@ -41,82 +40,27 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
         });
     }
 
-    public static void openKCRSingleTicketMachineScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
+    public static void openKCRSTMachineScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
         KCRSingleTicketSystem.TicketType ticketType = EnumHelper.valueOf(KCRSingleTicketSystem.TicketType.MTR, packet.readUtf());
         BlockPos storeBlockPos = packet.readBlockPos();
         int balance = packet.readInt();
-        minecraftClient.execute(() -> {
-            KSDStation current = KSDRailwayData.getStation(KSDClientData.STATIONS, storeBlockPos);
-            if (!(minecraftClient.screen instanceof KCRSingleTicketMachineScreen) &&
-                    current != null) {
-                UtilitiesClient.setScreen(minecraftClient, new KCRSingleTicketMachineScreen(
-                        ticketType,
-                        current,
-                        storeBlockPos,
-                        balance));
-            }
-        });
+        minecraftClient.execute(() -> TicketsScreen.openSTMScreen(ticketType, storeBlockPos, balance));
     }
 
-    public static void openKCRSingleTicketFareAdjustmentScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
-        BlockPos storeBlockPos = packet.readBlockPos();
+    public static void openKCRSTFareAdjustmentScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
         int balance = packet.readInt();
-        minecraftClient.execute(() -> {
-            if (!(minecraftClient.screen instanceof KCRSingleTicketMachineScreen)) {
-                UtilitiesClient.setScreen(minecraftClient, new PutItemScreen(
-                        "item.ksd.single_ticket",
-                        KSDItems.SINGLE_TICKET.get(),
-                        PutItemScreen.PutMethod.PUT,
-                        true,
-                        (singleTicketItem, amount) -> {
-                            CompoundTag singleTicketTag = singleTicketItem.getOrCreateTag();
-                            KSDStation current = DataUtilities.getStation(KSDClientData.STATIONS, singleTicketTag.getLong("entered_station_id"));
-                            KSDStation destination = KSDRailwayData.getStation(KSDClientData.STATIONS, storeBlockPos);
-                            if (!(minecraftClient.screen instanceof SingleTicketFareAdjustmentScreen) &&
-                                    current != null &&
-                                    destination != null) {
-                                UtilitiesClient.setScreen(minecraftClient, new SingleTicketFareAdjustmentScreen(
-                                        current,
-                                        destination,
-                                        balance,
-                                        singleTicketItem,
-                                        storeBlockPos));
-                            }
-                        }));
-            }
-        });
+        minecraftClient.execute(() -> TicketsScreen.openSTFAScreen(balance));
     }
 
     public static void openApplyOctopusScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
-        BlockPos storeBlockPos = packet.readBlockPos();
         int balance = packet.readInt();
-        minecraftClient.execute(() -> {
-            if (!(minecraftClient.screen instanceof ApplyOctopusScreen)) {
-                UtilitiesClient.setScreen(minecraftClient, new ApplyOctopusScreen(balance, storeBlockPos));
-            }
-        });
+        minecraftClient.execute(() -> TicketsScreen.openApplyOctopusScreen(balance));
     }
 
     public static void openAddValueMachineScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
         BlockPos storeBlockPos = packet.readBlockPos();
         int balance = packet.readInt();
-        minecraftClient.execute(() -> {
-            if (!(minecraftClient.screen instanceof KCRSingleTicketMachineScreen)) {
-                UtilitiesClient.setScreen(minecraftClient, new PutItemScreen(
-                        "item.ksd.octopus",
-                        KSDItems.OCTOPUS.get(),
-                        PutItemScreen.PutMethod.INSERT,
-                        true,
-                        (octopusItem, amount) -> {
-                            if (!(minecraftClient.screen instanceof AddValueMachineScreen)) {
-                                UtilitiesClient.setScreen(minecraftClient, new AddValueMachineScreen(
-                                        balance,
-                                        octopusItem,
-                                        storeBlockPos));
-                            }
-                        }));
-            }
-        });
+        minecraftClient.execute(() -> TicketsScreen.openAddValueScreen(storeBlockPos, balance));
     }
 
     public static void receiveChunk(Minecraft minecraftClient, FriendlyByteBuf packet) {
@@ -166,12 +110,12 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
         sendUpdate(packetId, packet);
     }
 
-    public static void sendCreateSingleTicketC2S(int fare,
-                                                 int amount,
-                                                 KCRSingleTicketSystem.TicketType ticketType,
-                                                 boolean isConcessionary,
-                                                 boolean firstClassAvailable,
-                                                 BlockPos storeBlockPos) {
+    public static void sendCreateSTC2S(int fare,
+                                       int amount,
+                                       KCRSingleTicketSystem.TicketType ticketType,
+                                       boolean isConcessionary,
+                                       boolean firstClassAvailable,
+                                       BlockPos storeBlockPos) {
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
         packet.writeInt(fare);
         packet.writeInt(amount);
@@ -182,9 +126,9 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
         RegistryClient.sendToServer(KSD_PACKET_CREATE_SINGLE_TICKET, packet);
     }
 
-    public static void sendAdjustSingleTicketFareC2S(long id,
-                                                     int addValue,
-                                                     BlockPos storeBlockPos) {
+    public static void sendAdjustSTFareC2S(long id,
+                                           int addValue,
+                                           BlockPos storeBlockPos) {
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
         packet.writeLong(id);
         packet.writeInt(addValue);

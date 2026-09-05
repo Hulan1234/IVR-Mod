@@ -30,6 +30,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LiftClient.class)
 public abstract class LiftRenderOptimizeMixin {
 
+    private static final double LIFT_VISUAL_CULL_RADIUS = 8.0D; // 为电梯箱体、门和面板设置保守包围半径。
+
     /**
      * 注入到 LiftClient.tickClient 中 renderLift 调用之前。
      * tickClient 流程：tick（电梯逻辑）→ renderPlayerAndGetOffset → 计算位置 → renderLift（绘制）。
@@ -57,8 +59,12 @@ public abstract class LiftRenderOptimizeMixin {
             return;
         }
         // 距离 > 300 格 → 跳过电梯绘制（复用列车渲染距离阈值）
-        if (rel.length() > TrainRenderOptimize.getTrainRenderDistance()) {
-            ci.cancel();
+        if (rel.length() > TrainRenderOptimize.getTrainRenderDistance() + LIFT_VISUAL_CULL_RADIUS) { // 检查电梯包围范围是否超出距离。
+            ci.cancel(); // 超出距离时只跳过绘制。
+            return; // 距离已经超出时不再进行视觉判断。
+        }
+        if (TrainRenderOptimize.isOutsideFrustum(rel, LIFT_VISUAL_CULL_RADIUS)) { // 判断电梯包围范围是否完全位于视锥外。
+            ci.cancel(); // 完全不可见时跳过电梯绘制。
         }
     }
 }

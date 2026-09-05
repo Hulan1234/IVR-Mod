@@ -4,7 +4,6 @@ import mtr.RegistryObject;
 import mtr.mappings.RegistryUtilities;
 import net.hulan.ivr.block.*;
 import net.hulan.ksd.data.KCRSingleTicketSystem;
-import net.hulan.ksd.sreen.KCRSingleTicketMachineScreen;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
 public interface IVRBlockEntityTypes {

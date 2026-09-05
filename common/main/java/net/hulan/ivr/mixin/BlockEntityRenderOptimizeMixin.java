@@ -51,7 +51,7 @@ public abstract class BlockEntityRenderOptimizeMixin {
             // 使用足够大的包围球，只剔除完全位于视线外的方块实体。
             if (rel.lengthSqr() >= thresholdSquared
                     || TrainRenderOptimize.isOutsideFrustum(rel, BLOCK_ENTITY_BOUNDING_RADIUS) // 立即剔除已经完全位于视锥外的方块实体。
-                    || TrainRenderOptimize.shouldCullBlockEntity(pos, rel, BLOCK_ENTITY_BOUNDING_RADIUS)) { // 仅剔除距离过远或异步确认完全在视锥外的方块实体。
+                    || TrainRenderOptimize.shouldCullBlockEntity(pos, rel, BLOCK_ENTITY_BOUNDING_RADIUS)) { // 仅剔除距离过远或稳定确认完全被遮挡的方块实体。
                 ci.cancel(); // 取消完全不可见或超出范围的方块实体渲染。
             }
         }

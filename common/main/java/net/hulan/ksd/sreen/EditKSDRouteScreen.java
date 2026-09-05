@@ -135,7 +135,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
             if (textFieldLightRailRouteNumber.visible) {
                 drawString(matrices, font, lightRailRouteNumberText, SQUARE_SIZE, SQUARE_SIZE * 7 + TEXT_PADDING, ARGB_WHITE);
             }
-            if (routeType.equals(Utilities.KCR_CLASSICAL) && buttonHasFCService.selected()) {
+            if (routeType.equals(Utilities.KCR) && buttonHasFCService.selected()) {
                 drawString(matrices, font, fcCarNumberText, width / 2 + SQUARE_SIZE, SQUARE_SIZE * 4 + TEXT_PADDING, ARGB_WHITE);
             }
             if (isSelectingRIS) {
@@ -208,7 +208,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
     private void setRouteTypeText(TransportMode transportMode, RouteType newRouteType) {
         routeType = newRouteType;
         buttonRouteType.setMessage(Text.translatable(String.format("gui.mtr.route_type_%s_%s", transportMode, routeType).toLowerCase(Locale.ENGLISH)));
-        setShowFCService(routeType.equals(Utilities.KCR_CLASSICAL));
+        setShowFCService(routeType.equals(Utilities.KCR));
     }
 
     private void setIsLightRailRoute(boolean isLightRailRoute) {

@@ -5,7 +5,6 @@ import mtr.block.BlockStationColor;
 import mtr.block.BlockStationColorSlab;
 import net.hulan.ivr.block.*;
 import net.hulan.ksd.data.KCRSingleTicketSystem;
-import net.hulan.ksd.sreen.KCRSingleTicketMachineScreen;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SlabBlock;

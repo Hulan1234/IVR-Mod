@@ -15,7 +15,7 @@ public class CommandAdjustFare {
                     CommandSourceStack source = context.getSource();
                     Entity entity = source.getEntity();
                     if (entity instanceof ServerPlayer player) {
-                        KSDPacketServer.openSingleTicketAdjustmentScreenS2C(player, player.blockPosition());
+                        KSDPacketServer.openSTAdjustmentScreenS2C(player);
                     }
                     return 0;
                 }));

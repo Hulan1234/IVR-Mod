@@ -80,6 +80,8 @@ public final class TrainRenderOptimize {
     private static final Map<String, Long> OCCLUSION_REQUESTS = new ConcurrentHashMap<>(); // 保存列车最近一次计算请求时间。
     private static final long BLOCK_ENTITY_VISIBILITY_REFRESH_NANOS = 100_000_000L; // 限制方块实体视锥计算频率。
     private static final long BLOCK_ENTITY_VISIBILITY_MAX_AGE_NANOS = 250_000_000L; // 限制方块实体视锥结果有效时间。
+    private static final double BLOCK_ENTITY_OCCLUSION_RADIUS = 0.45D; // 将方块实体遮挡采样限制在自身方块内部。
+    private static final int BLOCK_ENTITY_OCCLUSION_CONFIRMATIONS = 3; // 要求连续多次确认后才隐藏方块实体。
     private static final Map<Long, BlockEntityVisibilityState> BLOCK_ENTITY_VISIBILITY_STATES = new ConcurrentHashMap<>(); // 保存方块实体视锥结果。
     private static final Map<Long, Long> BLOCK_ENTITY_VISIBILITY_REQUESTS = new ConcurrentHashMap<>(); // 保存方块实体最近请求时间。
 
@@ -192,11 +194,13 @@ public final class TrainRenderOptimize {
         final BlockEntityVisibilityState state = BLOCK_ENTITY_VISIBILITY_STATES.get(key); // 读取该方块实体最近一次视锥结果。
         if (state != null
                 && now - state.completedAt < BLOCK_ENTITY_VISIBILITY_MAX_AGE_NANOS
+                && (BLOCK_ENTITY_VISIBILITY_REQUESTS.get(key) == null
+                || BLOCK_ENTITY_VISIBILITY_REQUESTS.get(key) <= state.completedAt)
                 && state.relative.distanceToSqr(rel) < 0.25D
                 && state.cameraPosition.distanceToSqr(cameraPosition) < 0.25D
                 && angleDifferenceDegrees(state.cameraYaw, cameraYaw) < 2.0F
                 && angleDifferenceDegrees(state.cameraPitch, cameraPitch) < 2.0F
-                && (state.frustumCull || state.occluded)) { // 只复用仍与当前视角和位置匹配的剔除结果。
+                && (state.frustumCull || state.occluded)) { // 只复用没有被新请求淘汰的稳定剔除结果。
             return true; // 使用异步线程已经确认的剔除结果。
         }
 
@@ -217,10 +221,23 @@ public final class TrainRenderOptimize {
                         break; // 停止检查剩余采样点。
                     }
                 }
+                BlockEntityVisibilityState previous = BLOCK_ENTITY_VISIBILITY_STATES.get(key); // 读取上一次结果用于遮挡稳定性判断。
+                boolean sameView = previous != null
+                        && previous.relative.distanceToSqr(rel) < 0.25D
+                        && previous.cameraPosition.distanceToSqr(cameraPosition) < 0.25D
+                        && angleDifferenceDegrees(previous.cameraYaw, cameraYaw) < 2.0F
+                        && angleDifferenceDegrees(previous.cameraPitch, cameraPitch) < 2.0F; // 判断前后快照是否仍然对应同一视角。
+                int occlusionStreak = occluded && sameView && previous.rawOccluded
+                        ? previous.occlusionStreak + 1
+                        : occluded ? 1 : 0; // 计算连续完全遮挡次数。
                 if (BLOCK_ENTITY_VISIBILITY_REQUESTS.get(key) != null
                         && BLOCK_ENTITY_VISIBILITY_REQUESTS.get(key) == requestAt) { // 只提交仍然是最新请求的结果。
                     BLOCK_ENTITY_VISIBILITY_STATES.put(key, new BlockEntityVisibilityState(
-                            rel, cameraPosition, cameraYaw, cameraPitch, cull, occluded, System.nanoTime())); // 保存最新视锥和遮挡结果。
+                            rel, cameraPosition, cameraYaw, cameraPitch, cull,
+                            occluded,
+                            occlusionStreak >= BLOCK_ENTITY_OCCLUSION_CONFIRMATIONS,
+                            occlusionStreak,
+                            System.nanoTime())); // 保存最新视锥、遮挡和稳定性结果。
                 } // 丢弃已经过期的异步计算结果。
             }); // 提交方块实体视锥计算任务。
         } // 仅在达到刷新间隔时创建新任务。
@@ -234,16 +251,20 @@ public final class TrainRenderOptimize {
         private final float cameraYaw; // 保存提交任务时的相机水平角度。
         private final float cameraPitch; // 保存提交任务时的相机俯仰角度。
         private final boolean frustumCull; // 保存视锥判定结果。
-        private final boolean occluded; // 保存遮挡判定结果。
+        private final boolean rawOccluded; // 保存本次原始遮挡判定结果。
+        private final boolean occluded; // 保存连续稳定后的遮挡判定结果。
+        private final int occlusionStreak; // 保存连续完全遮挡次数。
         private final long completedAt; // 保存结果完成时间。
 
-        private BlockEntityVisibilityState(Vec3 relative, Vec3 cameraPosition, float cameraYaw, float cameraPitch, boolean frustumCull, boolean occluded, long completedAt) {
+        private BlockEntityVisibilityState(Vec3 relative, Vec3 cameraPosition, float cameraYaw, float cameraPitch, boolean frustumCull, boolean rawOccluded, boolean occluded, int occlusionStreak, long completedAt) {
             this.relative = relative; // 记录相对位置快照。
             this.cameraPosition = cameraPosition; // 记录相机位置快照。
             this.cameraYaw = cameraYaw; // 记录相机水平角度快照。
             this.cameraPitch = cameraPitch; // 记录相机俯仰角度快照。
             this.frustumCull = frustumCull; // 记录是否完全位于视锥外。
-            this.occluded = occluded; // 记录是否完全被不透明方块遮挡。
+            this.rawOccluded = rawOccluded; // 记录本次是否完全被不透明方块遮挡。
+            this.occluded = occluded; // 记录是否达到稳定隐藏条件。
+            this.occlusionStreak = occlusionStreak; // 记录连续遮挡次数。
             this.completedAt = completedAt; // 记录结果完成时间。
         }
     }
@@ -386,22 +407,22 @@ public final class TrainRenderOptimize {
     }
 
     private static boolean[] captureBlockEntityOcclusionSnapshot(net.minecraft.world.level.Level world, Vec3 camera, BlockPos pos, double radius) {
-        boolean[] blocked = new boolean[9]; // 创建方块实体九点遮挡结果数组。
+        boolean[] blocked = new boolean[27]; // 创建方块实体二十七点遮挡结果数组。
         if (world == null) { // 世界未加载时无法进行遮挡检测。
             return blocked; // 默认保留方块实体渲染。
         }
         Vec3 center = new Vec3(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D); // 计算方块实体中心位置。
-        Vec3[] samples = {
-                center, // 检查方块实体中心。
-                center.add(-radius, -radius, -radius), // 检查左下后方角点。
-                center.add(-radius, -radius, radius), // 检查左下前方角点。
-                center.add(-radius, radius, -radius), // 检查左上后方角点。
-                center.add(-radius, radius, radius), // 检查左上前方角点。
-                center.add(radius, -radius, -radius), // 检查右下后方角点。
-                center.add(radius, -radius, radius), // 检查右下前方角点。
-                center.add(radius, radius, -radius), // 检查右上后方角点。
-                center.add(radius, radius, radius) // 检查右上前方角点。
-        };
+        double sampleRadius = Math.min(radius, BLOCK_ENTITY_OCCLUSION_RADIUS); // 将采样范围限制在实体所在方块内部。
+        double[] offsets = {-sampleRadius, 0.0D, sampleRadius}; // 设置方块内部的三组采样偏移。
+        Vec3[] samples = new Vec3[27]; // 创建方块实体内部的三维采样网格。
+        int sampleIndex = 0; // 初始化采样点下标。
+        for (double offsetX : offsets) { // 遍历方块内部的 X 方向采样点。
+            for (double offsetY : offsets) { // 遍历方块内部的 Y 方向采样点。
+                for (double offsetZ : offsets) { // 遍历方块内部的 Z 方向采样点。
+                    samples[sampleIndex++] = center.add(offsetX, offsetY, offsetZ); // 记录一个方块内部采样点。
+                }
+            }
+        }
         for (int i = 0; i < samples.length; i++) { // 遍历所有方块实体遮挡采样点。
             blocked[i] = isRayBlocked(world, camera, samples[i], pos); // 检查相机到采样点的射线。
         }

@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 
-/**
+/*
  * MTR 动态纹理释放异常抑制 Mixin。
  *
  * 背景：MTR 的列车动态文字屏（如 KCR 南铁的滚动字幕 / 像素文字）在进入渲染范围后，
@@ -30,16 +30,17 @@ import org.spongepowered.asm.mixin.Shadow;
 @Mixin(ClientCache.DynamicResource.class)
 public abstract class DynamicResourceRemoveMixin {
 
-    /** 动态纹理的 ResourceLocation（MTR public 字段）。 */
     @Shadow(remap = false)
     @Final
     public ResourceLocation resourceLocation;
 
-    /**
+    /*
      * 重写 DynamicResource.remove()：释放纹理但吞掉并发释放导致的异常。
      * 与 MTR 原版逻辑一致：跳过默认资源（黑/白/透明），否则
      * release(texture) + getTexture().releaseId() + close()。
      * 默认资源判断通过 resourceLocation 的命名空间/路径前缀判断（避免访问外层 private 字段）。
+     */
+    /**
      * @author
      */
     @Overwrite(remap = false)

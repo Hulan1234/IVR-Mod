@@ -24,7 +24,7 @@ public class KCRSingleTicketSystem {
         singleTicketTag.putLong("id", id);
         singleTicketTag.putString("ticket_type", ticketType.name());
         singleTicketTag.putInt("fare", fare);
-        singleTicketTag.putLong("expire_time", newExpireTime());
+        singleTicketTag.putLong("expire_time", KCRTicketSystem.newExpireTime());
         singleTicketTag.putBoolean("is_concessionary", isConcessionary);
         singleTicketTag.putBoolean("fc_available", fcAvailable);
         return singleTicketItem;
@@ -34,7 +34,7 @@ public class KCRSingleTicketSystem {
         CompoundTag singleTicketTag = singleTicketItem.getOrCreateTag();
         int originalFare = singleTicketTag.getInt("fare");
         singleTicketTag.putInt("fare", originalFare + addValue);
-        singleTicketTag.putLong("expire_time", newExpireTime());
+        singleTicketTag.putLong("expire_time", KCRTicketSystem.newExpireTime());
     }
     
     public static String getPrintedData(ItemStack singleTicketItem) {
@@ -50,15 +50,6 @@ public class KCRSingleTicketSystem {
                 Text.translatable("gui.ksd.pd_expire_time", expire_time).getString() + "\n" +
                 Text.translatable("gui.ksd.pd_is_concessionary", Text.translatable("gui.ksd." + isConcessionary)).getString() + "\n" +
                 Text.translatable("gui.ksd.pd_fc_available", Text.translatable("gui.ksd." + fcAvailable)).getString();
-    }
-
-    public static long newExpireTime() {
-        return System.currentTimeMillis() + Utilities.EXPIRE_TIME;
-    }
-
-    public static int getExpiredFare(long expireTime) {
-        double minutes = (System.currentTimeMillis() - expireTime) / 60_000.0F;
-        return (int) Math.ceil(2 * (minutes / 60));
     }
 
     public static ItemStack findSingleTicketItem(long id, Inventory inventory) {

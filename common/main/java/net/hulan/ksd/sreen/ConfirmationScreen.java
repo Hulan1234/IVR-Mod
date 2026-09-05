@@ -2,13 +2,14 @@ package net.hulan.ksd.sreen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.client.IDrawing;
+import mtr.data.IGui;
 import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.MutableComponent;
 
-public class ConfirmationScreen extends ScreenMapper {
+public class ConfirmationScreen extends ScreenMapper implements IGui {
 
     private final Runnable deleteCallback;
     private final MutableComponent text;
@@ -37,7 +38,7 @@ public class ConfirmationScreen extends ScreenMapper {
         try {
             renderBackground(matrices);
             super.render(matrices, mouseX, mouseY, delta);
-            drawCenteredString(matrices, font, text, width / 2, height / 2 - 40 + 6, -1);
+            drawCenteredString(matrices, font, text, width / 2, height / 2 - 40 + 6, ARGB_WHITE);
         } catch (Exception e) {
             e.printStackTrace();
         }

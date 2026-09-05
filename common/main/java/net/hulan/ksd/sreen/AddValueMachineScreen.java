@@ -86,7 +86,7 @@ public class AddValueMachineScreen extends PaymentScreen {
         } catch (RuntimeException e) {
             value = 0;
         }
-        addValue = Mth.clamp(value, 0, 500);
+        addValue = Mth.clamp(value, 0, 1000);
         countTotal();
     }
 

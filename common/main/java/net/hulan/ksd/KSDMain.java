@@ -59,8 +59,8 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
         registerBlockItem.accept("kp_cell_top", KP_CELL_TOP, KCR_PLATFORM_BLOCKS);
         registerBlockItem.accept("kp_cell_light", KP_LIGHT, KCR_PLATFORM_BLOCKS);
         registerBlockItem.accept("first_class_processor", FIRST_CLASS_PROCESSOR, KCR_PLATFORM_BLOCKS);
-        mtr.Registry.registerNetworkReceiver(KSD_PACKET_CREATE_SINGLE_TICKET, KSDPacketServer::receiveCreateSingleTicketC2S);
-        mtr.Registry.registerNetworkReceiver(KSD_PACKET_ADJUST_SINGLE_TICKET_FARE, KSDPacketServer::receiveAdjustSingleTicketFareC2S);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_CREATE_SINGLE_TICKET, KSDPacketServer::receiveCreateSTC2S);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_ADJUST_SINGLE_TICKET_FARE, KSDPacketServer::receiveAdjustSTFareC2S);
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_PAYMENT, KSDPacketServer::receivePayment);
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_CREATE_OCTOPUS, KSDPacketServer::receiveApplyOctopusC2S);
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_OCTOPUS_ADD_VALUE, KSDPacketServer::receiveOctopusAddValueC2S);
