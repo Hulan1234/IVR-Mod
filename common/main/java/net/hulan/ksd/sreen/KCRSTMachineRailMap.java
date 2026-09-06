@@ -32,7 +32,7 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
     private double centerX;
     private double centerY;
     private final boolean isLRT;
-    private final KCRSingleTicketSystem.TicketType ticketType;
+    private final SingleTicketSystem.TicketType ticketType;
     private final Consumer<KSDStation> onClickedOnDestination;
     private final KSDStation currentStation;
     private final Set<KSDRoute> mainRoutes = new HashSet<>();
@@ -53,7 +53,7 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
     private long handCursor;
 
     public KCRSTMachineRailMap(Consumer<KSDStation> onClickedOnDestination,
-                               KCRSingleTicketSystem.TicketType ticketType,
+                               SingleTicketSystem.TicketType ticketType,
                                KSDStation currentStation) {
         this.ticketType = ticketType; // 保存当前线路图类型
         this.onClickedOnDestination = onClickedOnDestination;
@@ -68,7 +68,7 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
             centerY = player.getZ();
         }
         scale = 0.05F;
-        isLRT = ticketType.equals(KCRSingleTicketSystem.TicketType.LRT); // 缓存轻铁线路图标记
+        isLRT = ticketType.equals(SingleTicketSystem.TicketType.LRT); // 缓存轻铁线路图标记
     }
 
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
@@ -476,7 +476,7 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
                     specialInterchangeStationIds.add(stationId);
                 }
             });
-        } else if (ticketType == KCRSingleTicketSystem.TicketType.KCR) {
+        } else if (ticketType == SingleTicketSystem.TicketType.KCR) {
             mainRouteCountsByStation.forEach((stationId, count) -> {
                 // KCR 图中，主线路与任一辅助线路换乘时使用胶囊站点。
                 if (count > 0 && (otherRouteCountsByStation.getOrDefault(stationId, 0) > 0

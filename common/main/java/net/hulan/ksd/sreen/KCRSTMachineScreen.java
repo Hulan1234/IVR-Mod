@@ -5,7 +5,7 @@ import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.data.KCRSingleTicketSystem;
+import net.hulan.ksd.data.SingleTicketSystem;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
 import net.hulan.ksd.utils.RailDataUtilities;
@@ -21,7 +21,7 @@ import java.util.Set;
 
 public class KCRSTMachineScreen extends ScreenMapper implements KSDGui {
 
-    public final KCRSingleTicketSystem.TicketType ticketType;
+    public final SingleTicketSystem.TicketType ticketType;
     private final KSDStation current;
     public final BlockPos machinePos;
     private final int balance;
@@ -38,7 +38,7 @@ public class KCRSTMachineScreen extends ScreenMapper implements KSDGui {
     private static final float RMH_CHI_WIDTH;
     private static final float RMH_ENG_WIDTH;
 
-    public KCRSTMachineScreen(KCRSingleTicketSystem.TicketType ticketType, @NotNull KSDStation current, BlockPos machinePos, int balance) {
+    public KCRSTMachineScreen(SingleTicketSystem.TicketType ticketType, @NotNull KSDStation current, BlockPos machinePos, int balance) {
         super(Text.literal(""));
         this.ticketType = ticketType;
         this.current = current;

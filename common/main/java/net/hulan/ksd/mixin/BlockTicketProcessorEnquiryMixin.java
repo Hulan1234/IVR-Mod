@@ -3,7 +3,7 @@ package net.hulan.ksd.mixin;
 import mtr.SoundEvents;
 import mtr.block.BlockTicketProcessorEnquiry;
 import mtr.mappings.Text;
-import net.hulan.ksd.data.KCRSingleTicketSystem;
+import net.hulan.ksd.data.SingleTicketSystem;
 import net.hulan.ksd.data.KSDRailwayData;
 import net.hulan.ksd.data.OctopusSystem;
 import net.hulan.ksd.item.ItemOctopus;
@@ -30,7 +30,7 @@ public class BlockTicketProcessorEnquiryMixin {
         if (!world.isClientSide) {
             ItemStack itemInHand = player.getItemInHand(interactionHand);
             if (itemInHand.getItem() instanceof ItemSingleTicket) {
-                player.displayClientMessage(Text.literal(KCRSingleTicketSystem.getPrintedData(itemInHand)), false);
+                player.displayClientMessage(Text.literal(SingleTicketSystem.getPrintedData(itemInHand)), false);
                 world.playSound(null, pos, SoundEvents.TICKET_PROCESSOR_ENTRY, SoundSource.BLOCKS, 1.0F, 1.0F);
                 cir.setReturnValue(InteractionResult.SUCCESS);
             } else if (itemInHand.getItem() instanceof ItemOctopus) {

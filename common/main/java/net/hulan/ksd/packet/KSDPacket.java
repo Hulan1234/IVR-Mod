@@ -5,6 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 public interface KSDPacket {
 
     ResourceLocation KSD_PACKET_OPEN_KSD_DASHBOARD_SCREEN = new ResourceLocation("ksd", "packet_open_dashboard_screen");
+    ResourceLocation KSD_PACKET_OPEN_TICKETS_SCREEN = new ResourceLocation("ksd", "packet_open_tickets_screen");
     ResourceLocation KSD_PACKET_OPEN_KCR_ST_MACHINE_SCREEN = new ResourceLocation("ksd", "packet_open_kcr_st_machine_screen");
     ResourceLocation KSD_PACKET_OPEN_KCR_ST_FARE_ADJUSTMENT_SCREEN = new ResourceLocation("ksd", "packet_open_kcr_st_fare_adjustment_screen");
     ResourceLocation KSD_PACKET_OPEN_APPLY_OCTOPUS_SCREEN = new ResourceLocation("ksd", "packet_open_apply_octopus_screen");

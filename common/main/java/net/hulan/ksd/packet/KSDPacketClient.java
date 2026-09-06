@@ -9,7 +9,7 @@ import mtr.data.TransportMode;
 import mtr.mappings.UtilitiesClient;
 import mtr.packet.PacketTrainDataBase;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.data.KCRSingleTicketSystem;
+import net.hulan.ksd.data.SingleTicketSystem;
 import net.hulan.ksd.data.Octopus;
 import net.hulan.ksd.data.PaymentMethod;
 import net.hulan.ksd.sreen.*;
@@ -17,6 +17,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,8 +41,19 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
         });
     }
 
+    public static void openTicketsScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
+        BlockPos storeBlockPos = packet.readBlockPos();
+        int balance = packet.readInt();
+        minecraftClient.execute(() -> {
+            Player player = minecraftClient.player;
+            if (player != null && !(minecraftClient.screen instanceof TicketsScreen)) {
+                UtilitiesClient.setScreen(minecraftClient, new TicketsScreen(storeBlockPos, balance));
+            }
+        });
+    }
+
     public static void openKCRSTMachineScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
-        KCRSingleTicketSystem.TicketType ticketType = EnumHelper.valueOf(KCRSingleTicketSystem.TicketType.MTR, packet.readUtf());
+        SingleTicketSystem.TicketType ticketType = EnumHelper.valueOf(SingleTicketSystem.TicketType.MTR, packet.readUtf());
         BlockPos storeBlockPos = packet.readBlockPos();
         int balance = packet.readInt();
         minecraftClient.execute(() -> TicketsScreen.openSTMScreen(ticketType, storeBlockPos, balance));
@@ -112,7 +124,7 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
 
     public static void sendCreateSTC2S(int fare,
                                        int amount,
-                                       KCRSingleTicketSystem.TicketType ticketType,
+                                       SingleTicketSystem.TicketType ticketType,
                                        boolean isConcessionary,
                                        boolean firstClassAvailable,
                                        BlockPos storeBlockPos) {

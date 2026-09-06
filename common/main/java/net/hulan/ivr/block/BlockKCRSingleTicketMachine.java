@@ -3,7 +3,7 @@ package net.hulan.ivr.block;
 import mtr.block.IBlock;
 import mtr.mappings.*;
 import net.hulan.ivr.IVRBlockEntityTypes;
-import net.hulan.ksd.data.KCRSingleTicketSystem;
+import net.hulan.ksd.data.SingleTicketSystem;
 import net.hulan.ksd.packet.KSDPacketServer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -41,10 +41,10 @@ public class BlockKCRSingleTicketMachine extends BlockDirectionalMapper implemen
     private static final BooleanProperty STORED = BooleanProperty.create("stored");
     public static final EnumProperty<Side> SIDE = EnumProperty.create("side", Side.class);
     public static final EnumProperty<Height> HEIGHT = EnumProperty.create("height", Height.class);
-    public final KCRSingleTicketSystem.TicketType ticketType;
+    public final SingleTicketSystem.TicketType ticketType;
     public final boolean isWall;
 
-    public BlockKCRSingleTicketMachine(KCRSingleTicketSystem.TicketType ticketType, boolean isWall) {
+    public BlockKCRSingleTicketMachine(SingleTicketSystem.TicketType ticketType, boolean isWall) {
         super(Properties.of(Material.METAL, MaterialColor.COLOR_GRAY)
                 .requiresCorrectToolForDrops()
                 .strength(2)
@@ -172,7 +172,7 @@ public class BlockKCRSingleTicketMachine extends BlockDirectionalMapper implemen
         }
 
         @Override
-        public String getSerializedName() {
+        public @NotNull String getSerializedName() {
             return name;
         }
     }
@@ -192,7 +192,7 @@ public class BlockKCRSingleTicketMachine extends BlockDirectionalMapper implemen
         }
 
         @Override
-        public String getSerializedName() {
+        public @NotNull String getSerializedName() {
             return name;
         }
     }
@@ -206,7 +206,7 @@ public class BlockKCRSingleTicketMachine extends BlockDirectionalMapper implemen
 
         private final List<ItemStack> items = new ArrayList<>();
 
-        public TileEntityKCRSingleTicketMachine(KCRSingleTicketSystem.TicketType ticketType, boolean isWall, BlockPos blockPos, BlockState blockState) {
+        public TileEntityKCRSingleTicketMachine(SingleTicketSystem.TicketType ticketType, boolean isWall, BlockPos blockPos, BlockState blockState) {
             super(switch (ticketType) {
                         case MTR -> isWall ?
                                 IVRBlockEntityTypes.KCR_SINGLE_TICKET_MACHINE_MTR_WALL_TILE_ENTITY.get() :

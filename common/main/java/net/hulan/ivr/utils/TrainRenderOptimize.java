@@ -1,6 +1,5 @@
 package net.hulan.ivr.utils;
 
-import mtr.data.TrainClient;
 import mtr.block.BlockPSDAPGBase;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Camera;
@@ -8,9 +7,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
-import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Set;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -18,17 +14,14 @@ import java.util.concurrent.Executors;
 
 /**
  * 渲染优化工具类（客户端）。
- *
  * 核心思路：在 GPU 压力大的密集场景（大站台、多列车）下，
  * 通过距离、保守视锥和异步遮挡结果，在真正把顶点提交给 GPU 之前跳过不必要的渲染。
- *
  * 覆盖两类目标：
  *   - 列车（TrainRenderOptimizeMixin）：≤TRAIN_RENDER_DISTANCE（180 格）完整渲染；
  *     >180 格完全不渲染。
  *   - 方块实体（BlockEntityRenderOptimizeMixin）：<BLOCK_ENTITY_RENDER_DISTANCE（50 格）
  *     完全渲染；≥50 格完全不渲染（纯距离阈值）。
  *   - 电梯（LiftRenderOptimizeMixin）：复用列车距离阈值。
- *
  * 所有方法均为静态，供各个 Mixin 注入点复用。
  */
 public final class TrainRenderOptimize {
@@ -44,20 +37,6 @@ public final class TrainRenderOptimize {
      * 规则：≤此距离的车厢完整渲染（MTR 原模型，含内饰）；>此距离完全不渲染。
      */
     public static final double TRAIN_RENDER_DISTANCE = 180.0D; // 将列车距离剔除阈值设置为 180 格。
-
-    /** 列车车厢视锥判断使用的保守半径。 */
-    public static final double TRAIN_VISUAL_CULL_RADIUS = 24.0D; // 为列车视锥判断提供保守包围半径。
-
-    /** 列车连接件和屏障使用的保守半径。 */
-    public static final double TRAIN_AUXILIARY_CULL_RADIUS = 32.0D; // 为连接件和屏障保留更大的可见范围。
-
-    /**
-     * 列车模拟剔除缓冲（格）。
-     * TrainSimulateOptimizeMixin 中，列车路径首节点距相机超过
-     * TRAIN_RENDER_DISTANCE + 此缓冲 → 完全跳过该列车的模拟与渲染。
-     * 缓冲用于避免列车恰在渲染边缘时反复进入/退出模拟导致卡顿。
-     */
-    public static final double TRAIN_SIMULATE_BUFFER = 64.0D;
 
     /**
      * 方块实体（站牌 / PSD / PID / 时钟 / 站名牌等）的最大渲染距离（格）。
@@ -206,8 +185,7 @@ public final class TrainRenderOptimize {
 
         final Long previousRequest = BLOCK_ENTITY_VISIBILITY_REQUESTS.get(key); // 读取最近一次异步请求时间。
         if (previousRequest == null || now - previousRequest >= BLOCK_ENTITY_VISIBILITY_REFRESH_NANOS) {
-            final long requestAt = now; // 标记本次异步请求的版本。
-            BLOCK_ENTITY_VISIBILITY_REQUESTS.put(key, requestAt); // 记录最新请求，淘汰旧任务结果。
+            BLOCK_ENTITY_VISIBILITY_REQUESTS.put(key, now); // 记录最新请求，淘汰旧任务结果。
             final double tanVertical = getFovTanHalf(); // 在主线程捕获视场角快照。
             final double aspect = (double) minecraft.getWindow().getWidth()
                     / Math.max(1.0D, minecraft.getWindow().getHeight()); // 在主线程捕获窗口宽高比。
@@ -231,7 +209,7 @@ public final class TrainRenderOptimize {
                         ? previous.occlusionStreak + 1
                         : occluded ? 1 : 0; // 计算连续完全遮挡次数。
                 if (BLOCK_ENTITY_VISIBILITY_REQUESTS.get(key) != null
-                        && BLOCK_ENTITY_VISIBILITY_REQUESTS.get(key) == requestAt) { // 只提交仍然是最新请求的结果。
+                        && BLOCK_ENTITY_VISIBILITY_REQUESTS.get(key) == now) { // 只提交仍然是最新请求的结果。
                     BLOCK_ENTITY_VISIBILITY_STATES.put(key, new BlockEntityVisibilityState(
                             rel, cameraPosition, cameraYaw, cameraPitch, cull,
                             occluded,
@@ -267,32 +245,6 @@ public final class TrainRenderOptimize {
             this.occlusionStreak = occlusionStreak; // 记录连续遮挡次数。
             this.completedAt = completedAt; // 记录结果完成时间。
         }
-    }
-
-    /** 使用全部角点构造保守包围球后执行视锥判断。 */
-    public static boolean isOutsideFrustum(Vec3[] corners, boolean relative) {
-        if (corners == null || corners.length == 0) { // 没有角点时不进行剔除。
-            return false;
-        }
-        Vec3 center = new Vec3(0.0D, 0.0D, 0.0D); // 初始化角点中心。
-        int count = 0; // 统计有效角点数量。
-        for (Vec3 corner : corners) {
-            if (corner != null) {
-                center = center.add(corner); // 累加角点坐标。
-                count++; // 增加有效角点计数。
-            }
-        }
-        if (count == 0) { // 没有有效角点时保守地保留渲染。
-            return false;
-        }
-        center = center.scale(1.0D / count); // 计算角点中心。
-        double radius = 0.0D; // 初始化包围球半径。
-        for (Vec3 corner : corners) {
-            if (corner != null) {
-                radius = Math.max(radius, corner.distanceTo(center)); // 找到能覆盖所有角点的半径。
-            }
-        }
-        return isOutsideFrustum(toCameraRelative(center, relative), radius + 1.0D); // 对完整包围球执行视锥测试。
     }
 
     /**
@@ -530,24 +482,6 @@ public final class TrainRenderOptimize {
     }
 
     /**
-     * 反射读取 Train（父类）的 path 字段。
-     * 父类字段无法通过 @Shadow 在 TrainClient 目标上可靠定位，改用反射。
-     *
-     * @param trainClient 列车实例（TrainClient 继承 Train）
-     * @return 列车路径列表；失败时返回 null
-     */
-    @SuppressWarnings("unchecked")
-    public static List<mtr.path.PathData> getTrainPath(TrainClient trainClient) {
-        try {
-            Field field = TrainClient.class.getSuperclass().getDeclaredField("path");
-            field.setAccessible(true);
-            return (List<mtr.path.PathData>) field.get(trainClient);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    /**
      * 反射读取 Lift（父类）的 currentPositionX/Y/Z 字段。
      * 父类字段无法通过 @Shadow 在 LiftClient 目标上可靠定位，改用反射。
      *
@@ -563,30 +497,6 @@ public final class TrainRenderOptimize {
             return new double[]{x, y, z};
         } catch (Exception e) {
             return null;
-        }
-    }
-
-    /**
-     * 判断玩家是否乘坐在这列列车上（玩家的 UUID 是否在 Train.ridingEntities 乘客集合中）。
-     * 通过反射读取父类 Train 的 protected 字段 ridingEntities。
-     * 用于列车相关 Mixin：判断玩家是否正在乘坐列车。
-     *
-     * @param trainClient 列车实例（TrainClient 继承 Train）
-     * @return true 表示玩家正在乘坐这列列车
-     */
-    @SuppressWarnings("unchecked")
-    public static boolean isPlayerOnTrain(TrainClient trainClient) {
-        try {
-            if (trainClient == null) {
-                return false;
-            }
-            java.util.UUID playerUuid = Minecraft.getInstance().player.getUUID();
-            Field field = TrainClient.class.getSuperclass().getDeclaredField("ridingEntities");
-            field.setAccessible(true);
-            Set<java.util.UUID> riding = (Set<java.util.UUID>) field.get(trainClient);
-            return riding != null && riding.contains(playerUuid);
-        } catch (Exception e) {
-            return false;
         }
     }
 

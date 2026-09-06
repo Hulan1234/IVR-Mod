@@ -9,13 +9,12 @@ import net.hulan.ksd.mixin.SidingAccessor;
 import net.hulan.ksd.mixin.TrainInvoker;
 import net.hulan.ksd.mixin.TrainServerAccessor;
 import net.hulan.ksd.utils.DataUtilities;
-import net.hulan.ksd.utils.Utilities;
+import net.hulan.ksd.utils.RailDataUtilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -23,7 +22,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Score;
 import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -55,43 +53,30 @@ public final class FirstClassValidationSystem {
                 if (oldCar == -1) continue;
                 long routeId = ((TrainServerAccessor) playerTrain).getRouteId();
                 KSDRoute route = DataUtilities.getRoute(ksd.routes, routeId);
-                if (hasFCService(route) && newCar == route.firstClassCar) {
+                if (RailDataUtilities.hasFirstClassService(route) && newCar == route.firstClassCar) {
                     ItemStack holdingItem = player.getMainHandItem();
-                    if (holdingItem.getItem() instanceof ItemSingleTicket) {
-                        ticketValidate(world, player, holdingItem);
-                        continue;
-                    } else if (holdingItem.getItem() instanceof ItemOctopus) {
-                        continue;
+                    if (holdingItem.getItem() instanceof ItemSingleTicket || holdingItem.getItem() instanceof ItemOctopus) {
+                        validate(world, ksd, player, holdingItem, holdingItem.getItem() instanceof ItemOctopus);
                     } else {
-                        KSDStation firstStationInRoute = ksd.dataCache.platformIdToStation.get(route.getFirstPlatformId());
-                        if (route.recommendedInterchangeStationId == 0) {
-                            if (firstStationInRoute != null) {
-                                route.recommendedInterchangeStationId = firstStationInRoute.id;
-                            }
-                        }
-                        KSDStation firstStation = DataUtilities.getStation(ksd.stations, route.recommendedInterchangeStationId);
-                        validate(ksd, world, player, player.blockPosition(), firstStation, route);
+                        illegallyEntered(world, player, newCar);
                     }
                 }
             }
         }
     }
 
-    public static void illegallyEntered(Level world, FirstClassPlayer firstClassPlayer, int percentageOffset) {
+    public static void illegallyEntered(Level world, Player player, int percentageOffset) {
         addObjectivesIfMissing(world);
-        Player levelPlayer = world.getPlayerByUUID(firstClassPlayer.uuid);
-        if (levelPlayer != null) {
-            firstClassPlayer.state = FirstClassState.ILLEGALLY;
-            Score carScore = getPlayerScore(world, levelPlayer, PLAYER_CAR_OBJECTIVE);
-            carScore.setScore(percentageOffset + 1);
-            playSoundAndSendMessage(world, levelPlayer.blockPosition(), levelPlayer, "gui.ksd.first_class_illegal");
-        }
+        Score carScore = getPlayerScore(world, player, PLAYER_CAR_OBJECTIVE);
+        Score balance = getPlayerScore(world, player, TicketSystem.BALANCE_OBJECTIVE);
+        carScore.setScore(percentageOffset + 1);
+        balance.setScore(balance.getScore() - FC_EVASION_FINE);
+        playSoundAndSendMessage(world, player.blockPosition(), player, "gui.ksd.first_class_illegal");
     }
 
-    public static FirstClassState ticketValidate(Level world, Player player, ItemStack ticketItem) {
-        CompoundTag ticketTag = ticketItem.getOrCreateTag();
-        long enteredStationId = ticketTag.getLong("entered_station_id");
-        if (enteredStationId == 0L) {
+    public static FirstClassState validate(Level world, KSDRailwayData railwayData, Player player, ItemStack item, boolean isOctopus) {
+        CompoundTag ticketTag = item.getOrCreateTag();
+        if (!KCRTicketSystem.isEntered(ticketTag, railwayData.stations, isOctopus)) {
             playSoundAndSendMessage(
                     world,
                     player.blockPosition(),
@@ -100,24 +85,7 @@ public final class FirstClassValidationSystem {
             return FirstClassState.DENIED;
         }
         boolean isConcessionary = ticketTag.getBoolean("is_concessionary");
-        boolean fcAvailable = ticketTag.getBoolean("fc_available");
-        if (fcAvailable) {
-            if (player.addTag("fc_validated")) {
-                playSoundAndSendMessage(
-                        world,
-                        player.blockPosition(),
-                        player,
-                        isConcessionary ? "gui.ksd.fc_validated_concessionary" : "gui.ksd.fc_validated");
-                return isConcessionary ? FirstClassState.VALIDATED_CONCESSIONARY : FirstClassState.VALIDATED;
-            } else {
-                playSoundAndSendMessage(
-                        world,
-                        player.blockPosition(),
-                        player,
-                        "gui.ksd.fc_already_validated");
-                return FirstClassState.DENIED;
-            }
-        } else {
+        if (!isOctopus && !ticketTag.getBoolean("fc_available")) {
             playSoundAndSendMessage(
                     world,
                     player.blockPosition(),
@@ -125,63 +93,33 @@ public final class FirstClassValidationSystem {
                     "gui.ksd.fc_denied_fc_unavailable");
             return FirstClassState.DENIED;
         }
-    }
-
-    public static void ticketDevalidate(Player player) {
-        player.removeTag("fc_validated");
-    }
-
-    public static FirstClassState validateOnMachine(BlockPos clickedPos, Level world, Player player) {
-        KSDRailwayData ksd = KSDRailwayData.getInstance(world);
-        if (ksd == null) {
-            playSoundAndSendMessage(world, clickedPos, player, "gui.ksd.first_class_denied");
-            return FirstClassState.DENIED;
-        }
-        KSDStation station = KSDRailwayData.getStation(ksd.stations, clickedPos);
-        if (station == null) {
-            playSoundAndSendMessage(world, clickedPos, player, "gui.ksd.first_class_denied");
-            return FirstClassState.DENIED;
-        }
-        for (KSDRoute route : ksd.dataCache.stationIdToRoutes.get(station.id)) {
-            if (hasFCService(route)) {
-                return validate(ksd, world, player, clickedPos, station, route);
-            }
-        }
-        playSoundAndSendMessage(world, clickedPos, player, "gui.ksd.first_class_denied_no_matched_route");
-        return FirstClassState.DENIED;
-    }
-
-    private static FirstClassState validate(KSDRailwayData ksd, Level world, Player player, BlockPos pos, KSDStation validateStation, KSDRoute route) {
-        Score balance = getPlayerScore(world, player, TicketSystem.BALANCE_OBJECTIVE);
-        Score entryZone = getPlayerScore(world, player, "mtr_entry_zone");
-        FirstClassPlayer firstClassPlayer = ksd.jsonDataManager.getFirstClassPlayer(player.getUUID());
-        if (entryZone.getScore() == 0 || firstClassPlayer == null) {
-            return FirstClassState.DENIED;
-        }
-        if (!isValidated(firstClassPlayer)) {
-            if (balance.getScore() < 0) {
-                firstClassPlayer.state = FirstClassState.DENIED;
-                playSoundAndSendMessage(world, pos, player, "gui.ksd.first_class_denied");
-            } else {
-                if (isConcessionary(player)) {
-                    firstClassPlayer.state = FirstClassState.VALIDATED_CONCESSIONARY;
-                    playSoundAndSendMessage(world, pos, player, "gui.ksd.first_class_enabled_access_concessionary");
-                } else {
-                    firstClassPlayer.state = FirstClassState.VALIDATED;
-                    playSoundAndSendMessage(world, pos, player, "gui.ksd.first_class_enabled_access");
-                }
-            }
-            ksd.dataCache.sync();
-            return firstClassPlayer.state;
+        if (validate(player)) {
+            playSoundAndSendMessage(
+                    world,
+                    player.blockPosition(),
+                    player,
+                    isConcessionary ? "gui.ksd.fc_validated_concessionary" : "gui.ksd.fc_validated");
+            return isConcessionary ? FirstClassState.VALIDATED_CONCESSIONARY : FirstClassState.VALIDATED;
         } else {
-            playSoundAndSendMessage(world, pos, player, "gui.ksd.first_class_already_valid");
+            playSoundAndSendMessage(
+                    world,
+                    player.blockPosition(),
+                    player,
+                    "gui.ksd.fc_already_validated");
             return FirstClassState.DENIED;
         }
     }
 
-    public static boolean isValidated(FirstClassPlayer firstClassPlayer) {
-        return firstClassPlayer.state.equals(FirstClassState.VALIDATED)
-                || firstClassPlayer.state.equals(FirstClassState.VALIDATED_CONCESSIONARY);
+    public static boolean validate(Player player) {
+        return player.addTag("fc_validated");
+    }
+
+    public static boolean isValidated(Player player) {
+        return player.getTags().contains("fc_validated");
+    }
+
+    public static void devalidate(Player player) {
+        player.removeTag("fc_validated");
     }
 
     private static Score getPlayerScore(Level world, Player player, String objectiveName) {
@@ -193,14 +131,6 @@ public final class FirstClassValidationSystem {
             world.getScoreboard().addObjective(PLAYER_CAR_OBJECTIVE, ObjectiveCriteria.DUMMY, Text.literal("Player Car"), ObjectiveCriteria.RenderType.INTEGER);
         } catch (Exception ignored) {
         }
-    }
-
-    private static boolean isConcessionary(Player player) {
-        return player.isCreative();
-    }
-
-    private static boolean hasFCService(@Nullable KSDRoute route) {
-        return route != null && route.routeType.equals(Utilities.KCR) && route.hasFirstClassService;
     }
 
     private static void playSoundAndSendMessage(Level world, BlockPos pos, Player player, String message) {
@@ -264,7 +194,7 @@ public final class FirstClassValidationSystem {
         return new Vec3[]{positions[carriageIndex], positions[carriageIndex + 1]};
     }
 
-    public enum FirstClassState implements StringRepresentable {
+    public enum FirstClassState {
 
         MTR("mtr"),
         ILLEGALLY("illegally"),
@@ -279,11 +209,6 @@ public final class FirstClassValidationSystem {
         }
 
         public String getName() {
-            return name;
-        }
-
-        @Override
-        public @NotNull String getSerializedName() {
             return name;
         }
     }

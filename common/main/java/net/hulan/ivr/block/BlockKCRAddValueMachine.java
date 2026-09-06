@@ -51,9 +51,9 @@ public class BlockKCRAddValueMachine extends BlockDirectionalMapper implements E
 
     @SuppressWarnings("deprecation")
     public @NotNull InteractionResult use(BlockState blockState, Level world, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
-        BlockPos leftBottomPos = getLeftBottomPos(blockState, pos);
+        BlockPos leftBottomPos = getRightBottomPos(blockState, pos);
         if (!world.isClientSide) {
-            if (!isLeftBottom(blockState) || (isLeftBottom(blockState) && !IBlock.getStatePropertySafe(blockState, STORED))) {
+            if (!isRightBottom(blockState) || (isRightBottom(blockState) && !IBlock.getStatePropertySafe(blockState, STORED))) {
                 KSDPacketServer.openAddValueMachine((ServerPlayer) player, leftBottomPos);
             } else {
                 BlockEntity entity = world.getBlockEntity(leftBottomPos);
@@ -145,13 +145,13 @@ public class BlockKCRAddValueMachine extends BlockDirectionalMapper implements E
         builder.add(FACING, STORED, SIDE, HEIGHT);
     }
 
-    private static boolean isLeftBottom(BlockState state) {
-        return state.getValue(SIDE) == Side.LEFT && state.getValue(HEIGHT) == Height.DOWN;
+    private static boolean isRightBottom(BlockState state) {
+        return state.getValue(SIDE) == Side.RIGHT && state.getValue(HEIGHT) == Height.DOWN;
     }
 
-    private static BlockPos getLeftBottomPos(BlockState state, BlockPos pos) {
+    private static BlockPos getRightBottomPos(BlockState state, BlockPos pos) {
         Direction widthDirection = IBlock.getStatePropertySafe(state, FACING);
-        return pos.relative(widthDirection, state.getValue(SIDE) == Side.RIGHT ? -1 : 0)
+        return pos.relative(widthDirection, state.getValue(SIDE) == Side.RIGHT ? 0 : 1)
                 .below(state.getValue(HEIGHT).offset);
     }
 
@@ -167,7 +167,7 @@ public class BlockKCRAddValueMachine extends BlockDirectionalMapper implements E
         }
 
         @Override
-        public String getSerializedName() {
+        public @NotNull String getSerializedName() {
             return name;
         }
     }
@@ -187,14 +187,14 @@ public class BlockKCRAddValueMachine extends BlockDirectionalMapper implements E
         }
 
         @Override
-        public String getSerializedName() {
+        public @NotNull String getSerializedName() {
             return name;
         }
     }
 
     @Override
     public BlockEntityMapper createBlockEntity(BlockPos blockPos, BlockState blockState) {
-        return isLeftBottom(blockState) ? new TileEntityKCRAddValueMachine(blockPos, blockState) : null;
+        return isRightBottom(blockState) ? new TileEntityKCRAddValueMachine(blockPos, blockState) : null;
     }
 
     public static class TileEntityKCRAddValueMachine extends BlockEntityClientSerializableMapper implements StorableBlockEntity {

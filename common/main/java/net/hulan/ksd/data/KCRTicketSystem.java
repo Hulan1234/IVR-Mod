@@ -14,6 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class KCRTicketSystem {
@@ -21,141 +22,108 @@ public class KCRTicketSystem {
     private static final int BASE_FARE = 2;
     private static final int ZONE_FARE = 1;
 
-    public static TicketSystem.EnumTicketBarrierOpen singleTicketCheck(Level world,
-                                                                       Player player,
-                                                                       BlockPos pos,
-                                                                       ItemStack stStack,
-                                                                       boolean canEnter,
-                                                                       boolean canExit) {
+    public static TicketSystem.EnumTicketBarrierOpen check(Level world,
+                                                           Player player,
+                                                           BlockPos pos,
+                                                           ItemStack item,
+                                                           boolean canEnter,
+                                                           boolean canExit,
+                                                           boolean isOctopus) {
         KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
         if (railwayData != null) {
             KSDStation currentStation = KSDRailwayData.getStation(railwayData.stations, pos);
             if (currentStation != null) {
-                CompoundTag stTag = stStack.getOrCreateTag();
+                CompoundTag itemTag = item.getOrCreateTag();
                 boolean isEntrance;
                 if (canEnter && canExit) {
-                    isEntrance = !stTag.contains("entered_station_id");
+                    isEntrance = isEntered(itemTag, railwayData.stations, isOctopus);
                 } else {
                     isEntrance = canEnter;
                 }
                 if (isEntrance) {
-                    return stEnter(world, player, currentStation, stTag);
+                    return onEnter(world, railwayData, player, currentStation, itemTag, isOctopus);
                 } else {
-                    return stExit(world, railwayData, currentStation, player, stStack);
+                    return onExit(world, railwayData, player, currentStation, item, isOctopus);
                 }
             }
         }
         return TicketSystem.EnumTicketBarrierOpen.CLOSED;
     }
 
-    private static TicketSystem.EnumTicketBarrierOpen stEnter(Level world, Player player, KSDStation enteredStation, CompoundTag stTag) {
-        if (stTag.contains("entered_station_id")) {
+    private static TicketSystem.EnumTicketBarrierOpen onEnter(Level world,
+                                                              KSDRailwayData railwayData,
+                                                              Player player,
+                                                              KSDStation enteredStation,
+                                                              CompoundTag itemTag,
+                                                              boolean isOctopus) {
+        if (isEntered(itemTag, railwayData.stations, isOctopus)) {
             playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.already_entered");
             return TicketSystem.EnumTicketBarrierOpen.CLOSED;
         }
-        stTag.putLong("entered_station_id", enteredStation.id);
-        boolean isConcessionary = stTag.getBoolean("is_concessionary");
+        enterStation(itemTag, enteredStation.id, isOctopus);
+        boolean isConcessionary = itemTag.getBoolean("is_concessionary");
         playSoundAndSendMessage(world, player.blockPosition(), player,
                 isConcessionary ? SoundEvents.TICKET_BARRIER_CONCESSIONARY : SoundEvents.TICKET_BARRIER,
                 isConcessionary ? "gui.ksd.enter_concessionary" : "gui.ksd.enter");
         return TicketSystem.EnumTicketBarrierOpen.OPEN;
     }
 
-    private static TicketSystem.EnumTicketBarrierOpen stExit(Level world, KSDRailwayData railwayData, KSDStation exitStation, Player player, ItemStack stItem) {
-        CompoundTag stTag = stItem.getOrCreateTag();
-        long enteredStationId = stTag.getLong("entered_station_id");
-        KSDStation enteredStation = DataUtilities.getStation(railwayData.stations, enteredStationId);
+    private static TicketSystem.EnumTicketBarrierOpen onExit(Level world,
+                                                             KSDRailwayData railwayData,
+                                                             Player player,
+                                                             KSDStation exitStation,
+                                                             ItemStack item,
+                                                             boolean isOctopus) {
+        CompoundTag itemTag = item.getOrCreateTag();
+        KSDStation enteredStation = getEnteredStation(itemTag, railwayData.stations);
         if (enteredStation != null) {
-            int stFare = stTag.getInt("fare");
-            long expireTime = stTag.getLong("expire_time");
-            boolean isConcessionary = stTag.getBoolean("is_concessionary");
-            boolean fcAvailable = stTag.getBoolean("fc_available");
-            int actualFare = getFare(railwayData.dataCache.wayFinder, enteredStation, exitStation, isConcessionary, fcAvailable);
-            if (isExpired(expireTime)) {
-                playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.expired");
-                return TicketSystem.EnumTicketBarrierOpen.CLOSED;
-            } else if (actualFare > stFare){
-                playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.st_insufficient_fare");
-                return TicketSystem.EnumTicketBarrierOpen.CLOSED;
-            } else {
-                if (fcAvailable) {
-                    FirstClassValidationSystem.ticketDevalidate(player);
-                }
-                Utilities.getInventory(player).removeItem(stItem);
-                playSoundAndSendMessage(world, player.blockPosition(), player,
-                        isConcessionary ? SoundEvents.TICKET_BARRIER_CONCESSIONARY : SoundEvents.TICKET_BARRIER,
-                        isConcessionary ? "gui.ksd.exit_concessionary" : "gui.ksd.exit");
-                return TicketSystem.EnumTicketBarrierOpen.OPEN;
-            }
-        }
-        return TicketSystem.EnumTicketBarrierOpen.CLOSED;
-    }
-
-    public static TicketSystem.EnumTicketBarrierOpen octopusCheck(Level world,
-                                                                  Player player,
-                                                                  BlockPos pos,
-                                                                  ItemStack octopusStack,
-                                                                  boolean canEnter,
-                                                                  boolean canExit) {
-        KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
-        if (railwayData != null) {
-            KSDStation currentStation = KSDRailwayData.getStation(railwayData.stations, pos);
-            if (currentStation != null) {
-                CompoundTag octopusTag = octopusStack.getOrCreateTag();
-                boolean isEntrance;
-                if (canEnter && canExit) {
-                    isEntrance = !octopusTag.contains("entered_station_id");
+            if (!isOctopus) {
+                int stFare = itemTag.getInt("fare");
+                long expireTime = itemTag.getLong("expire_time");
+                boolean isConcessionary = itemTag.getBoolean("is_concessionary");
+                boolean fcAvailable = itemTag.getBoolean("fc_available");
+                int actualFare = getFare(railwayData.dataCache.wayFinder, enteredStation, exitStation, isConcessionary, fcAvailable);
+                if (isExpired(expireTime)) {
+                    playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.expired");
+                    return TicketSystem.EnumTicketBarrierOpen.CLOSED;
+                } else if (actualFare > stFare){
+                    playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.st_insufficient_fare");
+                    return TicketSystem.EnumTicketBarrierOpen.CLOSED;
                 } else {
-                    isEntrance = canEnter;
+                    exitStation(itemTag, false);
+                    if (fcAvailable) {
+                        FirstClassValidationSystem.devalidate(player);
+                    }
+                    Utilities.getInventory(player).removeItem(item);
+                    playSoundAndSendMessage(world, player.blockPosition(), player,
+                            isConcessionary ? SoundEvents.TICKET_BARRIER_CONCESSIONARY : SoundEvents.TICKET_BARRIER,
+                            isConcessionary ? "gui.ksd.exit_concessionary" : "gui.ksd.exit");
+                    return TicketSystem.EnumTicketBarrierOpen.OPEN;
                 }
-                if (isEntrance) {
-                    return octopusEnter(world, player, currentStation, octopusTag);
-                } else {
-                    return octopusExit(world, railwayData, currentStation, player, octopusTag);
-                }
-            }
-        }
-        return TicketSystem.EnumTicketBarrierOpen.CLOSED;
-    }
-
-    private static TicketSystem.EnumTicketBarrierOpen octopusEnter(Level world, Player player, KSDStation enteredStation, CompoundTag octopusTag) {
-        if (octopusTag.contains("entered_station_id") && octopusTag.contains("entered_time")) {
-            playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.already_entered");
-            return TicketSystem.EnumTicketBarrierOpen.CLOSED;
-        }
-        octopusTag.putLong("entered_station_id", enteredStation.id);
-        octopusTag.putLong("entered_time", System.currentTimeMillis());
-        boolean isConcessionary = octopusTag.getBoolean("is_concessionary");
-        playSoundAndSendMessage(world, player.blockPosition(), player,
-                isConcessionary ? SoundEvents.TICKET_BARRIER_CONCESSIONARY : SoundEvents.TICKET_BARRIER,
-                isConcessionary ? "gui.ksd.enter_concessionary" : "gui.ksd.enter");
-        return TicketSystem.EnumTicketBarrierOpen.OPEN;
-    }
-
-    private static TicketSystem.EnumTicketBarrierOpen octopusExit(Level world, KSDRailwayData railwayData, KSDStation exitStation, Player player, CompoundTag octopusTag) {
-        long enteredStationId = octopusTag.getLong("entered_station_id");
-        KSDStation enteredStation = DataUtilities.getStation(railwayData.stations, enteredStationId);
-        if (enteredStation != null) {
-            UUID uuid = octopusTag.getUUID("uuid");
-            int balance = octopusTag.getInt("balance");
-            long expireTime = octopusTag.getLong("entered_time") + net.hulan.ksd.utils.Utilities.EXPIRE_TIME;
-            boolean isConcessionary = octopusTag.getBoolean("is_concessionary");
-            boolean fcValidated = octopusTag.getBoolean("fc_validated");
-            int fare = getFare(railwayData.dataCache.wayFinder, enteredStation, exitStation, isConcessionary, fcValidated);
-            if (isExpired(expireTime)) {
-                fare += getExpiredFare(expireTime);
-            }
-            if (balance < 0){
-                playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.st_insufficient_octopus");
-                return TicketSystem.EnumTicketBarrierOpen.CLOSED;
             } else {
-                OctopusSystem.addValue(uuid, -fare, Octopus.History.Source.MTR, railwayData.jsonDataManager, Utilities.getInventory(player));
-                octopusTag.remove("entered_station_id");
-                octopusTag.remove("entered_time");
-                playSoundAndSendMessage(world, player.blockPosition(), player,
-                        isConcessionary ? SoundEvents.TICKET_BARRIER_CONCESSIONARY : SoundEvents.TICKET_BARRIER,
-                        isConcessionary ? "gui.ksd.exit_concessionary" : "gui.ksd.exit");
-                return TicketSystem.EnumTicketBarrierOpen.OPEN;
+                UUID uuid = itemTag.getUUID("uuid");
+                int balance = itemTag.getInt("balance");
+                long expireTime = getEntryTime(itemTag) + net.hulan.ksd.utils.Utilities.EXPIRE_TIME;
+                boolean isConcessionary = itemTag.getBoolean("is_concessionary");
+                boolean fcValidated = FirstClassValidationSystem.isValidated(player);
+                int fare = getFare(railwayData.dataCache.wayFinder, enteredStation, exitStation, isConcessionary, fcValidated);
+                if (isExpired(expireTime)) {
+                    playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.expired");
+                    return TicketSystem.EnumTicketBarrierOpen.CLOSED;
+                } else if (balance < 0){
+                    playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.st_insufficient_octopus");
+                    return TicketSystem.EnumTicketBarrierOpen.CLOSED;
+                } else {
+                    exitStation(itemTag, true);
+                    if (fcValidated) {
+                        FirstClassValidationSystem.devalidate(player);
+                    }
+                    OctopusSystem.addValue(uuid, -fare, Octopus.History.Source.MTR, railwayData.jsonDataManager, Utilities.getInventory(player));
+                    playSoundAndSendMessage(world, player.blockPosition(), player,
+                            isConcessionary ? SoundEvents.TICKET_BARRIER_CONCESSIONARY : SoundEvents.TICKET_BARRIER,
+                            isConcessionary ? "gui.ksd.exit_concessionary" : "gui.ksd.exit");
+                    return TicketSystem.EnumTicketBarrierOpen.OPEN;
+                }
             }
         }
         return TicketSystem.EnumTicketBarrierOpen.CLOSED;
@@ -169,6 +137,33 @@ public class KCRTicketSystem {
             totalFare += part;
         }
         return totalFare / (isConcessionary ? 2 : 1);
+    }
+
+    public static void enterStation(CompoundTag itemTag, long enteredStationId, boolean isOctopus) {
+        itemTag.putLong("entered_station_id", enteredStationId);
+        if (isOctopus) {
+            itemTag.putLong("entry_time", System.currentTimeMillis());
+        }
+    }
+
+    public static KSDStation getEnteredStation(CompoundTag itemTag, Set<KSDStation> stations) {
+        long enteredStationId = itemTag.getLong("entered_station_id");
+        return DataUtilities.getStation(stations, enteredStationId);
+    }
+
+    public static long getEntryTime(CompoundTag itemTag) {
+        return itemTag.getLong("entry_time");
+    }
+
+    public static boolean isEntered(CompoundTag itemTag, Set<KSDStation> stations, boolean isOctopus) {
+        return getEnteredStation(itemTag, stations) != null && (!isOctopus || itemTag.contains("entry_time"));
+    }
+
+    public static void exitStation(CompoundTag itemTag, boolean isOctopus) {
+        itemTag.remove("entered_station_id");
+        if (isOctopus) {
+            itemTag.remove("entry_time");
+        }
     }
 
     public static boolean isExpired(long expiredTime) {

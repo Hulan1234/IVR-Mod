@@ -36,7 +36,15 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         Registry.sendToPlayer(player, KSD_PACKET_OPEN_KSD_DASHBOARD_SCREEN, packet);
     }
 
-    public static void openSTMachineScreenS2C(ServerPlayer player, KCRSingleTicketSystem.TicketType ticketType, BlockPos pos) {
+    public static void openTicketsScreenS2C(ServerPlayer player, BlockPos pos) {
+        int balance = TicketSystem.getPlayerScore(player.getLevel(), player, "mtr_balance").getScore();
+        FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
+        packet.writeBlockPos(pos);
+        packet.writeInt(balance);
+        Registry.sendToPlayer(player, KSD_PACKET_OPEN_TICKETS_SCREEN, packet);
+    }
+
+    public static void openSTMachineScreenS2C(ServerPlayer player, SingleTicketSystem.TicketType ticketType, BlockPos pos) {
         int balance = TicketSystem.getPlayerScore(player.getLevel(), player, "mtr_balance").getScore();
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
         packet.writeUtf(ticketType.name());
@@ -139,7 +147,7 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
     public static void receiveCreateSTC2S(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {
         int fare = packet.readInt();
         int amount = packet.readInt();
-        KCRSingleTicketSystem.TicketType ticketType = EnumHelper.valueOf(KCRSingleTicketSystem.TicketType.MTR, packet.readUtf());
+        SingleTicketSystem.TicketType ticketType = EnumHelper.valueOf(SingleTicketSystem.TicketType.MTR, packet.readUtf());
         boolean isConcessionary = packet.readBoolean();
         boolean fcAvailable = packet.readBoolean();
         BlockPos storeBlockPos = packet.readBlockPos();
@@ -147,7 +155,7 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
             Level world = player.level;
             List<ItemStack> items = new ArrayList<>(amount);
             for (int i = 1; i <= amount; i++) {
-                items.add(KCRSingleTicketSystem.createSingleTicketItem(fare, ticketType, isConcessionary, fcAvailable));
+                items.add(SingleTicketSystem.createSingleTicketItem(fare, ticketType, isConcessionary, fcAvailable));
             }
             storeOrReleaseItems(world, storeBlockPos, Utilities.getInventory(player), items);
         });
@@ -161,10 +169,10 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
             Level world = player.level;
             List<ItemStack> items = new ArrayList<>();
             Inventory inventory = Utilities.getInventory(player);
-            ItemStack singleTicketItem = KCRSingleTicketSystem.findSingleTicketItem(id, inventory);
+            ItemStack singleTicketItem = SingleTicketSystem.findSingleTicketItem(id, inventory);
             if (!singleTicketItem.isEmpty()) {
                 inventory.removeItem(singleTicketItem);
-                KCRSingleTicketSystem.adjustSingleTicketFare(singleTicketItem, addValue);
+                SingleTicketSystem.adjustSingleTicketFare(singleTicketItem, addValue);
                 items.add(singleTicketItem);
                 storeOrReleaseItems(world, storeBlockPos, inventory, items);
             }

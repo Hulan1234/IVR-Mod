@@ -1,8 +1,8 @@
-package net.hulan.ksd.commands;
+package net.hulan.ivr.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import net.hulan.ksd.data.KCRSingleTicketSystem;
+import net.hulan.ksd.data.SingleTicketSystem;
 import net.hulan.ksd.packet.KSDPacketServer;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -15,20 +15,20 @@ public class CommandSingleTicketMachine {
         return Commands.literal("ivr")
                 .then(Commands.literal("single_ticket_machine")
                         .then(Commands.literal("MTR").executes(context -> {
-                            openScreen(context, KCRSingleTicketSystem.TicketType.MTR);
+                            openScreen(context, SingleTicketSystem.TicketType.MTR);
                             return 0;
                         }))
                         .then(Commands.literal("KCR").executes(context -> {
-                            openScreen(context, KCRSingleTicketSystem.TicketType.KCR);
+                            openScreen(context, SingleTicketSystem.TicketType.KCR);
                             return 0;
                         }))
                         .then(Commands.literal("LRT").executes(context -> {
-                            openScreen(context, KCRSingleTicketSystem.TicketType.LRT);
+                            openScreen(context, SingleTicketSystem.TicketType.LRT);
                             return 0;
                         })));
     }
 
-    private static void openScreen(CommandContext<CommandSourceStack> context, KCRSingleTicketSystem.TicketType ticketType) {
+    private static void openScreen(CommandContext<CommandSourceStack> context, SingleTicketSystem.TicketType ticketType) {
         CommandSourceStack source = context.getSource();
         Entity entity = source.getEntity();
         if (entity instanceof ServerPlayer player) {

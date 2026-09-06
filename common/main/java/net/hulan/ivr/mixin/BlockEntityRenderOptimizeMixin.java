@@ -8,15 +8,14 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * 方块实体渲染优化 Mixin。
- *
  * 目的：降低城市密集区（站台 / PSD / PID / 站牌 / 时钟 / 站名牌等）的渲染开销。
- *
  * 规则：
  *   - 距离 < BLOCK_ENTITY_RENDER_DISTANCE（50 格）：完全渲染；
  *   - 距离 ≥ 50 格：完全不渲染。
@@ -25,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(BlockEntityRenderDispatcher.class)
 public abstract class BlockEntityRenderOptimizeMixin {
 
+    @Unique
     private static final double BLOCK_ENTITY_BOUNDING_RADIUS = 1.5D; // 为方块实体视锥判断设置保守包围半径。
 
     /**
@@ -42,9 +42,6 @@ public abstract class BlockEntityRenderOptimizeMixin {
         if (blockEntity instanceof BlockEntityMapper) {
             final BlockPos pos = blockEntity.getBlockPos();
             final net.minecraft.world.phys.Vec3 rel = TrainRenderOptimize.toCameraRelative(pos); // 计算方块实体中心相对相机的位置。
-            if (rel == null) {
-                return;
-            }
             // 距离剔除保留原有阈值；视锥剔除只接受完整包围球在视线外的情况。
             final double renderDistance = TrainRenderOptimize.BLOCK_ENTITY_RENDER_DISTANCE; // 将方块实体渲染距离固定为 50 格。
             final double thresholdSquared = renderDistance * renderDistance; // 使用平方距离减少开方计算。

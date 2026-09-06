@@ -1,7 +1,6 @@
 package net.hulan.ksd.data;
 
 import net.hulan.ksd.KSDItems;
-import net.hulan.ksd.item.ItemOctopus;
 import net.hulan.ksd.utils.Utilities;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Inventory;

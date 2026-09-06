@@ -22,17 +22,13 @@ import java.util.stream.Stream;
 
 public class JSONDataManager {
 
-    public final Set<FirstClassPlayer> fps = new HashSet<>();
     public final Set<Octopus> octopuses = new HashSet<>();
-    private final Path fcpPath;
     private final Path ocPath;
 
     public JSONDataManager(ServerLevel world) {
         Path savedPath = world.getServer().getWorldPath(LevelResource.ROOT).resolve("json-data").resolve(world.dimension().location().getPath());
-        fcpPath = savedPath.resolve("first-class-players");
         ocPath = savedPath.resolve("octopus");
         try {
-            Files.createDirectories(fcpPath);
             Files.createDirectories(ocPath);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -40,19 +36,12 @@ public class JSONDataManager {
     }
 
     public void onLoad() {
-        fps.clear();
         octopuses.clear();
-        loadData(fcpPath, FirstClassPlayer::new, fps::add);
         loadData(ocPath, Octopus::new, octopuses::add);
     }
 
     public void onSave() {
-        saveData(fcpPath, fps);
         saveData(ocPath, octopuses);
-    }
-
-    public FirstClassPlayer getFirstClassPlayer(UUID uuid) {
-        return DataUtilities.getOrNull(fps, f -> f.uuid.equals(uuid));
     }
 
     public Octopus getOctopus(UUID uuid) {

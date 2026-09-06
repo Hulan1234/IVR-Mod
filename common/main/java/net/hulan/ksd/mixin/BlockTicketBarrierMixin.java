@@ -1,10 +1,8 @@
 package net.hulan.ksd.mixin;
 
 import mtr.block.BlockTicketBarrier;
-import mtr.block.IBlock;
 import mtr.data.TicketSystem;
 import mtr.mappings.BlockDirectionalMapper;
-import net.hulan.ksd.KSDItems;
 import net.hulan.ksd.data.KCRTicketSystem;
 import net.hulan.ksd.item.ItemOctopus;
 import net.hulan.ksd.item.ItemSingleTicket;
@@ -46,14 +44,8 @@ public class BlockTicketBarrierMixin extends BlockDirectionalMapper {
     public @NotNull InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
         if (!world.isClientSide) {
             ItemStack itemInHand = player.getItemInHand(interactionHand);
-            if (itemInHand.getItem() instanceof ItemSingleTicket) {
-                TicketSystem.EnumTicketBarrierOpen canOpen = KCRTicketSystem.singleTicketCheck(world, player, pos, itemInHand, isEntrance, !isEntrance);
-                world.setBlockAndUpdate(pos, state.setValue(OPEN, canOpen));
-                if (canOpen.isOpen() && !world.getBlockTicks().hasScheduledTick(pos, this)) {
-                    mtr.mappings.Utilities.scheduleBlockTick(world, pos, this, 40);
-                }
-            } else if (itemInHand.getItem() instanceof ItemOctopus) {
-                TicketSystem.EnumTicketBarrierOpen canOpen = KCRTicketSystem.octopusCheck(world, player, pos, itemInHand, isEntrance, !isEntrance);
+            if (itemInHand.getItem() instanceof ItemSingleTicket || itemInHand.getItem() instanceof ItemOctopus) {
+                TicketSystem.EnumTicketBarrierOpen canOpen = KCRTicketSystem.check(world, player, pos, itemInHand, isEntrance, !isEntrance, itemInHand.getItem() instanceof ItemOctopus);
                 world.setBlockAndUpdate(pos, state.setValue(OPEN, canOpen));
                 if (canOpen.isOpen() && !world.getBlockTicks().hasScheduledTick(pos, this)) {
                     mtr.mappings.Utilities.scheduleBlockTick(world, pos, this, 40);

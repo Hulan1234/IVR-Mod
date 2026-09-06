@@ -10,7 +10,7 @@ import mtr.mappings.FabricRegistryUtilities;
 import mtr.mappings.RegistryUtilities;
 import mtr.packet.IPacket;
 import net.fabricmc.api.ModInitializer;
-import net.hulan.ivr.packet.IVRPacket;
+import net.hulan.ivr.commands.CommandManager;import net.hulan.ivr.packet.IVRPacket;
 import net.hulan.ivr.packet.IVRPacketTrainDataGuiServer;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
@@ -171,6 +171,7 @@ public class IVR implements ModInitializer, IVRPacket, IVRBlocks, IVRBlockEntity
         mtr.Registry.registerNetworkReceiver(PACKET_CLASSICAL_1ODD_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveClassicalSign1OddIdsC2S);
         mtr.Registry.registerNetworkReceiver(PACKET_MODERN_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveModernSignIdsC2S);
         mtr.Registry.registerNetworkReceiver(PACKET_MODERN_1ODD_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveModernSign1OddIdsC2S);
+        CommandManager.registerCommands();
     }
 
     private static void registerItem(String path, RegistryObject<Item> item) {

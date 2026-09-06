@@ -17,6 +17,7 @@ public class KSDClientMain implements ClientModInitializer, KSDPacket {
     @Override
     public void onInitializeClient() {
         RegistryClient.registerNetworkReceiver(KSD_PACKET_OPEN_KSD_DASHBOARD_SCREEN, (packet) -> KSDPacketClient.openKSDDashboardScreenS2C(Minecraft.getInstance(), packet));
+        RegistryClient.registerNetworkReceiver(KSD_PACKET_OPEN_TICKETS_SCREEN, (packet) -> KSDPacketClient.openTicketsScreenS2C(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(KSD_PACKET_OPEN_KCR_ST_MACHINE_SCREEN, (packet) -> KSDPacketClient.openKCRSTMachineScreenS2C(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(KSD_PACKET_OPEN_KCR_ST_FARE_ADJUSTMENT_SCREEN, (packet) -> KSDPacketClient.openKCRSTFareAdjustmentScreenS2C(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(KSD_PACKET_OPEN_APPLY_OCTOPUS_SCREEN, (packet) -> KSDPacketClient.openApplyOctopusScreenS2C(Minecraft.getInstance(), packet));

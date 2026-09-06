@@ -42,12 +42,8 @@ public class BlockTicketProcessorMixin extends BlockDirectionalDoubleBlockBase {
     private void use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult, CallbackInfoReturnable<InteractionResult> cir) {
         if (!world.isClientSide && IBlock.getStatePropertySafe(state, HALF) == DoubleBlockHalf.UPPER) {
             ItemStack itemInHand = player.getItemInHand(interactionHand);
-            if (itemInHand.getItem() instanceof ItemSingleTicket) {
-                TicketSystem.EnumTicketBarrierOpen canOpen = KCRTicketSystem.singleTicketCheck(world, player, pos, itemInHand, canEnter, canExit);
-                world.setBlockAndUpdate(pos, state.setValue(LIGHTS, canOpen.isOpen() ? BlockTicketProcessor.EnumTicketProcessorLights.GREEN : BlockTicketProcessor.EnumTicketProcessorLights.RED));
-                Utilities.scheduleBlockTick(world, pos, this, 20);
-            } else if (itemInHand.getItem() instanceof ItemOctopus) {
-                TicketSystem.EnumTicketBarrierOpen canOpen = KCRTicketSystem.octopusCheck(world, player, pos, itemInHand, canEnter, canExit);
+            if (itemInHand.getItem() instanceof ItemSingleTicket || itemInHand.getItem() instanceof ItemOctopus) {
+                TicketSystem.EnumTicketBarrierOpen canOpen = KCRTicketSystem.check(world, player, pos, itemInHand, canEnter, canExit, itemInHand.getItem() instanceof ItemOctopus);
                 world.setBlockAndUpdate(pos, state.setValue(LIGHTS, canOpen.isOpen() ? BlockTicketProcessor.EnumTicketProcessorLights.GREEN : BlockTicketProcessor.EnumTicketProcessorLights.RED));
                 Utilities.scheduleBlockTick(world, pos, this, 20);
             }

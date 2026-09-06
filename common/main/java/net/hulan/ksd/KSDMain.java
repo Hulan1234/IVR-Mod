@@ -9,7 +9,6 @@ import mtr.mappings.FabricRegistryUtilities;
 import mtr.mappings.RegistryUtilities;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.hulan.ksd.commands.CommandManager;
 import net.hulan.ksd.data.*;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketServer;
@@ -142,7 +141,6 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
             the_nether = server.getLevel(Level.NETHER);
             the_end = server.getLevel(Level.END);
         });
-        CommandManager.registerCommands();
     }
 
     private static void registerItem(String path, RegistryObject<Item> item) {

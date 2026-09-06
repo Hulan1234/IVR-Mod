@@ -3,7 +3,7 @@ package net.hulan.ksd.sreen;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.mappings.SelectableMapper;
 import mtr.mappings.WidgetMapper;
-import net.hulan.ksd.data.KCRSingleTicketSystem;
+import net.hulan.ksd.data.SingleTicketSystem;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.utils.RailDataUtilities;
 import net.hulan.ksd.utils.RenderUtilities;
@@ -82,7 +82,7 @@ public class KCRSTMMachineLegend implements WidgetMapper, SelectableMapper, GuiE
     }
 
     private int getMainRouteColor(KSDRoute route) {
-        if (ticketMachineScreen.ticketType == KCRSingleTicketSystem.TicketType.LRT) {
+        if (ticketMachineScreen.ticketType == SingleTicketSystem.TicketType.LRT) {
             return ORANGE_NETWORK_COLOR;
         }
         return argb(route.color);

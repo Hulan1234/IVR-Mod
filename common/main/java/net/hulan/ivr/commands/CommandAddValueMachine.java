@@ -1,4 +1,4 @@
-package net.hulan.ksd.commands;
+package net.hulan.ivr.commands;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.hulan.ksd.packet.KSDPacketServer;

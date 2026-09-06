@@ -8,24 +8,23 @@ import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
 import net.hulan.ksd.KSDItems;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.data.KCRSingleTicketSystem;
+import net.hulan.ksd.data.KCRTicketSystem;
+import net.hulan.ksd.data.SingleTicketSystem;
 import net.hulan.ksd.data.KSDRailwayData;
 import net.hulan.ksd.data.KSDStation;
-import net.hulan.ksd.utils.DataUtilities;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 
 public class TicketsScreen extends ScreenMapper implements KSDGui {
 
-    private final Button buttonOpenMTRSTMScreen;
-    private final Button buttonOpenKCRSTMScreen;
-    private final Button buttonOpenLRTSTMScreen;
-    private final Button buttonOpenITTTMScreen;
-    private final Button buttonOpenApplyOctopusScreen;
-    private final Button buttonOpenAddValueScreen;
+    private final TextureButton buttonOpenMTRSTMScreen;
+    private final TextureButton buttonOpenKCRSTMScreen;
+    private final TextureButton buttonOpenLRTSTMScreen;
+    private final TextureButton buttonOpenITTTMScreen;
+    private final TextureButton buttonOpenApplyOctopusScreen;
+    private final TextureButton buttonOpenAddValueScreen;
     private final int panelWidth;
     private final int panelHeight;
     private static final int MIN_PANEL_WIDTH = BUTTON_WIDTH * 2 + BUTTON_GAP + 8;
@@ -35,17 +34,17 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
         super(Text.literal("Tickets"));
         this.panelWidth = Math.max(MIN_PANEL_WIDTH, 440);
         this.panelHeight = Math.max(MIN_PANEL_HEIGHT, 290);
-        buttonOpenMTRSTMScreen = UtilitiesClient.newButton(BUTTON_HEIGHT, Text.translatable("gui.ksd.open_stm_screen_mtr"), button ->
-                openSTMScreen(KCRSingleTicketSystem.TicketType.MTR, storeBlockPos, mtrBalance));
-        buttonOpenKCRSTMScreen = UtilitiesClient.newButton(BUTTON_HEIGHT, Text.translatable("gui.ksd.open_stm_screen_kcr"), button ->
-                openSTMScreen(KCRSingleTicketSystem.TicketType.KCR, storeBlockPos, mtrBalance));
-        buttonOpenLRTSTMScreen = UtilitiesClient.newButton(BUTTON_HEIGHT, Text.translatable("gui.ksd.open_stm_screen_lrt"), button ->
-                openSTMScreen(KCRSingleTicketSystem.TicketType.LRT, storeBlockPos, mtrBalance));
-        buttonOpenITTTMScreen = UtilitiesClient.newButton(BUTTON_HEIGHT, Text.translatable("gui.ksd.open_stm_screen_itt"), button -> {
+        buttonOpenMTRSTMScreen = new TextureButton(Text.translatable("gui.ksd.open_stm_screen_mtr"), button ->
+                openSTMScreen(SingleTicketSystem.TicketType.MTR, storeBlockPos, mtrBalance));
+        buttonOpenKCRSTMScreen = new TextureButton(Text.translatable("gui.ksd.open_stm_screen_kcr"), button ->
+                openSTMScreen(SingleTicketSystem.TicketType.KCR, storeBlockPos, mtrBalance));
+        buttonOpenLRTSTMScreen = new TextureButton(Text.translatable("gui.ksd.open_stm_screen_lrt"), button ->
+                openSTMScreen(SingleTicketSystem.TicketType.LRT, storeBlockPos, mtrBalance));
+        buttonOpenITTTMScreen = new TextureButton(Text.translatable("gui.ksd.open_stm_screen_itt"), button -> {
         });
-        buttonOpenApplyOctopusScreen = UtilitiesClient.newButton(BUTTON_HEIGHT, Text.translatable("gui.ksd.open_apply_octopus_screen"), button ->
+        buttonOpenApplyOctopusScreen = new TextureButton(Text.translatable("gui.ksd.open_apply_octopus_screen"), button ->
                 openApplyOctopusScreen(mtrBalance));
-        buttonOpenAddValueScreen = UtilitiesClient.newButton(BUTTON_HEIGHT, Text.translatable("gui.ksd.open_add_value_screen"), button ->
+        buttonOpenAddValueScreen = new TextureButton(Text.translatable("gui.ksd.open_add_value_screen"), button ->
                 openAddValueScreen(storeBlockPos, mtrBalance));
     }
 
@@ -55,26 +54,29 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
         final int panelTop = height / 2 - panelHeight / 2;
         final int left = panelLeft + (panelWidth - BUTTON_WIDTH * 2 - BUTTON_GAP) / 2;
         final int top = panelTop + (panelHeight - BUTTON_HEIGHT * 3 - BUTTON_GAP * 2) / 2;
-        final Button[] buttons = {
-                buttonOpenMTRSTMScreen,
-                buttonOpenKCRSTMScreen,
-                buttonOpenLRTSTMScreen,
-                buttonOpenITTTMScreen,
-                buttonOpenApplyOctopusScreen,
-                buttonOpenAddValueScreen
-        };
-        for (int i = 0; i < buttons.length; i++) {
-            final int column = i % 2;
-            final int row = i / 2;
-            final Button button = buttons[i];
-            IDrawing.setPositionAndWidth(button, left + column * (BUTTON_WIDTH + BUTTON_GAP), top + row * (BUTTON_HEIGHT + BUTTON_GAP), BUTTON_WIDTH);
-            addDrawableChild(button);
-        }
+        IDrawing.setPositionAndWidth(buttonOpenMTRSTMScreen, left, top, BUTTON_WIDTH);
+        buttonOpenMTRSTMScreen.setLayoutHeight(BUTTON_HEIGHT);
+        IDrawing.setPositionAndWidth(buttonOpenKCRSTMScreen, left + BUTTON_WIDTH + BUTTON_GAP, top, BUTTON_WIDTH);
+        buttonOpenKCRSTMScreen.setLayoutHeight(BUTTON_HEIGHT);
+        IDrawing.setPositionAndWidth(buttonOpenLRTSTMScreen, left, top + BUTTON_HEIGHT + BUTTON_GAP, BUTTON_WIDTH);
+        buttonOpenLRTSTMScreen.setLayoutHeight(BUTTON_HEIGHT);
+        IDrawing.setPositionAndWidth(buttonOpenITTTMScreen, left + BUTTON_WIDTH + BUTTON_GAP, top + BUTTON_HEIGHT + BUTTON_GAP, BUTTON_WIDTH);
+        buttonOpenITTTMScreen.setLayoutHeight(BUTTON_HEIGHT);
+        IDrawing.setPositionAndWidth(buttonOpenApplyOctopusScreen, left, top + (BUTTON_HEIGHT + BUTTON_GAP) * 2, BUTTON_WIDTH);
+        buttonOpenApplyOctopusScreen.setLayoutHeight(BUTTON_HEIGHT);
+        IDrawing.setPositionAndWidth(buttonOpenAddValueScreen, left + BUTTON_WIDTH + BUTTON_GAP, top + (BUTTON_HEIGHT + BUTTON_GAP) * 2, BUTTON_WIDTH);
+        buttonOpenAddValueScreen.setLayoutHeight(BUTTON_HEIGHT);
+        addDrawableChild(buttonOpenMTRSTMScreen);
+        addDrawableChild(buttonOpenKCRSTMScreen);
+        addDrawableChild(buttonOpenLRTSTMScreen);
+        addDrawableChild(buttonOpenITTTMScreen);
+        addDrawableChild(buttonOpenApplyOctopusScreen);
+        addDrawableChild(buttonOpenAddValueScreen);
     }
 
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
         renderBackground(matrices);
-        PaymentScreen.renderPaymentBackground(matrices, width, height, panelWidth, panelHeight);
+        KSDGui.renderBg(matrices, width, height, panelWidth, panelHeight);
         drawCenteredString(matrices, Minecraft.getInstance().font, title, width / 2, height / 2 - panelHeight / 2 + 7, IGui.ARGB_WHITE);
         super.render(matrices, mouseX, mouseY, delta);
     }
@@ -83,7 +85,7 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
         return false;
     }
 
-    public static void openSTMScreen(KCRSingleTicketSystem.TicketType ticketType, BlockPos storeBlockPos, int mtrBalance) {
+    public static void openSTMScreen(SingleTicketSystem.TicketType ticketType, BlockPos storeBlockPos, int mtrBalance) {
         Minecraft minecraft = Minecraft.getInstance();
         Player player = minecraft.player;
         if (player != null) {
@@ -109,9 +111,9 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
                         KSDItems.SINGLE_TICKET.get(),
                         PutItemScreen.PutMethod.PUT,
                         true,
-                        (singleTicketItem, amount) -> {
-                            CompoundTag singleTicketTag = singleTicketItem.getOrCreateTag();
-                            KSDStation current = DataUtilities.getStation(KSDClientData.STATIONS, singleTicketTag.getLong("entered_station_id"));
+                        (stItem, amount) -> {
+                            CompoundTag stTag = stItem.getOrCreateTag();
+                            KSDStation current = KCRTicketSystem.getEnteredStation(stTag, KSDClientData.STATIONS);
                             KSDStation destination = KSDRailwayData.getStation(KSDClientData.STATIONS, storeBlockPos);
                             if (!(minecraft.screen instanceof STFareAdjustmentScreen) &&
                                     current != null &&
@@ -120,7 +122,7 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
                                         current,
                                         destination,
                                         mtrBalance,
-                                        singleTicketItem,
+                                        stItem,
                                         storeBlockPos));
                             }
                         }));
@@ -157,4 +159,5 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
                     }));
         }
     }
+
 }

@@ -15,36 +15,36 @@ import java.time.format.FormatStyle;
 import java.util.Locale;
 import java.util.Random;
 
-public class KCRSingleTicketSystem {
+public class SingleTicketSystem {
 
     public static ItemStack createSingleTicketItem(int fare, TicketType ticketType, boolean isConcessionary, boolean fcAvailable) {
-        ItemStack singleTicketItem = new ItemStack(KSDItems.SINGLE_TICKET.get());
+        ItemStack stItem = new ItemStack(KSDItems.SINGLE_TICKET.get());
         long id = new Random().nextLong();
-        CompoundTag singleTicketTag = singleTicketItem.getOrCreateTag();
-        singleTicketTag.putLong("id", id);
-        singleTicketTag.putString("ticket_type", ticketType.name());
-        singleTicketTag.putInt("fare", fare);
-        singleTicketTag.putLong("expire_time", KCRTicketSystem.newExpireTime());
-        singleTicketTag.putBoolean("is_concessionary", isConcessionary);
-        singleTicketTag.putBoolean("fc_available", fcAvailable);
-        return singleTicketItem;
+        CompoundTag stTag = stItem.getOrCreateTag();
+        stTag.putLong("id", id);
+        stTag.putString("ticket_type", ticketType.name());
+        stTag.putInt("fare", fare);
+        stTag.putLong("expire_time", KCRTicketSystem.newExpireTime());
+        stTag.putBoolean("is_concessionary", isConcessionary);
+        stTag.putBoolean("fc_available", fcAvailable);
+        return stItem;
     }
 
-    public static void adjustSingleTicketFare(ItemStack singleTicketItem, int addValue) {
-        CompoundTag singleTicketTag = singleTicketItem.getOrCreateTag();
-        int originalFare = singleTicketTag.getInt("fare");
-        singleTicketTag.putInt("fare", originalFare + addValue);
-        singleTicketTag.putLong("expire_time", KCRTicketSystem.newExpireTime());
+    public static void adjustSingleTicketFare(ItemStack stItem, int addValue) {
+        CompoundTag stTag = stItem.getOrCreateTag();
+        int originalFare = stTag.getInt("fare");
+        stTag.putInt("fare", originalFare + addValue);
+        stTag.putLong("expire_time", KCRTicketSystem.newExpireTime());
     }
     
-    public static String getPrintedData(ItemStack singleTicketItem) {
-        CompoundTag singleTicketTag = singleTicketItem.getOrCreateTag();
+    public static String getPrintedData(ItemStack stItem) {
+        CompoundTag stTag = stItem.getOrCreateTag();
         DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(Locale.TRADITIONAL_CHINESE);
-        int fare = singleTicketTag.getInt("fare");
-        String ticketType = singleTicketTag.getString("ticket_type");
-        String expire_time = Instant.ofEpochMilli(singleTicketTag.getLong("expire_time")).atZone(ZoneId.of("Asia/Hong_Kong")).format(formatter);
-        boolean isConcessionary = singleTicketTag.getBoolean("is_concessionary");
-        boolean fcAvailable = singleTicketTag.getBoolean("fc_available");
+        int fare = stTag.getInt("fare");
+        String ticketType = stTag.getString("ticket_type");
+        String expire_time = Instant.ofEpochMilli(stTag.getLong("expire_time")).atZone(ZoneId.of("Asia/Hong_Kong")).format(formatter);
+        boolean isConcessionary = stTag.getBoolean("is_concessionary");
+        boolean fcAvailable = stTag.getBoolean("fc_available");
         return Text.translatable("gui.ksd.pd_fare", fare).getString() + "\n" +
                 Text.translatable("gui.ksd.pd_ticket_type", ticketType).getString() + "\n" +
                 Text.translatable("gui.ksd.pd_expire_time", expire_time).getString() + "\n" +

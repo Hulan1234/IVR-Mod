@@ -10,7 +10,6 @@ import net.hulan.ksd.data.KCRTicketSystem;
 import net.hulan.ksd.data.PaymentMethod;
 import net.hulan.ksd.packet.KSDPacketClient;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -54,24 +53,13 @@ public abstract class PaymentScreen extends ScreenMapper implements KSDGui {
 
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
         renderBackground(matrices);
-        renderPaymentBackground(matrices, width, height, 440, 290);
+        KSDGui.renderBg(matrices, width, height, 440, 290);
         drawCenteredString(matrices, Minecraft.getInstance().font, getTotalText(), width / 2, height / 2 + 42, ARGB_WHITE);
         drawCenteredString(matrices, Minecraft.getInstance().font, getNeedToPayText(), width / 2, height / 2 + 62, ARGB_WHITE);
         if (failed) {
             drawCenteredString(matrices, Minecraft.getInstance().font, getFailedText(), width / 2, height / 2 + 82, RGB_RED | ARGB_BLACK);
         }
         super.render(matrices, mouseX, mouseY, delta);
-    }
-
-    static void renderPaymentBackground(PoseStack matrices, int screenWidth, int screenHeight, int panelWidth, int panelHeight) {
-        panelWidth = Math.max(8, panelWidth);
-        panelHeight = Math.max(8, panelHeight);
-        final int left = screenWidth / 2 - panelWidth / 2;
-        final int top = screenHeight / 2 - panelHeight / 2;
-        final int right = left + panelWidth;
-        final int bottom = top + panelHeight;
-        Gui.fill(matrices, left, top, right, bottom, 0xFFC6C6C6);
-        Gui.fill(matrices, left + 4, top + 4, right - 4, bottom - 4, 0xFF4A4A4A);
     }
 
     public boolean isPauseScreen() {

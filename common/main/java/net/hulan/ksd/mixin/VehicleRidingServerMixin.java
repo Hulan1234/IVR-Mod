@@ -3,7 +3,9 @@ package net.hulan.ksd.mixin;
 import mtr.data.RailwayData;
 import mtr.data.VehicleRidingServer;
 import net.hulan.ksd.data.*;
-import net.hulan.ksd.utils.DataUtilities;import net.minecraft.resources.ResourceLocation;
+import net.hulan.ksd.utils.DataUtilities;
+import net.hulan.ksd.utils.RailDataUtilities;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -51,11 +53,8 @@ public class VehicleRidingServerMixin {
                     KSDRailwayData ksd = KSDRailwayData.getInstance(world);
                     if (ksd != null) {
                         KSDRoute route = DataUtilities.getRoute(ksd.routes, routeId);
-                        if (route != null && route.hasFirstClassService) {
-                            FirstClassPlayer fcPlayer = ksd.jsonDataManager.getFirstClassPlayer(player.getUUID());
-                            if (fcPlayer != null && route.firstClassCar == percentageOffset && (fcPlayer.state.equals(FirstClassValidationSystem.FirstClassState.MTR) || fcPlayer.state.equals(FirstClassValidationSystem.FirstClassState.DENIED))) {
-                                FirstClassValidationSystem.illegallyEntered(world, fcPlayer, percentageOffset);
-                            }
+                        if (route != null && RailDataUtilities.hasFirstClassService(route) && route.firstClassCar == percentageOffset) {
+                            FirstClassValidationSystem.illegallyEntered(world, player, percentageOffset);
                         }
                     }
                 }

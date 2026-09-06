@@ -4,7 +4,7 @@ import mtr.RegistryObject;
 import mtr.block.BlockStationColor;
 import mtr.block.BlockStationColorSlab;
 import net.hulan.ivr.block.*;
-import net.hulan.ksd.data.KCRSingleTicketSystem;
+import net.hulan.ksd.data.SingleTicketSystem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SlabBlock;
@@ -76,12 +76,12 @@ public interface IVRBlocks {
     RegistryObject<Block> KCR_STATION_NAME_WALL_WHITE = new RegistryObject<>(BlockKCRStationNameWallWhite::new);
     RegistryObject<Block> KCR_STATION_NAME_WALL_GRAY = new RegistryObject<>(BlockKCRStationNameWallGray::new);
     RegistryObject<Block> KCR_STATION_NAME_WALL_BLACK = new RegistryObject<>(BlockKCRStationNameWallBlack::new);
-    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_MTR = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(KCRSingleTicketSystem.TicketType.MTR, false));
-    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_KCR = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(KCRSingleTicketSystem.TicketType.KCR, false));
-    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_LIGHT_RAIL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(KCRSingleTicketSystem.TicketType.LRT, false));
-    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_MTR_WALL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(KCRSingleTicketSystem.TicketType.MTR, true));
-    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_KCR_WALL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(KCRSingleTicketSystem.TicketType.KCR, true));
-    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_LIGHT_RAIL_WALL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(KCRSingleTicketSystem.TicketType.LRT, true));
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_MTR = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(SingleTicketSystem.TicketType.MTR, false));
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_KCR = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(SingleTicketSystem.TicketType.KCR, false));
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_LIGHT_RAIL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(SingleTicketSystem.TicketType.LRT, false));
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_MTR_WALL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(SingleTicketSystem.TicketType.MTR, true));
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_KCR_WALL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(SingleTicketSystem.TicketType.KCR, true));
+    RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_LIGHT_RAIL_WALL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(SingleTicketSystem.TicketType.LRT, true));
     RegistryObject<Block> KCR_ADD_VALUE_MACHINE_WALL = new RegistryObject<>(BlockKCRAddValueMachine::new);
     RegistryObject<Block> MODERN_ROUTE = new RegistryObject<>(BlockModernRouteSign::new);
 }
