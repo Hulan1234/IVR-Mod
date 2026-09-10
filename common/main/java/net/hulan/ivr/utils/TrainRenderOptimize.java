@@ -5,6 +5,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.Camera;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Map;
@@ -423,7 +425,11 @@ public final class TrainRenderOptimize {
                 return false; // 半透明设施不阻挡视线，也不继续检查其后方方块。
             }
             // 玻璃和其他不启用遮挡面的方块不能隐藏列车。
-            if (state.canOcclude() && state.getMaterial().isSolidBlocking()) {
+            if (!state.canOcclude() || !state.getMaterial().isSolidBlocking()) {
+                continue; // 不满足不透明条件时继续检查射线后方。
+            }
+            VoxelShape shape = state.getShape(world, currentPos, CollisionContext.empty()); // 获取方块的实际碰撞形状。
+            if (!shape.isEmpty() && shape.clip(start, end, currentPos) != null) { // 只有射线真正穿过方块形状时才算遮挡。
                 return true; // 发现不透明遮挡方块。
             }
         }

@@ -5,6 +5,7 @@ import mtr.mappings.BlockDirectionalMapper;
 import mtr.mappings.Utilities;
 import net.hulan.ksd.data.FirstClassValidationSystem;
 import net.hulan.ksd.data.KSDRailwayData;
+import net.hulan.ksd.data.KSDStation;
 import net.hulan.ksd.item.ItemOctopus;
 import net.hulan.ksd.item.ItemSingleTicket;
 import net.minecraft.core.BlockPos;
@@ -42,17 +43,26 @@ public class BlockKCRFirstClassProcessor extends BlockDirectionalMapper {
     public @NotNull InteractionResult use(BlockState blockState, Level world, BlockPos blockPos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
         KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
         if (!world.isClientSide && railwayData != null) {
-            ItemStack holdingItem = player.getItemInHand(interactionHand);
-            FirstClassValidationSystem.FirstClassState firstClassState = FirstClassValidationSystem.FirstClassState.MTR;
-            if (holdingItem.getItem() instanceof ItemSingleTicket || holdingItem.getItem() instanceof ItemOctopus) {
-                firstClassState = FirstClassValidationSystem.validate(world, railwayData, player, holdingItem, holdingItem.getItem() instanceof ItemOctopus);
+            KSDStation validateStation = KSDRailwayData.getStation(railwayData.stations, blockPos);
+            if (validateStation != null) {
+                ItemStack holdingItem = player.getItemInHand(interactionHand);
+                FirstClassValidationSystem.FirstClassState firstClassState = FirstClassValidationSystem.FirstClassState.MTR;
+                if (holdingItem.getItem() instanceof ItemSingleTicket || holdingItem.getItem() instanceof ItemOctopus) {
+                    firstClassState = FirstClassValidationSystem.validate(
+                            world,
+                            railwayData,
+                            player,
+                            validateStation.id,
+                            holdingItem,
+                            holdingItem.getItem() instanceof ItemOctopus);
+                }
+                switch (firstClassState) {
+                    case VALIDATED -> world.setBlockAndUpdate(blockPos, blockState.setValue(TYPE, 1));
+                    case VALIDATED_CONCESSIONARY -> world.setBlockAndUpdate(blockPos, blockState.setValue(TYPE, 2));
+                    default -> world.setBlockAndUpdate(blockPos, blockState.setValue(TYPE, 3));
+                }
+                Utilities.scheduleBlockTick(world, blockPos, this, 20);
             }
-            switch (firstClassState) {
-                case VALIDATED -> world.setBlockAndUpdate(blockPos, blockState.setValue(TYPE, 1));
-                case VALIDATED_CONCESSIONARY -> world.setBlockAndUpdate(blockPos, blockState.setValue(TYPE, 2));
-                default -> world.setBlockAndUpdate(blockPos, blockState.setValue(TYPE, 3));
-            }
-            Utilities.scheduleBlockTick(world, blockPos, this, 20);
         }
         return InteractionResult.SUCCESS;
     }

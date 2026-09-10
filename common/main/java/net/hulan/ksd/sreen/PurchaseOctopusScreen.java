@@ -3,6 +3,7 @@ package net.hulan.ksd.sreen;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.client.IDrawing;
 import mtr.data.IGui;
+import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
 import mtr.screen.WidgetBetterCheckbox;
@@ -20,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class ApplyOctopusScreen extends PaymentScreen implements IGui {
+public class PurchaseOctopusScreen extends PaymentScreen implements IGui {
 
     private int amount;
     private int addValue;
@@ -29,8 +30,8 @@ public class ApplyOctopusScreen extends PaymentScreen implements IGui {
     private final WidgetBetterTextField textFieldAddValue;
     private final List<Button> amountButtons = new ArrayList<>(10);
 
-    public ApplyOctopusScreen(int mtrBalance, BlockPos storeBlockPos) {
-        super(mtrBalance, null, storeBlockPos);
+    public PurchaseOctopusScreen(int mtrBalance, ScreenMapper parent, BlockPos storeBlockPos) {
+        super(mtrBalance, parent, storeBlockPos);
         buttonIsConcessionary = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.is_concessionary"), this::setIsConcessionary);
         buttonAddValueNow = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.add_value_now"), this::setAddValueNow);
         textFieldAddValue = new WidgetBetterTextField("Value");
@@ -89,7 +90,7 @@ public class ApplyOctopusScreen extends PaymentScreen implements IGui {
     }
 
     void extraAction() {
-        KSDPacketClient.sendApplyOctopusC2S(
+        KSDPacketClient.sendPurchaseOctopusC2S(
                 addValue,
                 buttonIsConcessionary.selected(),
                 amount);

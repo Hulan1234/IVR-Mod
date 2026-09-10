@@ -121,8 +121,7 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
 
         // 先确定最终颜色，再把每个胶囊完整绘制一次，避免同深度重复叠画产生闪烁和错位。
         for (InterchangeCapsule capsule : interchangeCapsules) {
-            int color = capsule == hoveredCapsule && !isLRT
-                    ? renderUtilities.lightenColor(capsule.color) : capsule.color;
+            int color = capsule == hoveredCapsule ? renderUtilities.lightenColor(capsule.color) : capsule.color;
             drawInterchangeCapsule(matrices, capsule, color);
         }
         // 遍历所有车站圆
@@ -144,7 +143,7 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
                 // 判断圆是否属于被命中的车站
                 if (circle.stationId == station.id) {
                     // 用提亮后的颜色重画该圆的圆环
-                    int color = isLRT ? ARGB_BLACK : renderUtilities.lightenColor(circle.color);
+                    int color = renderUtilities.lightenColor(isLRT ? ARGB_BLACK : circle.color);
                     renderUtilities.drawStationCircle(matrices, (float) x + (float) circle.centerX, (float) y + (float) circle.centerY,
                             RADIUS, SEGMENTS, STATION_RING_THICKNESS, color);
                 }
@@ -532,9 +531,9 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
                 // 非胶囊站点按原逻辑为每条可见线路分别生成一个圆圈。
                 if (!capsuleStationIds.contains(stationId)
                         && getRenderableStation(stationId) != null
-                        && visibleCircleKeys.add(circleKey)) {
+                    && visibleCircleKeys.add(circleKey)) {
                     stationCircles.add(new StationCircle(stationId, endpoint.getA(), endpoint.getB(),
-                            getStationMarkerColor(stationId, getDrawingColor(route))));
+                            isLRT ? ARGB_BLACK : getDrawingColor(route)));
                 }
             }
 

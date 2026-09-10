@@ -1,0 +1,4 @@
+{
+  "parent": "ksd:item/extruded_sprite",
+  "textures": { "layer0": "ksd:item/st_m_c" }
+}

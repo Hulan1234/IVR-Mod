@@ -8,13 +8,11 @@ import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
 import net.hulan.ksd.KSDItems;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.data.KCRTicketSystem;
 import net.hulan.ksd.data.SingleTicketSystem;
 import net.hulan.ksd.data.KSDRailwayData;
 import net.hulan.ksd.data.KSDStation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 
 public class TicketsScreen extends ScreenMapper implements KSDGui {
@@ -23,7 +21,7 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
     private final TextureButton buttonOpenKCRSTMScreen;
     private final TextureButton buttonOpenLRTSTMScreen;
     private final TextureButton buttonOpenITTTMScreen;
-    private final TextureButton buttonOpenApplyOctopusScreen;
+    private final TextureButton buttonOpenPurchaseOctopusScreen;
     private final TextureButton buttonOpenAddValueScreen;
     private final int panelWidth;
     private final int panelHeight;
@@ -42,10 +40,10 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
                 openSTMScreen(SingleTicketSystem.TicketType.LRT, storeBlockPos, mtrBalance));
         buttonOpenITTTMScreen = new TextureButton(Text.translatable("gui.ksd.open_stm_screen_itt"), button -> {
         });
-        buttonOpenApplyOctopusScreen = new TextureButton(Text.translatable("gui.ksd.open_apply_octopus_screen"), button ->
-                openApplyOctopusScreen(mtrBalance));
+        buttonOpenPurchaseOctopusScreen = new TextureButton(Text.translatable("gui.ksd.open_purchase_octopus_screen"), button ->
+                openPurchaseOctopusScreen(mtrBalance, this));
         buttonOpenAddValueScreen = new TextureButton(Text.translatable("gui.ksd.open_add_value_screen"), button ->
-                openAddValueScreen(storeBlockPos, mtrBalance));
+                openAddValueScreen(mtrBalance, this, storeBlockPos));
     }
 
     protected void init() {
@@ -62,15 +60,15 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
         buttonOpenLRTSTMScreen.setLayoutHeight(BUTTON_HEIGHT);
         IDrawing.setPositionAndWidth(buttonOpenITTTMScreen, left + BUTTON_WIDTH + BUTTON_GAP, top + BUTTON_HEIGHT + BUTTON_GAP, BUTTON_WIDTH);
         buttonOpenITTTMScreen.setLayoutHeight(BUTTON_HEIGHT);
-        IDrawing.setPositionAndWidth(buttonOpenApplyOctopusScreen, left, top + (BUTTON_HEIGHT + BUTTON_GAP) * 2, BUTTON_WIDTH);
-        buttonOpenApplyOctopusScreen.setLayoutHeight(BUTTON_HEIGHT);
+        IDrawing.setPositionAndWidth(buttonOpenPurchaseOctopusScreen, left, top + (BUTTON_HEIGHT + BUTTON_GAP) * 2, BUTTON_WIDTH);
+        buttonOpenPurchaseOctopusScreen.setLayoutHeight(BUTTON_HEIGHT);
         IDrawing.setPositionAndWidth(buttonOpenAddValueScreen, left + BUTTON_WIDTH + BUTTON_GAP, top + (BUTTON_HEIGHT + BUTTON_GAP) * 2, BUTTON_WIDTH);
         buttonOpenAddValueScreen.setLayoutHeight(BUTTON_HEIGHT);
         addDrawableChild(buttonOpenMTRSTMScreen);
         addDrawableChild(buttonOpenKCRSTMScreen);
         addDrawableChild(buttonOpenLRTSTMScreen);
         addDrawableChild(buttonOpenITTTMScreen);
-        addDrawableChild(buttonOpenApplyOctopusScreen);
+        addDrawableChild(buttonOpenPurchaseOctopusScreen);
         addDrawableChild(buttonOpenAddValueScreen);
     }
 
@@ -100,48 +98,18 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
         //TODO 直通车售票界面
     }
 
-    public static void openSTFAScreen(int mtrBalance) {
-        Minecraft minecraft = Minecraft.getInstance();
-        Player player = minecraft.player;
-        if (player != null) {
-            BlockPos storeBlockPos = player.blockPosition();
-            if (!(minecraft.screen instanceof STFareAdjustmentScreen)) {
-                UtilitiesClient.setScreen(minecraft, new PutItemScreen(
-                        "item.ksd.single_ticket",
-                        KSDItems.SINGLE_TICKET.get(),
-                        PutItemScreen.PutMethod.PUT,
-                        true,
-                        (stItem, amount) -> {
-                            CompoundTag stTag = stItem.getOrCreateTag();
-                            KSDStation current = KCRTicketSystem.getEnteredStation(stTag, KSDClientData.STATIONS);
-                            KSDStation destination = KSDRailwayData.getStation(KSDClientData.STATIONS, storeBlockPos);
-                            if (!(minecraft.screen instanceof STFareAdjustmentScreen) &&
-                                    current != null &&
-                                    destination != null) {
-                                UtilitiesClient.setScreen(minecraft, new STFareAdjustmentScreen(
-                                        current,
-                                        destination,
-                                        mtrBalance,
-                                        stItem,
-                                        storeBlockPos));
-                            }
-                        }));
-            }
-        }
-    }
-
-    public static void openApplyOctopusScreen(int mtrBalance) {
+    public static void openPurchaseOctopusScreen(int mtrBalance, ScreenMapper parent) {
         Minecraft minecraft = Minecraft.getInstance();
         Player player =  minecraft.player;
         if (player != null) {
             BlockPos storeBlockPos = player.blockPosition();
-            if (!(minecraft.screen instanceof ApplyOctopusScreen)) {
-                UtilitiesClient.setScreen(minecraft, new ApplyOctopusScreen(mtrBalance, storeBlockPos));
+            if (!(minecraft.screen instanceof PurchaseOctopusScreen)) {
+                UtilitiesClient.setScreen(minecraft, new PurchaseOctopusScreen(mtrBalance, parent, storeBlockPos));
             }
         }
     }
 
-    public static void openAddValueScreen(BlockPos storeBlockPos, int mtrBalance) {
+    public static void openAddValueScreen(int mtrBalance, ScreenMapper parent, BlockPos storeBlockPos) {
         Minecraft minecraft = Minecraft.getInstance();
         if (!(minecraft.screen instanceof KCRSTMachineScreen)) {
             UtilitiesClient.setScreen(minecraft, new PutItemScreen(
@@ -153,6 +121,7 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
                         if (!(minecraft.screen instanceof AddValueMachineScreen)) {
                             UtilitiesClient.setScreen(minecraft, new AddValueMachineScreen(
                                     mtrBalance,
+                                    parent,
                                     octopusItem,
                                     storeBlockPos));
                         }

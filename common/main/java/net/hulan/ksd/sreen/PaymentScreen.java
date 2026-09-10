@@ -66,6 +66,12 @@ public abstract class PaymentScreen extends ScreenMapper implements KSDGui {
         return false;
     }
 
+    public void onClose() {
+        if (minecraft != null) {
+            UtilitiesClient.setScreen(minecraft, parent);
+        }
+    }
+
     void countTotal() {
         failed = false;
     }
@@ -146,9 +152,6 @@ public abstract class PaymentScreen extends ScreenMapper implements KSDGui {
                                     if (balance < 0) {
                                         failed = true;
                                         failedMessage = Text.translatable("insufficient_octopus");
-                                        if (minecraft != null) {
-                                            UtilitiesClient.setScreen(minecraft, parent);
-                                        }
                                     } else {
                                         payWithOctopus(uuid);
                                         if (minecraft != null) {

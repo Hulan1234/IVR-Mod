@@ -27,7 +27,7 @@ import java.util.*;
 
 public final class FirstClassValidationSystem {
 
-    private static final int FC_EVASION_FINE = 1000;
+    public static final int FC_EVASION_FINE = 1000;
     private static final String PLAYER_CAR_OBJECTIVE = "player_car";
 
     public static void tick(KSDRailwayData ksd, RailwayData mtr, Level world, List<ServerPlayer> players) {
@@ -36,7 +36,7 @@ public final class FirstClassValidationSystem {
         TrainServer playerTrain = null;
         int newCar = -1;
         for (ServerPlayer player : players) {
-            Score carScore = getPlayerScore(world, player, PLAYER_CAR_OBJECTIVE);
+            Score carScore = getPlayerScore(world, player );
             for (Train t : trains) {
                 if (t.isPlayerRiding(player)) {
                     playerTrain = (TrainServer) t;
@@ -55,28 +55,45 @@ public final class FirstClassValidationSystem {
                 KSDRoute route = DataUtilities.getRoute(ksd.routes, routeId);
                 if (RailDataUtilities.hasFirstClassService(route) && newCar == route.firstClassCar) {
                     ItemStack holdingItem = player.getMainHandItem();
-                    if (holdingItem.getItem() instanceof ItemSingleTicket || holdingItem.getItem() instanceof ItemOctopus) {
-                        validate(world, ksd, player, holdingItem, holdingItem.getItem() instanceof ItemOctopus);
+                    KSDStation firstStation = ksd.dataCache.routeIdToStationsWithIndex.get(route.id).get(0);
+                    if ((holdingItem.getItem() instanceof ItemSingleTicket || holdingItem.getItem() instanceof ItemOctopus) && firstStation != null) {
+                        validate(world,
+                                ksd,
+                                player,
+                                firstStation.id,
+                                holdingItem,
+                                holdingItem.getItem() instanceof ItemOctopus);
                     } else {
-                        illegallyEntered(world, player, newCar);
+                        addPunishment(world, player, newCar);
                     }
                 }
             }
         }
     }
 
-    public static void illegallyEntered(Level world, Player player, int percentageOffset) {
+    public static void addPunishment(Level world, Player player, int percentageOffset) {
         addObjectivesIfMissing(world);
-        Score carScore = getPlayerScore(world, player, PLAYER_CAR_OBJECTIVE);
-        Score balance = getPlayerScore(world, player, TicketSystem.BALANCE_OBJECTIVE);
+        Score carScore = getPlayerScore(world, player);
         carScore.setScore(percentageOffset + 1);
-        balance.setScore(balance.getScore() - FC_EVASION_FINE);
-        playSoundAndSendMessage(world, player.blockPosition(), player, "gui.ksd.first_class_illegal");
+        player.addTag("illegally_riding_fc");
     }
 
-    public static FirstClassState validate(Level world, KSDRailwayData railwayData, Player player, ItemStack item, boolean isOctopus) {
-        CompoundTag ticketTag = item.getOrCreateTag();
-        if (!KCRTicketSystem.isEntered(ticketTag, railwayData.stations, isOctopus)) {
+    public static boolean hasPunishment(Player player) {
+        return player.getTags().contains("illegally_riding_fc");
+    }
+
+    public static void removePunishment(Player player) {
+        player.removeTag("illegally_riding_fc");
+    }
+
+    public static FirstClassState validate(Level world,
+                                           KSDRailwayData railwayData,
+                                           Player player,
+                                           long validateStationId,
+                                           ItemStack item,
+                                           boolean isOctopus) {
+        CompoundTag itemTag = item.getOrCreateTag();
+        if (!KCRTicketSystem.isEntered(itemTag, railwayData.stations, isOctopus)) {
             playSoundAndSendMessage(
                     world,
                     player.blockPosition(),
@@ -84,8 +101,8 @@ public final class FirstClassValidationSystem {
                     "gui.ksd.fc_denied_no_entry");
             return FirstClassState.DENIED;
         }
-        boolean isConcessionary = ticketTag.getBoolean("is_concessionary");
-        if (!isOctopus && !ticketTag.getBoolean("fc_available")) {
+        boolean isConcessionary = itemTag.getBoolean("is_concessionary");
+        if (!isOctopus && !itemTag.getBoolean("fc_available")) {
             playSoundAndSendMessage(
                     world,
                     player.blockPosition(),
@@ -93,7 +110,11 @@ public final class FirstClassValidationSystem {
                     "gui.ksd.fc_denied_fc_unavailable");
             return FirstClassState.DENIED;
         }
-        if (validate(player)) {
+        if (!isValidated(itemTag)) {
+            validate(itemTag, validateStationId);
+            if (hasPunishment(player)) {
+                removePunishment(player);
+            }
             playSoundAndSendMessage(
                     world,
                     player.blockPosition(),
@@ -110,20 +131,22 @@ public final class FirstClassValidationSystem {
         }
     }
 
-    public static boolean validate(Player player) {
-        return player.addTag("fc_validated");
+    public static void validate(CompoundTag itemTag, long validatedStationId) {
+        itemTag.putBoolean("fc_validated", true);
+        itemTag.putLong("fc_validated_station_id", validatedStationId);
     }
 
-    public static boolean isValidated(Player player) {
-        return player.getTags().contains("fc_validated");
+    public static boolean isValidated(CompoundTag itemTag) {
+        return itemTag.getBoolean("fc_validated") && itemTag.contains("fc_validated_station_id");
     }
 
-    public static void devalidate(Player player) {
-        player.removeTag("fc_validated");
+    public static void devalidate(CompoundTag itemTag) {
+        itemTag.remove("fc_validated");
+        itemTag.remove("fc_validated_station_id");
     }
 
-    private static Score getPlayerScore(Level world, Player player, String objectiveName) {
-        return world.getScoreboard().getOrCreatePlayerScore(player.getGameProfile().getName(), world.getScoreboard().getObjective(objectiveName));
+    private static Score getPlayerScore(Level world, Player player) {
+        return world.getScoreboard().getOrCreatePlayerScore(player.getGameProfile().getName(), world.getScoreboard().getObjective(FirstClassValidationSystem.PLAYER_CAR_OBJECTIVE));
     }
 
     private static void addObjectivesIfMissing(Level world) {

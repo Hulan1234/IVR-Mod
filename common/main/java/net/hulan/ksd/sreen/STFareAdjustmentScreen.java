@@ -2,7 +2,9 @@ package net.hulan.ksd.sreen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.client.IDrawing;
+import mtr.data.EnumHelper;
 import mtr.data.IGui;
+import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
 import mtr.screen.WidgetBetterCheckbox;
 import net.hulan.ksd.client.KSDClientData;
@@ -32,8 +34,13 @@ public class STFareAdjustmentScreen extends PaymentScreen implements IGui {
     private final WidgetBetterCheckbox buttonIsConcessionary;
     private final WidgetBetterCheckbox buttonFCAvailable;
 
-    public STFareAdjustmentScreen(@NotNull KSDStation current, @NotNull KSDStation destination, int mtrBalance, ItemStack singleTicketItem, BlockPos storeBlockPos) {
-        super(mtrBalance, null, storeBlockPos);
+    public STFareAdjustmentScreen(@NotNull KSDStation current,
+                                  @NotNull KSDStation destination,
+                                  int mtrBalance,
+                                  ScreenMapper parent,
+                                  ItemStack singleTicketItem,
+                                  BlockPos storeBlockPos) {
+        super(mtrBalance, parent, storeBlockPos);
         this.current = current;
         this.destination = destination;
         this.singleTicketItem = singleTicketItem;
@@ -72,8 +79,7 @@ public class STFareAdjustmentScreen extends PaymentScreen implements IGui {
     void extraAction() {
         KSDPacketClient.sendAdjustSTFareC2S(
                 singleTicketId,
-                actualFare - originFare,
-                storeBlockPos);
+                actualFare - originFare);
     }
 
     void payWithOctopus(UUID uuid) {
@@ -90,19 +96,24 @@ public class STFareAdjustmentScreen extends PaymentScreen implements IGui {
         long id = singleTicketTag.getLong("id");
         int fare = singleTicketTag.getInt("fare");
         long expireTime = singleTicketTag.getLong("expire_time");
-        String ticketType = singleTicketTag.getString("ticket_type");
+        SingleTicketSystem.TicketType ticketType = EnumHelper.valueOf(SingleTicketSystem.TicketType.MTR, singleTicketTag.getString("ticket_type"));
         boolean isConcessionary = singleTicketTag.getBoolean("is_concessionary");
         boolean fcAvailable = singleTicketTag.getBoolean("fc_available");
         singleTicketId = id;
         originFare = fare;
         actualFare = KCRTicketSystem.getFare(wayFinder, current, destination, isConcessionary, fcAvailable);
-        ticketTypeText = ticketType;
+        ticketTypeText = ticketType.name();
         expired = KCRTicketSystem.isExpired(expireTime);
         expiredFare = KCRTicketSystem.getExpiredFare(expireTime);
+        setTicketType(ticketType);
         setIsConcessionary(isConcessionary);
         setFCAvailable(fcAvailable);
         countTotal();
         failed = false;
+    }
+
+    private void setTicketType(SingleTicketSystem.TicketType ticketType) {
+        buttonFCAvailable.visible = ticketType.equals(SingleTicketSystem.TicketType.KCR);
     }
 
     private void setIsConcessionary(boolean isConcessionary) {

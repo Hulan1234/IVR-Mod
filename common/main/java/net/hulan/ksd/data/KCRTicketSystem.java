@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-public class KCRTicketSystem {
+public final class KCRTicketSystem {
 
     private static final int BASE_FARE = 2;
     private static final int ZONE_FARE = 1;
@@ -60,6 +60,10 @@ public class KCRTicketSystem {
             playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.already_entered");
             return TicketSystem.EnumTicketBarrierOpen.CLOSED;
         }
+        if (isOctopus && itemTag.getInt("balance") < 0){
+            playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.insufficient_octopus");
+            return TicketSystem.EnumTicketBarrierOpen.CLOSED;
+        }
         enterStation(itemTag, enteredStation.id, isOctopus);
         boolean isConcessionary = itemTag.getBoolean("is_concessionary");
         playSoundAndSendMessage(world, player.blockPosition(), player,
@@ -74,6 +78,10 @@ public class KCRTicketSystem {
                                                              KSDStation exitStation,
                                                              ItemStack item,
                                                              boolean isOctopus) {
+        if (FirstClassValidationSystem.hasPunishment(player)) {
+            playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.illegally_riding_fc");
+            return TicketSystem.EnumTicketBarrierOpen.CLOSED;
+        }
         CompoundTag itemTag = item.getOrCreateTag();
         KSDStation enteredStation = getEnteredStation(itemTag, railwayData.stations);
         if (enteredStation != null) {
@@ -92,7 +100,7 @@ public class KCRTicketSystem {
                 } else {
                     exitStation(itemTag, false);
                     if (fcAvailable) {
-                        FirstClassValidationSystem.devalidate(player);
+                        FirstClassValidationSystem.devalidate(itemTag);
                     }
                     Utilities.getInventory(player).removeItem(item);
                     playSoundAndSendMessage(world, player.blockPosition(), player,
@@ -102,21 +110,17 @@ public class KCRTicketSystem {
                 }
             } else {
                 UUID uuid = itemTag.getUUID("uuid");
-                int balance = itemTag.getInt("balance");
                 long expireTime = getEntryTime(itemTag) + net.hulan.ksd.utils.Utilities.EXPIRE_TIME;
                 boolean isConcessionary = itemTag.getBoolean("is_concessionary");
-                boolean fcValidated = FirstClassValidationSystem.isValidated(player);
+                boolean fcValidated = FirstClassValidationSystem.isValidated(itemTag);
                 int fare = getFare(railwayData.dataCache.wayFinder, enteredStation, exitStation, isConcessionary, fcValidated);
                 if (isExpired(expireTime)) {
                     playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.expired");
                     return TicketSystem.EnumTicketBarrierOpen.CLOSED;
-                } else if (balance < 0){
-                    playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.st_insufficient_octopus");
-                    return TicketSystem.EnumTicketBarrierOpen.CLOSED;
                 } else {
                     exitStation(itemTag, true);
                     if (fcValidated) {
-                        FirstClassValidationSystem.devalidate(player);
+                        FirstClassValidationSystem.devalidate(itemTag);
                     }
                     OctopusSystem.addValue(uuid, -fare, Octopus.History.Source.MTR, railwayData.jsonDataManager, Utilities.getInventory(player));
                     playSoundAndSendMessage(world, player.blockPosition(), player,
@@ -153,6 +157,10 @@ public class KCRTicketSystem {
 
     public static long getEntryTime(CompoundTag itemTag) {
         return itemTag.getLong("entry_time");
+    }
+
+    public static void resetEntryTime(CompoundTag itemTag) {
+        itemTag.putLong("entry_time", System.currentTimeMillis());
     }
 
     public static boolean isEntered(CompoundTag itemTag, Set<KSDStation> stations, boolean isOctopus) {

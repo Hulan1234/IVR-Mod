@@ -42,6 +42,7 @@ public abstract class DynamicResourceRemoveMixin {
      */
     /**
      * @author
+     * @reason
      */
     @Overwrite(remap = false)
     private void remove() {

@@ -12,15 +12,15 @@ public class OctopusSystem {
 
     public static final int BASE_PRICE = 99;
 
-    public static Octopus ApplyOctopus(int addValue, boolean isConcessionary, JSONDataManager jsonDataManager) {
+    public static Octopus createOctopus(int addValue, boolean isConcessionary, JSONDataManager jsonDataManager) {
         Octopus octopus = new Octopus(isConcessionary);
         octopus.addBalance(addValue, Octopus.History.Source.ADD_VALUE);
         jsonDataManager.octopuses.add(octopus);
         return octopus;
     }
 
-    public static ItemStack ApplyOctopusItem(int addValue, boolean isConcessionary, JSONDataManager jsonDataManager) {
-        Octopus octopus = ApplyOctopus(addValue, isConcessionary, jsonDataManager);
+    public static ItemStack createOctopusItem(int addValue, boolean isConcessionary, JSONDataManager jsonDataManager) {
+        Octopus octopus = createOctopus(addValue, isConcessionary, jsonDataManager);
         ItemStack octopusItem = new ItemStack(KSDItems.OCTOPUS.get());
         CompoundTag octopusTag = octopusItem.getOrCreateTag();
         octopus.toNBT(octopusTag);

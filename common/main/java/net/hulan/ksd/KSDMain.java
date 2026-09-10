@@ -58,11 +58,14 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
         registerBlockItem.accept("kp_cell_top", KP_CELL_TOP, KCR_PLATFORM_BLOCKS);
         registerBlockItem.accept("kp_cell_light", KP_LIGHT, KCR_PLATFORM_BLOCKS);
         registerBlockItem.accept("first_class_processor", FIRST_CLASS_PROCESSOR, KCR_PLATFORM_BLOCKS);
-        mtr.Registry.registerNetworkReceiver(KSD_PACKET_CREATE_SINGLE_TICKET, KSDPacketServer::receiveCreateSTC2S);
-        mtr.Registry.registerNetworkReceiver(KSD_PACKET_ADJUST_SINGLE_TICKET_FARE, KSDPacketServer::receiveAdjustSTFareC2S);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_PURCHASE_ST, KSDPacketServer::receivePurchaseSTC2S);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_ADJUST_ST_FARE, KSDPacketServer::receiveAdjustSTFareC2S);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_ADJUST_OCTOPUS_FARE, KSDPacketServer::receiveAdjustOctopusFareC2S);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_ADJUST_FC_FARE, (minecraftServer, player, packet) ->
+                KSDPacketServer.receiveAdjustFCFareC2S(minecraftServer, player));
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_PAYMENT, KSDPacketServer::receivePayment);
-        mtr.Registry.registerNetworkReceiver(KSD_PACKET_CREATE_OCTOPUS, KSDPacketServer::receiveApplyOctopusC2S);
-        mtr.Registry.registerNetworkReceiver(KSD_PACKET_OCTOPUS_ADD_VALUE, KSDPacketServer::receiveOctopusAddValueC2S);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_PURCHASE_OCTOPUS, KSDPacketServer::receivePurchaseOctopusC2S);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_ADD_VALUE, KSDPacketServer::receiveOctopusAddValueC2S);
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_UPDATE_STATION,
                 (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(
                         minecraftServer,

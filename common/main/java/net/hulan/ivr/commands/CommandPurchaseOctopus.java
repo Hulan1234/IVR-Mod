@@ -7,15 +7,15 @@ import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
-public class CommandApplyOctopus {
+public class CommandPurchaseOctopus {
 
     public static LiteralArgumentBuilder<CommandSourceStack> register() {
         return Commands.literal("ivr")
-                .then(Commands.literal("apply_octopus").executes(context -> {
+                .then(Commands.literal("purchase_octopus").executes(context -> {
                     CommandSourceStack source = context.getSource();
                     Entity entity = source.getEntity();
                     if (entity instanceof ServerPlayer player) {
-                        KSDPacketServer.openApplyOctopusScreenS2C(player);
+                        KSDPacketServer.openPurchaseOctopusScreenS2C(player);
                     }
                     return 0;
                 }));

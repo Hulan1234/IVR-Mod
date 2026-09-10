@@ -2,6 +2,7 @@ package net.hulan.ksd.sreen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.client.IDrawing;
+import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
 import mtr.screen.WidgetBetterTextField;
 import net.hulan.ksd.data.Octopus;
@@ -25,8 +26,8 @@ public class AddValueMachineScreen extends PaymentScreen {
     private final ItemStack octopusItem;
     private final WidgetBetterTextField textFieldAddValue;
 
-    public AddValueMachineScreen(int mtrBalance, ItemStack octopusItem, BlockPos storeBlockPos) {
-        super(mtrBalance, null, storeBlockPos);
+    public AddValueMachineScreen(int mtrBalance, ScreenMapper parent, ItemStack octopusItem, BlockPos storeBlockPos) {
+        super(mtrBalance, parent, storeBlockPos);
         this.octopusItem = octopusItem;
         textFieldAddValue = new WidgetBetterTextField("Value");
     }

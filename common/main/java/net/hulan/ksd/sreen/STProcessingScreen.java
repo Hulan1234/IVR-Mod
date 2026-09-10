@@ -56,6 +56,7 @@ public class STProcessingScreen extends PaymentScreen implements IGui {
         addDrawableChild(buttonIsConcessionary);
         addDrawableChild(buttonFCAvailable);
         setAmount(1);
+        setTicketType(stmMachineScreen.ticketType);
         setIsConcessionary(false);
         setFCAvailable(false);
     }
@@ -85,7 +86,7 @@ public class STProcessingScreen extends PaymentScreen implements IGui {
     }
 
     void extraAction() {
-        KSDPacketClient.sendCreateSTC2S(
+        KSDPacketClient.sendPurchaseSTC2S(
                 fare,
                 amount,
                 stmMachineScreen.ticketType,
@@ -109,6 +110,10 @@ public class STProcessingScreen extends PaymentScreen implements IGui {
     private void setAmount(int amount) {
         this.amount = Mth.clamp(amount, 1, 10);
         countTotal();
+    }
+
+    private void setTicketType(SingleTicketSystem.TicketType ticketType) {
+        buttonFCAvailable.visible = ticketType.equals(SingleTicketSystem.TicketType.KCR);
     }
 
     private void setIsConcessionary(boolean isConcessionary) {

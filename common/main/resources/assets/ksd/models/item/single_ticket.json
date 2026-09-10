@@ -1,6 +1,33 @@
 {
-  "parent": "item/generated",
-  "textures": {
-    "layer0": "ksd:item/single_ticket"
-  }
+  "parent": "ksd:item/st_k",
+  "overrides": [
+    {
+      "predicate": { "ksd:ticket_variant": 0.1 },
+      "model": "ksd:item/st_k_c"
+    },
+    {
+      "predicate": { "ksd:ticket_variant": 0.2 },
+      "model": "ksd:item/st_k_f"
+    },
+    {
+      "predicate": { "ksd:ticket_variant": 0.3 },
+      "model": "ksd:item/st_k_c_f"
+    },
+    {
+      "predicate": { "ksd:ticket_variant": 0.4 },
+      "model": "ksd:item/st_m"
+    },
+    {
+      "predicate": { "ksd:ticket_variant": 0.5 },
+      "model": "ksd:item/st_m_c"
+    },
+    {
+      "predicate": { "ksd:ticket_variant": 0.6 },
+      "model": "ksd:item/st_l"
+    },
+    {
+      "predicate": { "ksd:ticket_variant": 0.7 },
+      "model": "ksd:item/st_l_c"
+    }
+  ]
 }

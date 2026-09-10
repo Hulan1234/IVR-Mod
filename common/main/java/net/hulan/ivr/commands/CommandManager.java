@@ -7,9 +7,8 @@ public class CommandManager {
     public static void registerCommands() {
         Utilities utilities = Utilities.getInstance();
         utilities.registerCommand(CommandTickets.register());
-        utilities.registerCommand(CommandSingleTicketMachine.register());
         utilities.registerCommand(CommandAdjustFare.register());
-        utilities.registerCommand(CommandApplyOctopus.register());
+        utilities.registerCommand(CommandPurchaseOctopus.register());
         utilities.registerCommand(CommandAddValueMachine.register());
     }
 }

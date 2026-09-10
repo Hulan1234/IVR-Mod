@@ -17,7 +17,7 @@ import java.util.Random;
 
 public class SingleTicketSystem {
 
-    public static ItemStack createSingleTicketItem(int fare, TicketType ticketType, boolean isConcessionary, boolean fcAvailable) {
+    public static ItemStack purchaseSingleTicketItem(int fare, TicketType ticketType, boolean isConcessionary, boolean fcAvailable) {
         ItemStack stItem = new ItemStack(KSDItems.SINGLE_TICKET.get());
         long id = new Random().nextLong();
         CompoundTag stTag = stItem.getOrCreateTag();
@@ -64,8 +64,17 @@ public class SingleTicketSystem {
     }
 
     public enum TicketType {
+
         MTR,
         KCR,
-        LRT,
+        LRT;
+
+        public float getModelPredicateValue(boolean isConcessionary, boolean fcAvailable) {
+            return switch (this) {
+                case KCR -> isConcessionary ? (fcAvailable ? 0.3F : 0.1F) : (fcAvailable ? 0.2F : 0.0F);
+                case MTR -> isConcessionary ? 0.5F : 0.4F;
+                case LRT -> isConcessionary ? 0.7F : 0.6F;
+            };
+        }
     }
 }

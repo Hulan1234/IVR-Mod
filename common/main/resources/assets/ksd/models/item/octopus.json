@@ -1,5 +1,5 @@
 {
-  "parent": "item/generated",
+  "parent": "ksd:item/extruded_sprite",
   "textures": {
     "layer0": "ksd:item/octopus"
   }
