@@ -43,7 +43,7 @@ public class TextureButton extends ButtonMapper {
 
     @Override
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
-        super.render(matrices, mouseX, mouseY, delta);
+        //super.render(matrices, mouseX, mouseY, delta);
         if (texture != null) {
             final int widgetX = UtilitiesClient.getWidgetX(this);
             final int widgetY = UtilitiesClient.getWidgetY(this);

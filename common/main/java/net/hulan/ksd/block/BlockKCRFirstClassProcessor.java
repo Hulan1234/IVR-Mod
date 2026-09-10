@@ -52,7 +52,7 @@ public class BlockKCRFirstClassProcessor extends BlockDirectionalMapper {
                             world,
                             railwayData,
                             player,
-                            validateStation.id,
+                            validateStation,
                             holdingItem,
                             holdingItem.getItem() instanceof ItemOctopus);
                 }

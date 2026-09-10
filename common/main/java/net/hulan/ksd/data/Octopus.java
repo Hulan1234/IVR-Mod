@@ -98,7 +98,7 @@ public class Octopus extends JSONData implements PrintableData {
         printed.append(Text.translatable("gui.ksd.pd_balance", balance).getString()).append("\n");
         printed.append(Text.translatable("gui.ksd.pd_histories").getString()).append("\n");
         for (History history : histories) {
-            printed.append("\t").append(history.getPrintedData());
+            printed.append(history.getPrintedData()).append("\n");
         }
         return printed.toString();
     }

@@ -3,7 +3,6 @@ package net.hulan.ksd.sreen;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.client.IDrawing;
 import mtr.data.EnumHelper;
-import mtr.data.IGui;
 import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
 import mtr.screen.WidgetBetterCheckbox;
@@ -20,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-public class STFareAdjustmentScreen extends PaymentScreen implements IGui {
+public class STFareAdjustmentScreen extends PaymentScreen {
 
     private final KSDStation current;
     private final KSDStation destination;
@@ -70,7 +69,6 @@ public class STFareAdjustmentScreen extends PaymentScreen implements IGui {
         drawCenteredString(matrices, Minecraft.getInstance().font, getExpiredText(), width / 2, height / 2 - 20, ARGB_WHITE);
     }
 
-    @Override
     void countTotal() {
         total = actualFare - originFare + (expired ? expiredFare : 0);
         super.countTotal();

@@ -60,7 +60,7 @@ public final class FirstClassValidationSystem {
                         validate(world,
                                 ksd,
                                 player,
-                                firstStation.id,
+                                firstStation,
                                 holdingItem,
                                 holdingItem.getItem() instanceof ItemOctopus);
                     } else {
@@ -89,10 +89,18 @@ public final class FirstClassValidationSystem {
     public static FirstClassState validate(Level world,
                                            KSDRailwayData railwayData,
                                            Player player,
-                                           long validateStationId,
+                                           KSDStation validateStation,
                                            ItemStack item,
                                            boolean isOctopus) {
         CompoundTag itemTag = item.getOrCreateTag();
+        if (!RailDataUtilities.hasFirstClassService(validateStation, railwayData.dataCache)) {
+            playSoundAndSendMessage(
+                    world,
+                    player.blockPosition(),
+                    player,
+                    "gui.ksd.fc_denied_no_matched_route");
+            return FirstClassState.DENIED;
+        }
         if (!KCRTicketSystem.isEntered(itemTag, railwayData.stations, isOctopus)) {
             playSoundAndSendMessage(
                     world,
@@ -102,7 +110,8 @@ public final class FirstClassValidationSystem {
             return FirstClassState.DENIED;
         }
         boolean isConcessionary = itemTag.getBoolean("is_concessionary");
-        if (!isOctopus && !itemTag.getBoolean("fc_available")) {
+        boolean fcAvailable = isOctopus || itemTag.getBoolean("fc_available");
+        if (!fcAvailable) {
             playSoundAndSendMessage(
                     world,
                     player.blockPosition(),
@@ -111,7 +120,7 @@ public final class FirstClassValidationSystem {
             return FirstClassState.DENIED;
         }
         if (!isValidated(itemTag)) {
-            validate(itemTag, validateStationId);
+            validate(itemTag, validateStation.id);
             if (hasPunishment(player)) {
                 removePunishment(player);
             }
