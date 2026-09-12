@@ -4,9 +4,6 @@ import mtr.Items;
 import mtr.block.IBlock;
 import mtr.block.BlockPSDAPGGlassEndBase;
 import mtr.block.BlockPSDAPGBase;
-import mtr.data.DataCache;
-import mtr.data.Platform;
-import mtr.data.RailwayData;
 import mtr.mappings.BlockDirectionalMapper;
 import mtr.mappings.BlockEntityMapper;
 import mtr.mappings.EntityBlockMapper;
@@ -16,6 +13,7 @@ import net.hulan.ivr.IVRItems;
 import net.hulan.ksd.data.KSDDataCache;
 import net.hulan.ksd.data.KSDPlatform;
 import net.hulan.ksd.data.KSDRailwayData;
+import net.hulan.ksd.utils.Utilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
@@ -36,8 +34,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
-import net.minecraft.world.level.material.Material;
-import net.minecraft.world.level.material.MaterialColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -54,7 +50,7 @@ public class BlockKCRPSDTop extends BlockDirectionalMapper implements EntityBloc
     public static final EnumProperty<EnumPersistent> PERSISTENT = EnumProperty.create("persistent", EnumPersistent.class);
 
     public BlockKCRPSDTop() {
-        super(Properties.of(Material.METAL, MaterialColor.QUARTZ).requiresCorrectToolForDrops().strength(2.0F).noOcclusion());
+        super(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).noOcclusion());
     }
 
     @SuppressWarnings("deprecation")

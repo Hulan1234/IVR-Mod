@@ -17,8 +17,6 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
-import net.minecraft.world.level.material.Material;
-import net.minecraft.world.level.material.MaterialColor;
 
 import java.util.List;
 
@@ -27,7 +25,7 @@ public abstract class BlockKCRStationNameBase extends BlockDirectionalMapper imp
     public static final IntegerProperty COLOR = IntegerProperty.create("color", 0, 2);
 
     public BlockKCRStationNameBase() {
-        super(Properties.of(Material.METAL, MaterialColor.COLOR_GRAY).requiresCorrectToolForDrops().strength(2.0F).noOcclusion());
+        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).noOcclusion());
     }
 
     @Override

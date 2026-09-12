@@ -25,8 +25,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.world.level.material.Material;
-import net.minecraft.world.level.material.MaterialColor;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -42,7 +40,7 @@ public class BlockKCRAddValueMachine extends BlockDirectionalMapper implements E
     public static final EnumProperty<Height> HEIGHT = EnumProperty.create("height", Height.class);
 
     public BlockKCRAddValueMachine() {
-        super(Properties.of(Material.METAL, MaterialColor.COLOR_GRAY)
+        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties()
                 .requiresCorrectToolForDrops()
                 .strength(2)
                 .lightLevel(state -> 14));

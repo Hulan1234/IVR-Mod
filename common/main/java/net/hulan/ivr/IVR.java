@@ -1,44 +1,30 @@
 package net.hulan.ivr;
 
-import mtr.CreativeModeTabs;
 import mtr.MTR;
 import mtr.RegistryObject;
-import mtr.item.ItemBlockEnchanted;
-import mtr.item.ItemWithCreativeTabBase;
 import mtr.mappings.BlockEntityMapper;
-import mtr.mappings.FabricRegistryUtilities;
-import mtr.mappings.RegistryUtilities;
 import mtr.packet.IPacket;
-import net.fabricmc.api.ModInitializer;
-import net.hulan.ivr.commands.CommandManager;import net.hulan.ivr.packet.IVRPacket;
+import net.hulan.ivr.commands.CommandManager;
+import net.hulan.ivr.packet.IVRPacket;
 import net.hulan.ivr.packet.IVRPacketTrainDataGuiServer;
-import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Objects;
 import java.util.function.BiConsumer;
 
-public class IVR implements ModInitializer, IVRPacket, IVRBlocks, IVRBlockEntityTypes, IVRCreativeModTabs, IPacket {
+public class IVR implements IVRPacket, IVRBlocks, IVRBlockEntityTypes, IVRCreativeModTabs, IPacket {
 
     public static final String MOD_ID = "ivr";
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
-    @Override
-    public void onInitialize() {
-        init(IVR::registerItem, IVR::registerBlock, IVR::registerBlockItem, IVR::registerBlockEntityType, IVR::registerEnchantedBlockItem);
-    }
-
-    private void init(BiConsumer<String, RegistryObject<Item>> registerItem,
-                      BiConsumer<String, RegistryObject<Block>> registerBlock,
-                      MTR.RegisterBlockItem registerBlockItem,
-                      BiConsumer<String, RegistryObject<? extends BlockEntityType<? extends BlockEntityMapper>>> registerBlockEntityType,
-                      MTR.RegisterBlockItem registerEnchantedBlockItem) {
+    public static void init(BiConsumer<String, RegistryObject<Item>> registerItem,
+                            BiConsumer<String, RegistryObject<Block>> registerBlock,
+                            MTR.RegisterBlockItem registerBlockItem,
+                            BiConsumer<String, RegistryObject<? extends BlockEntityType<? extends BlockEntityMapper>>> registerBlockEntityType,
+                            MTR.RegisterBlockItem registerEnchantedBlockItem) {
         registerItem.accept("kcr_apg_door", IVRItems.KCR_APG_DOOR);
         registerItem.accept("kcr_apg_glass", IVRItems.KCR_APG_GLASS);
         registerItem.accept("kcr_apg_glass_end", IVRItems.KCR_APG_GLASS_END);
@@ -172,38 +158,5 @@ public class IVR implements ModInitializer, IVRPacket, IVRBlocks, IVRBlockEntity
         mtr.Registry.registerNetworkReceiver(PACKET_MODERN_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveModernSignIdsC2S);
         mtr.Registry.registerNetworkReceiver(PACKET_MODERN_1ODD_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveModernSign1OddIdsC2S);
         CommandManager.registerCommands();
-    }
-
-    private static void registerItem(String path, RegistryObject<Item> item) {
-        Item itemObject = item.get();
-        Registry.register(RegistryUtilities.registryGetItem(), new ResourceLocation(MOD_ID, path), itemObject);
-        if (itemObject instanceof ItemWithCreativeTabBase) {
-            FabricRegistryUtilities.registerCreativeModeTab(((ItemWithCreativeTabBase)itemObject).creativeModeTab.get(), itemObject);
-        } else if (itemObject instanceof ItemWithCreativeTabBase.ItemPlaceOnWater) {
-            FabricRegistryUtilities.registerCreativeModeTab(((ItemWithCreativeTabBase.ItemPlaceOnWater)itemObject).creativeModeTab.get(), itemObject);
-        }
-    }
-
-    private static void registerBlock(String path, RegistryObject<Block> block) {
-        Registry.register(RegistryUtilities.registryGetBlock(), new ResourceLocation(MOD_ID, path), block.get());
-    }
-
-    private static void registerBlockItem(String path, RegistryObject<Block> block, CreativeModeTabs.Wrapper creativeModeTab) {
-        registerBlock(path, block);
-        final BlockItem blockItem = new BlockItem(block.get(), RegistryUtilities.createItemProperties(creativeModeTab::get));
-        Registry.register(RegistryUtilities.registryGetItem(), new ResourceLocation(MOD_ID, path), blockItem);
-        FabricRegistryUtilities.registerCreativeModeTab(creativeModeTab.get(), blockItem);
-    }
-
-    private static void registerEnchantedBlockItem(String path, RegistryObject<Block> block, CreativeModeTabs.Wrapper creativeModeTab) {
-        registerBlock(path, block);
-        Objects.requireNonNull(creativeModeTab);
-        ItemBlockEnchanted itemBlockEnchanted = new ItemBlockEnchanted(block.get(), RegistryUtilities.createItemProperties(creativeModeTab::get));
-        Registry.register(RegistryUtilities.registryGetItem(), new ResourceLocation(MOD_ID, path), itemBlockEnchanted);
-        FabricRegistryUtilities.registerCreativeModeTab(creativeModeTab.get(), itemBlockEnchanted);
-    }
-
-    private static void registerBlockEntityType(String path, RegistryObject<? extends BlockEntityType<? extends BlockEntityMapper>> blockEntityType) {
-        Registry.register(RegistryUtilities.registryGetBlockEntityType(), new ResourceLocation(MOD_ID, path), (BlockEntityType<? extends BlockEntityMapper>)blockEntityType.get());
     }
 }

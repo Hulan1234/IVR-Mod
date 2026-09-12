@@ -1,18 +1,17 @@
 package net.hulan.ivr.block;
 
 import mtr.mappings.BlockDirectionalMapper;
+import net.hulan.ksd.utils.Utilities;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.material.Material;
-import net.minecraft.world.level.material.MaterialColor;
 import org.jetbrains.annotations.Nullable;
 
 public class BlockKCRPlatform extends BlockDirectionalMapper {
 
     public BlockKCRPlatform() {
-        super(Properties.of(Material.METAL, MaterialColor.COLOR_YELLOW).requiresCorrectToolForDrops().strength(2.0F));
+        super(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F));
     }
 
     @Nullable

@@ -5,6 +5,7 @@ import mtr.mappings.BlockEntityMapper;
 import mtr.mappings.BlockMapper;
 import mtr.mappings.EntityBlockMapper;
 import net.hulan.ivr.IVRBlockEntityTypes;
+import net.hulan.ksd.utils.Utilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -13,8 +14,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.material.Material;
-import net.minecraft.world.level.material.MaterialColor;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -25,7 +24,7 @@ public class BlockKCRClock extends BlockMapper implements EntityBlockMapper {
     public static final BooleanProperty FACING = BooleanProperty.create("facing");
 
     public BlockKCRClock() {
-        super(Properties.of(Material.METAL, MaterialColor.QUARTZ).requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 5));
+        super(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 5));
     }
 
     @Override

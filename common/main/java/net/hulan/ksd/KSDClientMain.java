@@ -1,36 +1,16 @@
 package net.hulan.ksd;
 
 import mtr.RegistryClient;
-import mtr.data.EnumHelper;
-import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.object.builder.v1.client.model.FabricModelPredicateProviderRegistry;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.data.SingleTicketSystem;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketClient;
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
 
-@Environment(EnvType.CLIENT)
-public class KSDClientMain implements ClientModInitializer, KSDPacket {
+public class KSDClientMain implements KSDPacket {
 
-    @Override
-    public void onInitializeClient() {
-        FabricModelPredicateProviderRegistry.register(
-                KSDItems.SINGLE_TICKET.get(),
-                new ResourceLocation(KSDMain.MOD_ID, "ticket_variant"),
-                (ticketItem, world, entity, seed) -> {
-                    CompoundTag ticketTag = ticketItem.getOrCreateTag();
-                    SingleTicketSystem.TicketType ticketType = EnumHelper.valueOf(SingleTicketSystem.TicketType.MTR, ticketTag.getString("ticket_type"));
-                    boolean isConcessionary = ticketTag.getBoolean("is_concessionary");
-                    boolean fcAvailable = ticketTag.getBoolean("fc_available");
-                    return ticketType.getModelPredicateValue(isConcessionary, fcAvailable);
-                });
+    public static void init() {
         RegistryClient.registerNetworkReceiver(
                 KSD_PACKET_OPEN_KSD_DASHBOARD_SCREEN,
                 (packet) -> KSDPacketClient.openKSDDashboardScreenS2C(Minecraft.getInstance(), packet));

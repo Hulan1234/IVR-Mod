@@ -1,22 +1,14 @@
 package net.hulan.ksd;
 
-import mtr.CreativeModeTabs;
 import mtr.MTR;
 import mtr.RegistryObject;
 import mtr.data.RailwayData;
-import mtr.item.ItemWithCreativeTabBase;
-import mtr.mappings.FabricRegistryUtilities;
-import mtr.mappings.RegistryUtilities;
-import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.hulan.ksd.data.*;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketServer;
 import net.hulan.ksd.utils.DataUtilities;
-import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -25,19 +17,14 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.function.BiConsumer;
 
-public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreativeModTabs, KSDPacket {
+public class KSDMain implements KSDBlocks, KSDItems, KSDCreativeModTabs, KSDPacket {
 
     public static final String MOD_ID = "ksd";
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
-    @Override
-    public void onInitialize() {
-        init(KSDMain::registerItem, KSDMain::registerBlock, KSDMain::registerBlock);
-    }
-
-    private void init(BiConsumer<String, RegistryObject<Item>> registerItem,
-                      BiConsumer<String, RegistryObject<Block>> registerBlock,
-                      MTR.RegisterBlockItem registerBlockItem) {
+    public static void init(BiConsumer<String, RegistryObject<Item>> registerItem,
+                             BiConsumer<String, RegistryObject<Block>> registerBlock,
+                             MTR.RegisterBlockItem registerBlockItem) {
         registerBlock.accept("kp_cell_side", KP_CELL_SIDE);
         registerBlock.accept("kp_cell_side_with_light", KP_CELL_SIDE_WITH_LIGHT);
         registerItem.accept("kp_cell_side_is", KP_CELL_SIDE_IS);
@@ -144,27 +131,6 @@ public class KSDMain implements ModInitializer, KSDBlocks, KSDItems, KSDCreative
             the_nether = server.getLevel(Level.NETHER);
             the_end = server.getLevel(Level.END);
         });
-    }
-
-    private static void registerItem(String path, RegistryObject<Item> item) {
-        Item itemObject = item.get();
-        Registry.register(RegistryUtilities.registryGetItem(), new ResourceLocation(MOD_ID, path), itemObject);
-        if (itemObject instanceof ItemWithCreativeTabBase) {
-            FabricRegistryUtilities.registerCreativeModeTab(((ItemWithCreativeTabBase)itemObject).creativeModeTab.get(), itemObject);
-        } else if (itemObject instanceof ItemWithCreativeTabBase.ItemPlaceOnWater) {
-            FabricRegistryUtilities.registerCreativeModeTab(((ItemWithCreativeTabBase.ItemPlaceOnWater)itemObject).creativeModeTab.get(), itemObject);
-        }
-    }
-
-    private static void registerBlock(String path, RegistryObject<Block> block) {
-        Registry.register(RegistryUtilities.registryGetBlock(), new ResourceLocation(MOD_ID, path), block.get());
-    }
-
-    private static void registerBlock(String path, RegistryObject<Block> block, CreativeModeTabs.Wrapper creativeModeTab) {
-        registerBlock(path, block);
-        final BlockItem blockItem = new BlockItem(block.get(), RegistryUtilities.createItemProperties(creativeModeTab::get));
-        Registry.register(RegistryUtilities.registryGetItem(), new ResourceLocation(MOD_ID, path), blockItem);
-        FabricRegistryUtilities.registerCreativeModeTab(creativeModeTab.get(), blockItem);
     }
 
     public static ServerLevel overworld;

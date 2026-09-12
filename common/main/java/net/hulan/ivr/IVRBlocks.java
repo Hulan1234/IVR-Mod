@@ -5,12 +5,11 @@ import mtr.block.BlockStationColor;
 import mtr.block.BlockStationColorSlab;
 import net.hulan.ivr.block.*;
 import net.hulan.ksd.data.SingleTicketSystem;
+import net.hulan.ksd.utils.Utilities;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.Material;
-import net.minecraft.world.level.material.MaterialColor;
 
 public interface IVRBlocks {
 
@@ -56,9 +55,9 @@ public interface IVRBlocks {
     RegistryObject<Block> KCR_CLOCK = new RegistryObject<>(BlockKCRClock::new);
     RegistryObject<Block> KCR_CLOCK_POLE = new RegistryObject<>(BlockKCRClockPole::new);
     RegistryObject<Block> KCR_CEILING_AUTO = new RegistryObject<>(BlockKCRCeilingAuto::new);
-    RegistryObject<Block> KCR_CEILING_LIGHT = new RegistryObject<>(() -> new BlockKCRCeiling(BlockBehaviour.Properties.of(Material.METAL, MaterialColor.QUARTZ).requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 15)));
-    RegistryObject<Block> KCR_CEILING_NO_LIGHT = new RegistryObject<>(() -> new BlockKCRCeiling(BlockBehaviour.Properties.of(Material.METAL, MaterialColor.QUARTZ).requiresCorrectToolForDrops().strength(2.0F)));
-    RegistryObject<Block> IVR_LOGO = new RegistryObject<>(() -> new Block(BlockBehaviour.Properties.of(Material.METAL, MaterialColor.COLOR_GRAY).requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 10)));
+    RegistryObject<Block> KCR_CEILING_LIGHT = new RegistryObject<>(() -> new BlockKCRCeiling(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 15)));
+    RegistryObject<Block> KCR_CEILING_NO_LIGHT = new RegistryObject<>(() -> new BlockKCRCeiling(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F)));
+    RegistryObject<Block> IVR_LOGO = new RegistryObject<>(() -> new Block(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 10)));
     RegistryObject<Block> KCR_APG_DOOR = new RegistryObject<>(BlockKCRAPGDoor::new);
     RegistryObject<Block> KCR_APG_GLASS = new RegistryObject<>(BlockKCRAPGGlass::new);
     RegistryObject<Block> KCR_APG_GLASS_END = new RegistryObject<>(BlockKCRAPGGlassEnd::new);

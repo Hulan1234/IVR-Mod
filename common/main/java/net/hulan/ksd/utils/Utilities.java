@@ -7,12 +7,16 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.Version;
 import net.fabricmc.loader.api.metadata.ModMetadata;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
@@ -81,6 +85,10 @@ public abstract class Utilities {
 
     public abstract void renderGuiItem(PoseStack poseStack, ItemRenderer itemRenderer, Font font, ItemStack itemStack, int x, int y);
 
+    public abstract void registerItemModelPredicator(ModelPredictor modelPredictor);
+
+    public abstract BlockBehaviour.Properties createBlockProperties();
+
     private static class NullUtilities extends Utilities {
 
         public void registerCommand(LiteralArgumentBuilder<CommandSourceStack> command) {
@@ -88,5 +96,18 @@ public abstract class Utilities {
 
         public void renderGuiItem(PoseStack poseStack, ItemRenderer itemRenderer, Font font, ItemStack itemStack, int x, int y) {
         }
+
+        public void registerItemModelPredicator(ModelPredictor modelPredictor) {
+
+        }
+
+        public BlockBehaviour.Properties createBlockProperties() {
+            return null;
+        }
+    }
+
+    @FunctionalInterface
+    public interface ModelPredictor{
+        float predictor(ItemStack itemStack, @Nullable ClientLevel world, @Nullable LivingEntity livingEntity);
     }
 }

@@ -22,8 +22,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
-import net.minecraft.world.level.material.Material;
-import net.minecraft.world.level.material.MaterialColor;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -35,7 +33,7 @@ public class BlockKCRFirstClassProcessor extends BlockDirectionalMapper {
     public static final IntegerProperty TYPE = IntegerProperty.create("type", 0, 3);
 
     public BlockKCRFirstClassProcessor() {
-        super(Properties.of(Material.METAL, MaterialColor.GOLD).requiresCorrectToolForDrops().strength(1).lightLevel((state) -> 6));
+        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1).lightLevel((state) -> 6));
         registerDefaultState(defaultBlockState().setValue(TYPE, 0));
     }
 

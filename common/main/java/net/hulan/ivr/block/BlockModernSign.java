@@ -28,8 +28,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.material.Material;
-import net.minecraft.world.level.material.MaterialColor;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -47,7 +45,7 @@ public class BlockModernSign extends BlockDirectionalMapper implements EntityBlo
     public static final float SMALL_SIGN_PERCENTAGE = 0.75F;
 
     public BlockModernSign(int length, boolean isOdd) {
-        super(Properties.of(Material.METAL, MaterialColor.COLOR_GRAY).requiresCorrectToolForDrops().strength(2.0F).lightLevel(value -> value.getValue(LIT) ? 15 : 0));
+        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel(value -> value.getValue(LIT) ? 15 : 0));
         this.length = length;
         this.isOdd = isOdd;
         registerDefaultState(defaultBlockState().setValue(LIT, false));
@@ -244,10 +242,6 @@ public class BlockModernSign extends BlockDirectionalMapper implements EntityBlo
             compoundTag.putBoolean("luminance", luminance);
         }
 
-        public AABB getRenderBoundingBox() {
-            return new AABB(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
-        }
-
         public void setData(Set<Long> selectedIds, String[] signTypes, boolean luminance) {
             this.selectedIds.clear();
             this.selectedIds.addAll(selectedIds);
@@ -364,10 +358,6 @@ public class BlockModernSign extends BlockDirectionalMapper implements EntityBlo
                 compoundTag.putString(KEY_SIGN_LENGTH2 + i, signId2[i] == null ? "" : signId2[i]);
             }
             compoundTag.putBoolean("luminance", luminance);
-        }
-
-        public AABB getRenderBoundingBox() {
-            return new AABB(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
         }
 
         public void setData(Set<Long> selectedIds1, String[] signType1, Set<Long> selectedIds2, String[] signType2, boolean luminance) {

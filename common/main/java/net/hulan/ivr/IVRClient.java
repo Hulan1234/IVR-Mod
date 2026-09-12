@@ -2,7 +2,6 @@ package net.hulan.ivr;
 
 import mtr.RegistryClient;
 import mtr.packet.IPacket;
-import net.fabricmc.api.ClientModInitializer;
 import net.hulan.ivr.packet.IVRPacket;
 import net.hulan.ivr.packet.IVRPacketTrainDataGuiClient;
 import net.hulan.ivr.render.*;
@@ -10,10 +9,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 
 @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-public class IVRClient implements ClientModInitializer, IVRPacket, IVRBlockEntityTypes, IVRBlocks, IPacket {
+public class IVRClient implements IVRPacket, IVRBlockEntityTypes, IVRBlocks, IPacket {
 
-    @Override
-    public void onInitializeClient() {
+    public static void init() {
         RegistryClient.registerBlockRenderType(RenderType.cutout(), KCR_CLOCK.get());
         RegistryClient.registerBlockRenderType(RenderType.cutout(), IVR_LOGO.get());
         RegistryClient.registerBlockRenderType(RenderType.cutout(), KCR_PLATFORM_INDENTED.get());

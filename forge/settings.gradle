@@ -1,0 +1,9 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        maven { name = 'Forge'; url = 'https://maven.minecraftforge.net/' }
+    }
+}
+rootProject.name = 'forge'
+include('1_16_5', '1_17_1', '1_18_2', '1_19_2', '1_19_4')

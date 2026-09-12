@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "ivr",
+  "version": "1.2-beta",
+  "name": "IVR",
+  "description": "",
+  "authors": ["Unknownkfa-Textures", "FrostyHulan-Coding"],
+  "contact": {},
+  "license": "MIT",
+  "icon": "icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "net.hulan.ivr.IVRFabricClientMain"
+    ],
+    "main": [
+      "net.hulan.ivr.IVRFabricMain"
+    ]
+  },
+  "mixins": [
+    "IVR.mixins.json",
+    "ksd.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.15.7",
+    "fabric": "*",
+    "minecraft": "*",
+    "mtr": "*"
+  }
+}

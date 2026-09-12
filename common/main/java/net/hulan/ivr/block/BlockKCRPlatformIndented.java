@@ -2,6 +2,7 @@ package net.hulan.ivr.block;
 
 import mtr.block.BlockPlatform;
 import mtr.block.IBlock;
+import net.hulan.ksd.utils.Utilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -9,8 +10,6 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
-import net.minecraft.world.level.material.MaterialColor;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -20,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 public class BlockKCRPlatformIndented extends BlockPlatform {
 
     public BlockKCRPlatformIndented() {
-        super(Properties.of(Material.METAL, MaterialColor.COLOR_YELLOW).requiresCorrectToolForDrops().strength(2.0F).noOcclusion(), true);
+        super(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).noOcclusion(), true);
     }
 
     @Nullable
