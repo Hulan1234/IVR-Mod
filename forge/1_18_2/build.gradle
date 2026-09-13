@@ -1,35 +1,31 @@
 plugins {
-    id 'net.minecraftforge.gradle' version '[5.1,6.0)'
-    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
+    id 'architectury-plugin' version '3.4-SNAPSHOT'
+    id 'dev.architectury.loom' version '1.13.469'
 }
 
 repositories {
+    maven { name = 'MavenCentralApache'; url = 'https://repo.maven.apache.org/maven2/' }
     maven { url = 'https://maven.minecraftforge.net/' }
     maven { url = 'https://maven.architectury.dev/' }
     maven { url = 'https://maven.fabricmc.net/' }
     maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
 }
 
+loom { silentMojangMappingsLicense() }
+
 dependencies {
-    minecraft "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
-    implementation fg.deobf('dev.architectury:architectury-forge:4.12.94')
-    implementation(files("lib/MTR-forge-1.18.2-3.2.2-hotfix-1.jar"))
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
+    modImplementation 'dev.architectury:architectury-forge:4.12.94'
+    modImplementation(files("lib/MTR-forge-1.18.2-3.2.2-hotfix-1.jar"))
 
 
     // Common:
     annotationProcessor 'org.ow2.asm:asm-debug-all:5.2'
     annotationProcessor 'com.google.guava:guava:32.1.2-jre'
     annotationProcessor 'com.google.code.gson:gson:2.8.9'
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
-mixin {
-    add sourceSets.main, 'IVR.refmap.json'
-    config 'IVR.mixins.json'
-    config 'ksd.mixins.json'
-}
-
-minecraft {
-    mappings channel: 'official', version: project.minecraft_version
-}
+architectury { minecraft = project.minecraft_version }
 

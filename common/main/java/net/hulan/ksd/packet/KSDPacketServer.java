@@ -11,7 +11,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -188,7 +187,7 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
     }
 
     public static void receiveAdjustFCFareC2S(MinecraftServer minecraftServer, ServerPlayer player) {
-        minecraftServer.execute(() -> FirstClassValidationSystem.removeIllegal((ServerLevel) player.level, player));
+        minecraftServer.execute(() -> FirstClassValidationSystem.setAdjusted(player.level, player));
     }
 
     public static void receivePayment(MinecraftServer minecraftServer, ServerPlayer player, FriendlyByteBuf packet) {

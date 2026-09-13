@@ -35,7 +35,7 @@ public class FCFareAdjustmentScreen extends PaymentScreen implements IGui {
         Player player = Minecraft.getInstance().player;
         if (player != null) {
             Level world = Minecraft.getInstance().level;
-            total = FirstClassValidationSystem.hasIllegal(world, player) ? FirstClassValidationSystem.FC_EVASION_FINE : 0;
+            total = FirstClassValidationSystem.isIllegal(world, player) ? FirstClassValidationSystem.FC_EVASION_FINE : 0;
         } else {
             total = 0;
         }

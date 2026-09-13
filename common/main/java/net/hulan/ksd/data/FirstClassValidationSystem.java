@@ -28,7 +28,7 @@ import java.util.*;
 public final class FirstClassValidationSystem {
 
     public static final int FC_EVASION_FINE = 1000;
-    private static final String IS_ILLEGAL = "is_illegal";
+    private static final String FIRST_CLASS_STATE = "fc_state";
     private static final String PLAYER_CAR_OBJECTIVE = "player_car";
 
     public static void tick(KSDRailwayData ksd, RailwayData mtr, Level world, List<ServerPlayer> players) {
@@ -74,6 +74,7 @@ public final class FirstClassValidationSystem {
     }
 
     public static void setIllegal(Level world, Player player, int percentageOffset) {
+        if (isValidated(world, player) || isAdjusted(world, player)) return;
         addObjectivesIfMissing(world);
         Score carScore = getPlayerCarScore(world, player);
         Score phpScore = getPlayerHasIllegalScore(world, player);
@@ -81,13 +82,37 @@ public final class FirstClassValidationSystem {
         phpScore.setScore(1);
     }
 
-    public static boolean hasIllegal(Level world, Player player) {
+    public static boolean isIllegal(Level world, Player player) {
         addObjectivesIfMissing(world);
         Score phpScore = getPlayerHasIllegalScore(world, player);
         return phpScore.getScore() == 1;
     }
 
-    public static void removeIllegal(Level world, Player player) {
+    public static void setValidated(Level world, Player player) {
+        addObjectivesIfMissing(world);
+        Score phpScore = getPlayerHasIllegalScore(world, player);
+        phpScore.setScore(2);
+    }
+
+    public static boolean isValidated(Level world, Player player) {
+        addObjectivesIfMissing(world);
+        Score phpScore = getPlayerHasIllegalScore(world, player);
+        return phpScore.getScore() == 2;
+    }
+
+    public static void setAdjusted(Level world, Player player) {
+        addObjectivesIfMissing(world);
+        Score phpScore = getPlayerHasIllegalScore(world, player);
+        phpScore.setScore(3);
+    }
+
+    public static boolean isAdjusted(Level world, Player player) {
+        addObjectivesIfMissing(world);
+        Score phpScore = getPlayerHasIllegalScore(world, player);
+        return phpScore.getScore() == 3;
+    }
+
+    public static void clearState(Level world, Player player) {
         addObjectivesIfMissing(world);
         Score phpScore = getPlayerHasIllegalScore(world, player);
         phpScore.setScore(0);
@@ -128,8 +153,8 @@ public final class FirstClassValidationSystem {
         }
         if (!isValidated(itemTag)) {
             validate(itemTag, validateStation.id);
-            if (hasIllegal(world, player)) {
-                removeIllegal(world, player);
+            if (!isValidated(world, player)) {
+                setValidated(world, player);
             }
             playSoundAndSendMessage(
                     world,
@@ -166,7 +191,7 @@ public final class FirstClassValidationSystem {
     }
 
     private static Score getPlayerHasIllegalScore(Level world, Player player) {
-        return world.getScoreboard().getOrCreatePlayerScore(player.getGameProfile().getName(), player.getScoreboard().getObjective(IS_ILLEGAL));
+        return world.getScoreboard().getOrCreatePlayerScore(player.getGameProfile().getName(), player.getScoreboard().getObjective(FIRST_CLASS_STATE));
     }
 
     private static void addObjectivesIfMissing(Level world) {
@@ -175,7 +200,7 @@ public final class FirstClassValidationSystem {
         } catch (Exception ignored) {
         }
         try {
-            world.getScoreboard().addObjective(IS_ILLEGAL, ObjectiveCriteria.DUMMY, Text.literal("IS ILLEGAL"), ObjectiveCriteria.RenderType.INTEGER);
+            world.getScoreboard().addObjective(FIRST_CLASS_STATE, ObjectiveCriteria.DUMMY, Text.literal("IS ILLEGAL"), ObjectiveCriteria.RenderType.INTEGER);
         } catch (Exception ignored) {
         }
     }

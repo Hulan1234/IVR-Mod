@@ -1,6 +1,5 @@
 plugins {
     id 'net.minecraftforge.gradle' version '[5.1,6.0)'
-    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
 }
 
 repositories {
@@ -18,16 +17,10 @@ dependencies {
     // Common:
     annotationProcessor 'org.ow2.asm:asm-debug-all:5.2'
     annotationProcessor 'com.google.guava:guava:32.1.2-jre'
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
-}
-
-mixin {
-    add sourceSets.main, 'IVR.refmap.json'
-    config 'IVR.mixins.json'
-    config 'ksd.mixins.json'
 }
 
 minecraft {
     mappings channel: 'official', version: project.minecraft_version
+    runs.all { args '-mixin.config=IVR.mixins.json', '-mixin.config=ksd.mixins.json' }
 }
 

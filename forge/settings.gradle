@@ -8,11 +8,20 @@ pluginManagement {
         maven { name = 'Sponge'; url = 'https://repo.spongepowered.org/repository/maven-public/' }
     }
 }
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven { name = 'MavenCentralApache'; url = 'https://repo.maven.apache.org/maven2/' }
+        maven { name = 'Forge'; url = 'https://maven.minecraftforge.net/' }
+        maven { name = 'Architectury'; url = 'https://maven.architectury.dev/' }
+        maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+    }
+}
+
 rootProject.name = 'forge'
 include('1_18_2', '1_19_2', '1_19_4')
 
-//project(':1_16_5').projectDir = file('1_16_5')
-//project(':1_17_1').projectDir = file('1_17_1')
 project(':1_18_2').projectDir = file('1_18_2')
 project(':1_19_2').projectDir = file('1_19_2')
 project(':1_19_4').projectDir = file('1_19_4')

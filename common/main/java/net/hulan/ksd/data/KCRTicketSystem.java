@@ -78,7 +78,7 @@ public final class KCRTicketSystem {
                                                              KSDStation exitStation,
                                                              ItemStack item,
                                                              boolean isOctopus) {
-        if (FirstClassValidationSystem.hasIllegal(world, player)) {
+        if (FirstClassValidationSystem.isIllegal(world, player)) {
             playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.illegally_riding_fc");
             return TicketSystem.EnumTicketBarrierOpen.CLOSED;
         }
@@ -102,6 +102,7 @@ public final class KCRTicketSystem {
                     if (fcAvailable) {
                         FirstClassValidationSystem.devalidate(itemTag);
                     }
+                    FirstClassValidationSystem.clearState(world, player);
                     Utilities.getInventory(player).removeItem(item);
                     playSoundAndSendMessage(world, player.blockPosition(), player,
                             isConcessionary ? SoundEvents.TICKET_BARRIER_CONCESSIONARY : SoundEvents.TICKET_BARRIER,
@@ -122,6 +123,7 @@ public final class KCRTicketSystem {
                     if (fcValidated) {
                         FirstClassValidationSystem.devalidate(itemTag);
                     }
+                    FirstClassValidationSystem.clearState(world, player);
                     OctopusSystem.addValue(uuid, -fare, Octopus.History.Source.MTR, railwayData.jsonDataManager, Utilities.getInventory(player));
                     playSoundAndSendMessage(world, player.blockPosition(), player,
                             isConcessionary ? SoundEvents.TICKET_BARRIER_CONCESSIONARY : SoundEvents.TICKET_BARRIER,
