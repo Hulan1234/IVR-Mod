@@ -78,7 +78,7 @@ public final class KCRTicketSystem {
                                                              KSDStation exitStation,
                                                              ItemStack item,
                                                              boolean isOctopus) {
-        if (FirstClassValidationSystem.hasPunishment(player)) {
+        if (FirstClassValidationSystem.hasIllegal(world, player)) {
             playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.illegally_riding_fc");
             return TicketSystem.EnumTicketBarrierOpen.CLOSED;
         }

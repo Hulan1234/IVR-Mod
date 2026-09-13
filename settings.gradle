@@ -8,6 +8,6 @@ pluginManagement {
     }
 }
 
-// Fabric and Forge are independent builds with their own version subprojects.
-includeBuild('fabric')
-includeBuild('forge')
+// Fabric and Forge use different Gradle versions. They are invoked by the
+// root build tasks through their own Wrapper scripts, rather than included as
+// composite builds (which would configure both with the root Gradle version).

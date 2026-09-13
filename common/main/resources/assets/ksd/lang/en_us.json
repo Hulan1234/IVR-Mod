@@ -46,7 +46,7 @@
   "gui.ksd.origin_fare" : "Original Fare:$%s",
   "gui.ksd.actual_fare" : "Actual Fare:$%s",
   "gui.ksd.ticket_type" : "Ticket Type:%s",
-  "gui.ksd.expired" : "Expired,Expired Fare:$%s",
+  "gui.ksd.expired" : "Expired",
   "gui.ksd.not_expired" : "Not Expired",
   "gui.ksd.is_concessionary" : "Concessionary",
   "gui.ksd.fc_available" : "First Class Available",

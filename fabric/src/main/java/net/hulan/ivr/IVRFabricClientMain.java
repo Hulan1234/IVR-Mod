@@ -4,7 +4,6 @@ import mtr.data.EnumHelper;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.hulan.ksd.KSDClientMain;
 import net.hulan.ksd.data.SingleTicketSystem;
 import net.hulan.ksd.utils.Utilities;
 import net.minecraft.nbt.CompoundTag;
@@ -15,8 +14,7 @@ public class IVRFabricClientMain implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         IVRClient.init();
-        KSDClientMain.init();
-        Utilities.getInstance().registerItemModelPredicator((ticketItem, world, entity) -> {
+        Utilities.getInstance().registerTicketItemModelPredicator((ticketItem, world, entity) -> {
             CompoundTag ticketTag = ticketItem.getOrCreateTag();
             SingleTicketSystem.TicketType ticketType = EnumHelper.valueOf(SingleTicketSystem.TicketType.MTR, ticketTag.getString("ticket_type"));
             boolean isConcessionary = ticketTag.getBoolean("is_concessionary");

@@ -1,3 +1,6 @@
 {
-  "parent": "ivr:block/kcr_add_value_machine_wall"
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "ivr:item/kcr_add_value_machine"
+  }
 }

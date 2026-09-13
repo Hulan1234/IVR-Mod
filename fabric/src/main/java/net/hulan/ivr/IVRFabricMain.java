@@ -30,10 +30,6 @@ public class IVRFabricMain implements ModInitializer {
                 IVRFabricMain::registerBlockItem,
                 IVRFabricMain::registerBlockEntityType,
                 IVRFabricMain::registerEnchantedBlockItem);
-        KSDMain.init(
-                IVRFabricMain::registerItem,
-                IVRFabricMain::registerBlock,
-                IVRFabricMain::registerBlockItem);
     }
 
     private static void registerItem(String path, RegistryObject<Item> item) {

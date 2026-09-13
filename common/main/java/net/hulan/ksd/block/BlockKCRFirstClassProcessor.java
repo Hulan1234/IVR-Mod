@@ -47,7 +47,7 @@ public class BlockKCRFirstClassProcessor extends BlockDirectionalMapper {
                 FirstClassValidationSystem.FirstClassState firstClassState = FirstClassValidationSystem.FirstClassState.MTR;
                 if (holdingItem.getItem() instanceof ItemSingleTicket || holdingItem.getItem() instanceof ItemOctopus) {
                     firstClassState = FirstClassValidationSystem.validate(
-                            world,
+                            (ServerLevel) world,
                             railwayData,
                             player,
                             validateStation,

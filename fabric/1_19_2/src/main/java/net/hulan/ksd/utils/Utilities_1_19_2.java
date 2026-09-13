@@ -27,7 +27,7 @@ public class Utilities_1_19_2 extends Utilities {
         itemRenderer.renderGuiItemDecorations(font, itemStack, x, y);
     }
 
-    public void registerItemModelPredicator(ModelPredictor modelPredictor) {
+    public void registerTicketItemModelPredicator(ModelPredictor modelPredictor) {
         FabricModelPredicateProviderRegistry.register(
                 KSDItems.SINGLE_TICKET.get(),
                 new ResourceLocation(KSDMain.MOD_ID, "ticket_variant"),
@@ -36,6 +36,6 @@ public class Utilities_1_19_2 extends Utilities {
     }
 
     public BlockBehaviour.Properties createBlockProperties() {
-        return BlockBehaviour.Properties.of(Material.METAL, MaterialColor.COLOR_GRAY);
+        return BlockBehaviour.Properties.of(Material.METAL);
     }
 }

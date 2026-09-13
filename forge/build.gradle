@@ -17,6 +17,17 @@ subprojects {
 
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
-        options.release = 17
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = ['../../common/main/java', '../src/main/java', 'src/main/java']
+            resources.srcDirs = ['../../common/main/resources', '../src/main/resources']
+        }
+    }
+
+    java {
+        toolchain.languageVersion = JavaLanguageVersion.of(17)
+        archivesBaseName = "IVR-FORGE-${project.minecraft_version}"
     }
 }

@@ -3,7 +3,6 @@ package net.hulan.ksd;
 import mtr.MTR;
 import mtr.RegistryObject;
 import mtr.data.RailwayData;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.hulan.ksd.data.*;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketServer;
@@ -23,8 +22,8 @@ public class KSDMain implements KSDBlocks, KSDItems, KSDCreativeModTabs, KSDPack
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
     public static void init(BiConsumer<String, RegistryObject<Item>> registerItem,
-                             BiConsumer<String, RegistryObject<Block>> registerBlock,
-                             MTR.RegisterBlockItem registerBlockItem) {
+                            BiConsumer<String, RegistryObject<Block>> registerBlock,
+                            MTR.RegisterBlockItem registerBlockItem) {
         registerBlock.accept("kp_cell_side", KP_CELL_SIDE);
         registerBlock.accept("kp_cell_side_with_light", KP_CELL_SIDE_WITH_LIGHT);
         registerItem.accept("kp_cell_side_is", KP_CELL_SIDE_IS);
@@ -126,7 +125,7 @@ public class KSDMain implements KSDBlocks, KSDItems, KSDCreativeModTabs, KSDPack
                 ksdRailwayData.onPlayerJoin(player);
             }
         });
-        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+        mtr.Registry.registerServerStartingEvent(server -> {
             overworld = server.overworld();
             the_nether = server.getLevel(Level.NETHER);
             the_end = server.getLevel(Level.END);

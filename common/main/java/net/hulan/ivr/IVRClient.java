@@ -8,7 +8,6 @@ import net.hulan.ivr.render.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 
-@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 public class IVRClient implements IVRPacket, IVRBlockEntityTypes, IVRBlocks, IPacket {
 
     public static void init() {

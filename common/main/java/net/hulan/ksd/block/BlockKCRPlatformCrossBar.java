@@ -9,7 +9,6 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -21,7 +20,7 @@ public class BlockKCRPlatformCrossBar extends BlockDirectionalMapper {
     private final Style type;
 
     public BlockKCRPlatformCrossBar(Style type) {
-        super(Properties.of(Material.METAL).requiresCorrectToolForDrops().strength(1));
+        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1));
         this.type = type;
     }
 

@@ -3,10 +3,7 @@ package net.hulan.ksd.utils;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import mtr.data.EnumHelper;
 import mtr.data.RouteType;
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.ModContainer;
-import net.fabricmc.loader.api.Version;
-import net.fabricmc.loader.api.metadata.ModMetadata;
+import net.minecraft.SharedConstants;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.client.gui.Font;
@@ -16,7 +13,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import org.jetbrains.annotations.Nullable;
+import org.msgpack.core.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
@@ -46,12 +43,7 @@ public abstract class Utilities {
     }
 
     public static String getMinecraftVersion() {
-        return FabricLoader.getInstance()
-                .getModContainer("minecraft")
-                .map(ModContainer::getMetadata)
-                .map(ModMetadata::getVersion)
-                .map(Version::getFriendlyString)
-                .orElse("1.18.2");
+        return SharedConstants.getCurrentVersion().getName();
     }
 
     public static String getIVRMinecraftVersion() {
@@ -85,7 +77,7 @@ public abstract class Utilities {
 
     public abstract void renderGuiItem(PoseStack poseStack, ItemRenderer itemRenderer, Font font, ItemStack itemStack, int x, int y);
 
-    public abstract void registerItemModelPredicator(ModelPredictor modelPredictor);
+    public abstract void registerTicketItemModelPredicator(ModelPredictor modelPredictor);
 
     public abstract BlockBehaviour.Properties createBlockProperties();
 
@@ -97,7 +89,7 @@ public abstract class Utilities {
         public void renderGuiItem(PoseStack poseStack, ItemRenderer itemRenderer, Font font, ItemStack itemStack, int x, int y) {
         }
 
-        public void registerItemModelPredicator(ModelPredictor modelPredictor) {
+        public void registerTicketItemModelPredicator(ModelPredictor modelPredictor) {
 
         }
 

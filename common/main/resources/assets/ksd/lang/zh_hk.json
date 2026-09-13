@@ -46,7 +46,7 @@
   "gui.ksd.origin_fare" : "原始票價：$%s",
   "gui.ksd.actual_fare" : "實際票價：$%s",
   "gui.ksd.ticket_type" : "車票類型：%s",
-  "gui.ksd.expired" : "超時，超時票價：$%s",
+  "gui.ksd.expired" : "超時",
   "gui.ksd.not_expired" : "未超時",
   "gui.ksd.is_concessionary" : "優惠",
   "gui.ksd.fc_available": "可乘坐頭等",

@@ -13,7 +13,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -24,7 +23,7 @@ public class BlockKCRPlatformCellSide extends BlockDirectionalMapper implements 
     public static final EnumProperty<Style> STYLE = EnumProperty.create("style", Style.class);
 
     public BlockKCRPlatformCellSide() {
-        super(Properties.of(Material.METAL).requiresCorrectToolForDrops().strength(1));
+        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1));
     }
 
     public BlockKCRPlatformCellSide(Properties properties) {

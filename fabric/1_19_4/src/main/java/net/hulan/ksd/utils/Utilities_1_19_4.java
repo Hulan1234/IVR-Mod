@@ -26,7 +26,7 @@ public class Utilities_1_19_4 extends Utilities {
         itemRenderer.renderGuiItemDecorations(poseStack, font, itemStack, x, y);
     }
 
-    public void registerItemModelPredicator(ModelPredictor modelPredictor) {
+    public void registerTicketItemModelPredicator(ModelPredictor modelPredictor) {
         FabricModelPredicateProviderRegistry.register(
                 KSDItems.SINGLE_TICKET.get(),
                 new ResourceLocation(KSDMain.MOD_ID, "ticket_variant"),

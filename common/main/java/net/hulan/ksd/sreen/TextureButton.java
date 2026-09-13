@@ -13,10 +13,8 @@ import net.minecraft.resources.ResourceLocation;
 /** A button that can display a full-size texture while retaining its normal click behavior. */
 public class TextureButton extends ButtonMapper {
 
-    private static final int MISSING_TEXTURE_BLACK = 0xFF000000;
-    private static final int MISSING_TEXTURE_MAGENTA = 0xFFFF00FF;
+    private static final int MISSING_TEXTURE_BACKGROUND = 0xFF4A4A4A;
     private static final int HOVER_BORDER_COLOR = 0xFFFFFFFF;
-    private static final int MISSING_TEXTURE_TILE_SIZE = 8;
     private static final int HOVER_BORDER_WIDTH = 2;
     private ResourceLocation texture;
 
@@ -43,19 +41,16 @@ public class TextureButton extends ButtonMapper {
 
     @Override
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
-        //super.render(matrices, mouseX, mouseY, delta);
-        if (texture != null) {
-            final int widgetX = UtilitiesClient.getWidgetX(this);
-            final int widgetY = UtilitiesClient.getWidgetY(this);
-            final int widgetWidth = getWidth();
-            final int widgetHeight = getHeight();
-            if (hasTexture()) {
-                RenderUtilities.getInstance().drawTexture(matrices, texture, widgetX, widgetY, widgetWidth, widgetHeight);
-            } else {
-                drawMissingTexture(matrices);
-            }
-            drawMessage(matrices);
+        final int widgetX = UtilitiesClient.getWidgetX(this);
+        final int widgetY = UtilitiesClient.getWidgetY(this);
+        final int widgetWidth = getWidth();
+        final int widgetHeight = getHeight();
+        if (hasTexture()) {
+            RenderUtilities.getInstance().drawTexture(matrices, texture, widgetX, widgetY, widgetWidth, widgetHeight);
+        } else {
+            drawMissingTexture(matrices);
         }
+        drawMessage(matrices);
         if (isMouseOver(mouseX, mouseY)) {
             drawHoverBorder(matrices);
         }
@@ -74,20 +69,7 @@ public class TextureButton extends ButtonMapper {
         final int widgetY = UtilitiesClient.getWidgetY(this);
         final int widgetWidth = getWidth();
         final int widgetHeight = getHeight();
-        Gui.fill(matrices, widgetX, widgetY, widgetX + widgetWidth, widgetY + widgetHeight, MISSING_TEXTURE_BLACK);
-        for (int tileX = 0; tileX < widgetWidth; tileX += MISSING_TEXTURE_TILE_SIZE) {
-            for (int tileY = 0; tileY < widgetHeight; tileY += MISSING_TEXTURE_TILE_SIZE) {
-                if (((tileX / MISSING_TEXTURE_TILE_SIZE) + (tileY / MISSING_TEXTURE_TILE_SIZE)) % 2 == 0) {
-                    Gui.fill(
-                            matrices,
-                            widgetX + tileX,
-                            widgetY + tileY,
-                            Math.min(widgetX + tileX + MISSING_TEXTURE_TILE_SIZE, widgetX + widgetWidth),
-                            Math.min(widgetY + tileY + MISSING_TEXTURE_TILE_SIZE, widgetY + widgetHeight),
-                            MISSING_TEXTURE_MAGENTA);
-                }
-            }
-        }
+        Gui.fill(matrices, widgetX, widgetY, widgetX + widgetWidth, widgetY + widgetHeight, MISSING_TEXTURE_BACKGROUND);
     }
 
     private void drawMessage(PoseStack matrices) {

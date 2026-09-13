@@ -28,6 +28,7 @@ import java.util.*;
 public final class FirstClassValidationSystem {
 
     public static final int FC_EVASION_FINE = 1000;
+    public static final String IS_ILLEGALLY = "is_illegally";
     private static final String PLAYER_CAR_OBJECTIVE = "player_car";
 
     public static void tick(KSDRailwayData ksd, RailwayData mtr, Level world, List<ServerPlayer> players) {
@@ -36,7 +37,7 @@ public final class FirstClassValidationSystem {
         TrainServer playerTrain = null;
         int newCar = -1;
         for (ServerPlayer player : players) {
-            Score carScore = getPlayerScore(world, player );
+            Score carScore = getPlayerCarScore(world, player);
             for (Train t : trains) {
                 if (t.isPlayerRiding(player)) {
                     playerTrain = (TrainServer) t;
@@ -57,33 +58,39 @@ public final class FirstClassValidationSystem {
                     ItemStack holdingItem = player.getMainHandItem();
                     KSDStation firstStation = ksd.dataCache.routeIdToStationsWithIndex.get(route.id).get(0);
                     if ((holdingItem.getItem() instanceof ItemSingleTicket || holdingItem.getItem() instanceof ItemOctopus) && firstStation != null) {
-                        validate(world,
+                        validate(
+                                world,
                                 ksd,
                                 player,
                                 firstStation,
                                 holdingItem,
                                 holdingItem.getItem() instanceof ItemOctopus);
                     } else {
-                        addPunishment(world, player, newCar);
+                        setIllegal(world, player, newCar);
                     }
                 }
             }
         }
     }
 
-    public static void addPunishment(Level world, Player player, int percentageOffset) {
+    public static void setIllegal(Level world, Player player, int percentageOffset) {
         addObjectivesIfMissing(world);
-        Score carScore = getPlayerScore(world, player);
+        Score carScore = getPlayerCarScore(world, player);
+        Score phpScore = getPlayerHasIllegalScore(world, player);
         carScore.setScore(percentageOffset + 1);
-        player.addTag("illegally_riding_fc");
+        phpScore.setScore(1);
     }
 
-    public static boolean hasPunishment(Player player) {
-        return player.getTags().contains("illegally_riding_fc");
+    public static boolean hasIllegal(Level world, Player player) {
+        addObjectivesIfMissing(world);
+        Score phpScore = getPlayerHasIllegalScore(world, player);
+        return phpScore.getScore() == 1;
     }
 
-    public static void removePunishment(Player player) {
-        player.removeTag("illegally_riding_fc");
+    public static void removeIllegal(Level world, Player player) {
+        addObjectivesIfMissing(world);
+        Score phpScore = getPlayerHasIllegalScore(world, player);
+        phpScore.setScore(0);
     }
 
     public static FirstClassState validate(Level world,
@@ -121,8 +128,8 @@ public final class FirstClassValidationSystem {
         }
         if (!isValidated(itemTag)) {
             validate(itemTag, validateStation.id);
-            if (hasPunishment(player)) {
-                removePunishment(player);
+            if (hasIllegal(world, player)) {
+                removeIllegal(world, player);
             }
             playSoundAndSendMessage(
                     world,
@@ -154,13 +161,21 @@ public final class FirstClassValidationSystem {
         itemTag.remove("fc_validated_station_id");
     }
 
-    private static Score getPlayerScore(Level world, Player player) {
+    private static Score getPlayerCarScore(Level world, Player player) {
         return world.getScoreboard().getOrCreatePlayerScore(player.getGameProfile().getName(), world.getScoreboard().getObjective(FirstClassValidationSystem.PLAYER_CAR_OBJECTIVE));
+    }
+
+    private static Score getPlayerHasIllegalScore(Level world, Player player) {
+        return world.getScoreboard().getOrCreatePlayerScore(player.getGameProfile().getName(), player.getScoreboard().getObjective(IS_ILLEGALLY));
     }
 
     private static void addObjectivesIfMissing(Level world) {
         try {
             world.getScoreboard().addObjective(PLAYER_CAR_OBJECTIVE, ObjectiveCriteria.DUMMY, Text.literal("Player Car"), ObjectiveCriteria.RenderType.INTEGER);
+        } catch (Exception ignored) {
+        }
+        try {
+            world.getScoreboard().addObjective(IS_ILLEGALLY, ObjectiveCriteria.DUMMY, Text.literal("Player Has Illegal"), ObjectiveCriteria.RenderType.INTEGER);
         } catch (Exception ignored) {
         }
     }

@@ -13,7 +13,6 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -24,7 +23,7 @@ public class BlockModernSignPole extends BlockPoleCheckBase {
     public static final IntegerProperty TYPE = IntegerProperty.create("type", 0, 4);
 
     public BlockModernSignPole() {
-        super(Properties.of(Material.METAL).requiresCorrectToolForDrops().strength(1).noOcclusion());
+        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1).noOcclusion());
     }
 
     @SuppressWarnings("deprecation")

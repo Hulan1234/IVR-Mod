@@ -16,18 +16,31 @@ subprojects {
         options.release = 17
     }
 
-    dependencies {
-        implementation 'com.google.code.gson:gson:2.14.0'
-    }
-
     sourceSets {
         main {
-            java {
-                srcDirs = ['../../common/main/java', 'src/main/java']  // 指向共用源码
-            }
-            resources {
-                srcDirs = ['../../common/main/resources', 'src/main/resources']
-            }
+            java.srcDirs = ['../../common/main/java', '../src/main/java', 'src/main/java']
+            resources.srcDirs = ['../../common/main/resources', '../src/main/resources', 'src/main/resources']
         }
+    }
+
+    java {
+        toolchain.languageVersion = JavaLanguageVersion.of(17)
+        archivesBaseName = "IVR-FABRIC-${project.minecraft_version}"
+    }
+
+    plugins.withId('fabric-loom') {
+        tasks.named('remapJar') {
+            destinationDirectory = file('../mods')
+        }
+        tasks.register('copyJar', Delete) {
+            delete layout.buildDirectory.dir('devlibs')
+        }
+        tasks.named('assemble') {
+            finalizedBy 'copyJar'
+        }
+    }
+
+    dependencies {
+        implementation 'com.google.code.gson:gson:2.14.0'
     }
 }

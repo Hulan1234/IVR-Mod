@@ -12,11 +12,10 @@ rootProject.name = 'fabric'
 
 // These are real Gradle subprojects. Keep the directory mapping explicit so
 // the settings file works regardless of the current Gradle invocation path.
-include('1_16_5', '1_17_1', '1_18_2', '1_19_2', '1_19_4', '1_20_1')
+include('1_16_5', '1_17_1', '1_18_2', '1_19_2', '1_19_4')
 
 project(':1_16_5').projectDir = file('1_16_5')
 project(':1_17_1').projectDir = file('1_17_1')
 project(':1_18_2').projectDir = file('1_18_2')
 project(':1_19_2').projectDir = file('1_19_2')
 project(':1_19_4').projectDir = file('1_19_4')
-project(':1_20_1').projectDir = file('1_20_1')

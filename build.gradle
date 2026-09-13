@@ -1,0 +1,30 @@
+// The Fabric and Forge trees use different Gradle versions, so invoke each
+// project's own Wrapper instead of nesting both builds in this Gradle process.
+def runChild = { String name, String directory, String childTask ->
+    tasks.register(name, Exec) {
+        workingDir = file(directory)
+        if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+            commandLine 'cmd', '/c', file("${directory}/gradlew.bat").absolutePath, childTask, '--no-daemon'
+        } else {
+            commandLine file("${directory}/gradlew"), childTask, '--no-daemon'
+        }
+    }
+}
+
+def fabricBuild = runChild('fabricBuild', 'fabric', 'build')
+def forgeBuild = runChild('forgeBuild', 'forge', 'build')
+
+tasks.register('build') {
+    group = 'build'
+    description = 'Build both the Fabric and Forge projects.'
+    dependsOn(fabricBuild, forgeBuild)
+}
+
+tasks.register('clean') {
+    group = 'build'
+    description = 'Clean both the Fabric and Forge projects.'
+    dependsOn(
+        runChild('fabricClean', 'fabric', 'clean'),
+        runChild('forgeClean', 'forge', 'clean')
+    )
+}

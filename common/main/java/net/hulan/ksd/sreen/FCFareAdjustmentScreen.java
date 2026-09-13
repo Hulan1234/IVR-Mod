@@ -4,13 +4,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.data.IGui;
 import mtr.mappings.ScreenMapper;
 import net.hulan.ksd.data.FirstClassValidationSystem;
-import net.hulan.ksd.data.KSDStation;
 import net.hulan.ksd.data.Octopus;
 import net.hulan.ksd.packet.KSDPacketClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.world.level.Level;
 
 import java.util.UUID;
 
@@ -35,7 +34,8 @@ public class FCFareAdjustmentScreen extends PaymentScreen implements IGui {
     void countTotal() {
         Player player = Minecraft.getInstance().player;
         if (player != null) {
-            total = FirstClassValidationSystem.hasPunishment(player) ? FirstClassValidationSystem.FC_EVASION_FINE : 0;
+            Level world = Minecraft.getInstance().level;
+            total = FirstClassValidationSystem.hasIllegal(world, player) ? FirstClassValidationSystem.FC_EVASION_FINE : 0;
         } else {
             total = 0;
         }

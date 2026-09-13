@@ -4,17 +4,19 @@
   "version": "1.2-beta",
   "name": "IVR",
   "description": "",
-  "authors": ["Unknownkfa-Textures", "FrostyHulan-Coding"],
+  "authors": ["kfa-Textures", "FrostyHulan-Coding"],
   "contact": {},
   "license": "MIT",
   "icon": "icon.png",
   "environment": "*",
   "entrypoints": {
     "client": [
-      "net.hulan.ivr.IVRFabricClientMain"
+      "net.hulan.ivr.IVRFabricClientMain",
+      "net.hulan.ksd.KSDFabricClientMain"
     ],
     "main": [
-      "net.hulan.ivr.IVRFabricMain"
+      "net.hulan.ivr.IVRFabricMain",
+      "net.hulan.ksd.KSDFabricMain"
     ]
   },
   "mixins": [
