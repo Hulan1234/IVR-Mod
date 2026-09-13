@@ -33,13 +33,13 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BlockKCRAddValueMachine extends BlockDirectionalMapper implements EntityBlockMapper {
+public class BlockOctopusAddValueMachine extends BlockDirectionalMapper implements EntityBlockMapper {
 
     private static final BooleanProperty STORED = BooleanProperty.create("stored");
     public static final EnumProperty<Side> SIDE = EnumProperty.create("side", Side.class);
     public static final EnumProperty<Height> HEIGHT = EnumProperty.create("height", Height.class);
 
-    public BlockKCRAddValueMachine() {
+    public BlockOctopusAddValueMachine() {
         super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties()
                 .requiresCorrectToolForDrops()
                 .strength(2)
@@ -200,7 +200,7 @@ public class BlockKCRAddValueMachine extends BlockDirectionalMapper implements E
         private final List<ItemStack> items = new ArrayList<>();
 
         public TileEntityKCRAddValueMachine(BlockPos blockPos, BlockState blockState) {
-            super(IVRBlockEntityTypes.KCR_ADD_VALUE_MACHINE_WALL_TILE_ENTITY.get(), blockPos, blockState);
+            super(IVRBlockEntityTypes.OCTOPUS_ADD_VALUE_MACHINE_WALL_TILE_ENTITY.get(), blockPos, blockState);
         }
 
         public void storeItems(List<ItemStack> items) {

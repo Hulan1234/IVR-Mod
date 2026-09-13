@@ -41,6 +41,7 @@
   "block.ivr.kcr_single_ticket_machine_mtr_wall" : "KCR Single Ticket Machine(MTR, Wall)",
   "block.ivr.kcr_single_ticket_machine_kcr_wall" : "KCR Single Ticket Machine(KCR, Wall)",
   "block.ivr.kcr_single_ticket_machine_light_rail_wall" : "KCR Single Ticket Machine(Light Rail, Wall)",
+  "block.ivr.octopus_add_value_machine" : "Octopus Add Value Machine",
   "item.ivr.kcr_apg_door": "KCR Automatic Platform Gates",
   "item.ivr.kcr_apg_glass": "KCR Automatic Platform Gates",
   "item.ivr.kcr_apg_glass_end": "KCR Automatic Platform Gates",

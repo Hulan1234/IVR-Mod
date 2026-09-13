@@ -28,7 +28,7 @@ import java.util.*;
 public final class FirstClassValidationSystem {
 
     public static final int FC_EVASION_FINE = 1000;
-    public static final String IS_ILLEGALLY = "is_illegally";
+    private static final String IS_ILLEGAL = "is_illegal";
     private static final String PLAYER_CAR_OBJECTIVE = "player_car";
 
     public static void tick(KSDRailwayData ksd, RailwayData mtr, Level world, List<ServerPlayer> players) {
@@ -166,7 +166,7 @@ public final class FirstClassValidationSystem {
     }
 
     private static Score getPlayerHasIllegalScore(Level world, Player player) {
-        return world.getScoreboard().getOrCreatePlayerScore(player.getGameProfile().getName(), player.getScoreboard().getObjective(IS_ILLEGALLY));
+        return world.getScoreboard().getOrCreatePlayerScore(player.getGameProfile().getName(), player.getScoreboard().getObjective(IS_ILLEGAL));
     }
 
     private static void addObjectivesIfMissing(Level world) {
@@ -175,7 +175,7 @@ public final class FirstClassValidationSystem {
         } catch (Exception ignored) {
         }
         try {
-            world.getScoreboard().addObjective(IS_ILLEGALLY, ObjectiveCriteria.DUMMY, Text.literal("Player Has Illegal"), ObjectiveCriteria.RenderType.INTEGER);
+            world.getScoreboard().addObjective(IS_ILLEGAL, ObjectiveCriteria.DUMMY, Text.literal("IS ILLEGAL"), ObjectiveCriteria.RenderType.INTEGER);
         } catch (Exception ignored) {
         }
     }
