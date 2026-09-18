@@ -4,12 +4,16 @@ import mtr.block.BlockPSDAPGBase;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Camera;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,14 +21,14 @@ import java.util.concurrent.Executors;
 /**
  * 渲染优化工具类（客户端）。
  * 核心思路：在 GPU 压力大的密集场景（大站台、多列车）下，
- * 通过距离、保守视锥和异步遮挡结果，在真正把顶点提交给 GPU 之前跳过不必要的渲染。
+ * 通过距离、保守视锥和遮挡结果，在真正把顶点提交给 GPU 之前跳过不必要的渲染。
  * 覆盖两类目标：
- *   - 列车（TrainRenderOptimizeMixin）：≤TRAIN_RENDER_DISTANCE（180 格）完整渲染；
- *     >180 格完全不渲染。
+ *   - 列车（TrainRenderOptimizeMixin）：≤TRAIN_RENDER_DISTANCE（250 格）完整渲染；
+ *     >250 格完全不渲染。
  *   - 方块实体（BlockEntityRenderOptimizeMixin）：<BLOCK_ENTITY_RENDER_DISTANCE（50 格）
  *     完全渲染；≥50 格完全不渲染（纯距离阈值）。
- *   - 电梯（LiftRenderOptimizeMixin）：复用列车距离阈值。
- * 所有方法均为静态，供各个 Mixin 注入点复用。
+ *   - 电梯（LiftRenderOptimizeMixin）：≤LIFT_RENDER_DISTANCE（50 格）渲染。
+ * 视角快照不变时，下面的判断只读取缓存，不重复做视锥和遮挡计算。
  */
 public final class TrainRenderOptimize {
 
@@ -38,7 +42,7 @@ public final class TrainRenderOptimize {
      * 列车渲染距离（格）。
      * 规则：≤此距离的车厢完整渲染（MTR 原模型，含内饰）；>此距离完全不渲染。
      */
-    public static final double TRAIN_RENDER_DISTANCE = 180.0D; // 将列车距离剔除阈值设置为 180 格。
+    public static final double TRAIN_RENDER_DISTANCE = 250.0D;
 
     /**
      * 方块实体（站牌 / PSD / PID / 时钟 / 站名牌等）的最大渲染距离（格）。
@@ -46,25 +50,37 @@ public final class TrainRenderOptimize {
      */
     public static final double BLOCK_ENTITY_RENDER_DISTANCE = 50.0D;
 
+    /** 电梯的最大渲染距离（格）。 */
+    public static final double LIFT_RENDER_DISTANCE = 50.0D;
+
     /** 无法读取客户端视场角时使用的保守视场角。 */
     private static final double FALLBACK_FOV_TAN_HALF = Math.tan(Math.toRadians(55.0D)); // 计算默认视场角的一半正切值。
     private static volatile double cachedFovTanHalf = FALLBACK_FOV_TAN_HALF; // 缓存当前视场角的一半正切值。
     private static volatile long fovCacheExpiresAt; // 保存视场角缓存的过期时间。
-    private static final long OCCLUSION_REFRESH_NANOS = 150_000_000L; // 限制遮挡检测提交频率，避免每帧重复计算。
-    private static final long OCCLUSION_RESULT_MAX_AGE_NANOS = 200_000_000L; // 限制遮挡结果的有效时间。
     private static final ExecutorService OCCLUSION_EXECUTOR = Executors.newSingleThreadExecutor(runnable -> {
-        Thread thread = new Thread(runnable, "ivr-train-visibility"); // 创建专用的可见性计算线程。
-        thread.setDaemon(true); // 防止线程阻止客户端退出。
-        return thread; // 返回配置完成的后台线程。
-    }); // 初始化遮挡计算线程池。
-    private static final Map<String, OcclusionState> OCCLUSION_STATES = new ConcurrentHashMap<>(); // 保存列车遮挡计算结果。
-    private static final Map<String, Long> OCCLUSION_REQUESTS = new ConcurrentHashMap<>(); // 保存列车最近一次计算请求时间。
-    private static final long BLOCK_ENTITY_VISIBILITY_REFRESH_NANOS = 100_000_000L; // 限制方块实体视锥计算频率。
-    private static final long BLOCK_ENTITY_VISIBILITY_MAX_AGE_NANOS = 250_000_000L; // 限制方块实体视锥结果有效时间。
-    private static final double BLOCK_ENTITY_OCCLUSION_RADIUS = 0.45D; // 将方块实体遮挡采样限制在自身方块内部。
-    private static final int BLOCK_ENTITY_OCCLUSION_CONFIRMATIONS = 3; // 要求连续多次确认后才隐藏方块实体。
-    private static final Map<Long, BlockEntityVisibilityState> BLOCK_ENTITY_VISIBILITY_STATES = new ConcurrentHashMap<>(); // 保存方块实体视锥结果。
-    private static final Map<Long, Long> BLOCK_ENTITY_VISIBILITY_REQUESTS = new ConcurrentHashMap<>(); // 保存方块实体最近请求时间。
+        Thread thread = new Thread(runnable, "ivr-visibility-cache");
+        thread.setDaemon(true);
+        return thread;
+    });
+    private static final double BLOCK_ENTITY_OCCLUSION_RADIUS = 0.45D;
+    private static final double TRAIN_BOUNDING_RADIUS = 12.0D;
+    private static final double LIFT_BOUNDING_RADIUS = 8.0D;
+    private static final Object VIEW_LOCK = new Object();
+    private static final Map<BlockEntity, CachedBlockEntityVisibility> BLOCK_ENTITY_RENDER_CACHE = Collections.synchronizedMap(new WeakHashMap<>());
+    private static final Map<String, MovingVisibilityState> TRAIN_RENDER_CACHE = new ConcurrentHashMap<>();
+    private static final Map<Long, MovingVisibilityState> LIFT_RENDER_CACHE = new ConcurrentHashMap<>();
+    private static volatile ViewSnapshot currentView;
+    private static volatile long currentViewGeneration;
+
+    private static final long OCCLUSION_REFRESH_NANOS = 150_000_000L;
+    private static final long OCCLUSION_RESULT_MAX_AGE_NANOS = 200_000_000L;
+    private static final long BLOCK_ENTITY_VISIBILITY_REFRESH_NANOS = 100_000_000L;
+    private static final long BLOCK_ENTITY_VISIBILITY_MAX_AGE_NANOS = 250_000_000L;
+    private static final int BLOCK_ENTITY_OCCLUSION_CONFIRMATIONS = 3;
+    private static final Map<String, OcclusionState> OCCLUSION_STATES = new ConcurrentHashMap<>();
+    private static final Map<String, Long> OCCLUSION_REQUESTS = new ConcurrentHashMap<>();
+    private static final Map<Long, BlockEntityVisibilityState> BLOCK_ENTITY_VISIBILITY_STATES = new ConcurrentHashMap<>();
+    private static final Map<Long, Long> BLOCK_ENTITY_VISIBILITY_REQUESTS = new ConcurrentHashMap<>();
 
     /* -------------------- 公共方法（供 Mixin 调用） -------------------- */
 
@@ -155,6 +171,224 @@ public final class TrainRenderOptimize {
                 || isOutsidePlane(up.add(forward.scale(tanVertical)).normalize(), 0.0D, rel, radius) // 检查上侧视锥平面。
                 || isOutsidePlane(forward.scale(tanVertical).subtract(up).normalize(), 0.0D, rel, radius) // 检查下侧视锥平面。
                 || isOutsidePlane(forward, 0.05D, rel, radius); // 检查相机前方的近裁剪面。
+    }
+
+    /**
+     * 根据当前视角缓存方块实体的可见性。缓存命中时不会再次计算距离、视锥或顶点前置判断。
+     */
+    public static boolean shouldRenderBlockEntity(BlockEntity blockEntity, double radius) {
+        if (blockEntity == null || blockEntity.getLevel() == null) {
+            return true;
+        }
+        final Level world = blockEntity.getLevel();
+        final ViewSnapshot view = refreshView(world);
+        final CachedBlockEntityVisibility cached = BLOCK_ENTITY_RENDER_CACHE.get(blockEntity);
+        if (cached != null && cached.generation == view.generation) {
+            return cached.visible;
+        }
+
+        final BlockPos pos = blockEntity.getBlockPos();
+        final Vec3 rel = new Vec3(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D).subtract(view.cameraPosition);
+        if (rel.lengthSqr() >= BLOCK_ENTITY_RENDER_DISTANCE * BLOCK_ENTITY_RENDER_DISTANCE
+                || isOutsideFrustumSnapshot(rel, radius, view.cameraYaw, view.cameraPitch, view.fovTanHalf, view.aspect)) {
+            BLOCK_ENTITY_RENDER_CACHE.put(blockEntity, new CachedBlockEntityVisibility(view.generation, false));
+            return false;
+        }
+
+        final CachedBlockEntityVisibility pending = new CachedBlockEntityVisibility(view.generation, true);
+        BLOCK_ENTITY_RENDER_CACHE.put(blockEntity, pending);
+        final boolean[] blockedSamples = captureBlockEntityOcclusionSnapshot(world, view.cameraPosition, pos, radius);
+        OCCLUSION_EXECUTOR.execute(() -> {
+            boolean occluded = true;
+            for (boolean blocked : blockedSamples) {
+                if (!blocked) {
+                    occluded = false;
+                    break;
+                }
+            }
+            if (occluded && pending.generation == currentViewGeneration && BLOCK_ENTITY_RENDER_CACHE.get(blockEntity) == pending) {
+                pending.visible = false;
+            }
+        });
+        return true;
+    }
+
+    private static final class CachedBlockEntityVisibility {
+
+        private final long generation;
+        private volatile boolean visible;
+
+        private CachedBlockEntityVisibility(long generation, boolean visible) {
+            this.generation = generation;
+            this.visible = visible;
+        }
+    }
+
+    /**
+     * 根据当前视角和车厢状态缓存列车车厢的可见性。
+     * 列车移动时只更新发生移动的车厢，视角不变且车厢状态不变时直接复用结果。
+     */
+    public static boolean shouldRenderTrainCar(Level world, long trainId, int carIndex, Vec3 center, float yaw, float pitch, boolean relative) {
+        if (world == null || center == null) {
+            return true;
+        }
+        final ViewSnapshot view = refreshView(world);
+        final String key = trainId + ":" + carIndex;
+        final MovingVisibilityState cached = TRAIN_RENDER_CACHE.get(key);
+        if (cached != null && cached.matches(view.generation, center, yaw, pitch, relative)) {
+            return cached.visible;
+        }
+
+        final Vec3 rel = relative ? center : center.subtract(view.cameraPosition);
+        if (rel.lengthSqr() > TRAIN_RENDER_DISTANCE * TRAIN_RENDER_DISTANCE
+                || isOutsideFrustumSnapshot(rel, TRAIN_BOUNDING_RADIUS, view.cameraYaw, view.cameraPitch, view.fovTanHalf, view.aspect)) {
+            TRAIN_RENDER_CACHE.put(key, new MovingVisibilityState(view.generation, center, yaw, pitch, relative, false));
+            return false;
+        }
+
+        final MovingVisibilityState pending = new MovingVisibilityState(view.generation, center, yaw, pitch, relative, true);
+        TRAIN_RENDER_CACHE.put(key, pending);
+        if (!relative) {
+            final boolean[] blockedSamples = captureOcclusionSnapshot(world, view.cameraPosition, center, yaw);
+            OCCLUSION_EXECUTOR.execute(() -> {
+                boolean occluded = true;
+                for (boolean blocked : blockedSamples) {
+                    if (!blocked) {
+                        occluded = false;
+                        break;
+                    }
+                }
+                if (occluded && pending.generation == currentViewGeneration && TRAIN_RENDER_CACHE.get(key) == pending) {
+                    pending.visible = false;
+                }
+            });
+        }
+        return true;
+    }
+
+    /** 根据当前视角和电梯状态缓存电梯的可见性。 */
+    public static boolean shouldRenderLift(Level world, long liftId, Vec3 center, boolean relative) {
+        if (world == null || center == null) {
+            return true;
+        }
+        final ViewSnapshot view = refreshView(world);
+        final MovingVisibilityState cached = LIFT_RENDER_CACHE.get(liftId);
+        if (cached != null && cached.matches(view.generation, center, 0.0F, 0.0F, relative)) {
+            return cached.visible;
+        }
+
+        final Vec3 rel = relative ? center : center.subtract(view.cameraPosition);
+        if (rel.lengthSqr() > LIFT_RENDER_DISTANCE * LIFT_RENDER_DISTANCE
+                || isOutsideFrustumSnapshot(rel, LIFT_BOUNDING_RADIUS, view.cameraYaw, view.cameraPitch, view.fovTanHalf, view.aspect)) {
+            LIFT_RENDER_CACHE.put(liftId, new MovingVisibilityState(view.generation, center, 0.0F, 0.0F, relative, false));
+            return false;
+        }
+
+        final MovingVisibilityState pending = new MovingVisibilityState(view.generation, center, 0.0F, 0.0F, relative, true);
+        LIFT_RENDER_CACHE.put(liftId, pending);
+        if (!relative) {
+            final boolean[] blockedSamples = captureLiftOcclusionSnapshot(world, view.cameraPosition, center);
+            OCCLUSION_EXECUTOR.execute(() -> {
+                boolean occluded = true;
+                for (boolean blocked : blockedSamples) {
+                    if (!blocked) {
+                        occluded = false;
+                        break;
+                    }
+                }
+                if (occluded && pending.generation == currentViewGeneration && LIFT_RENDER_CACHE.get(liftId) == pending) {
+                    pending.visible = false;
+                }
+            });
+        }
+        return true;
+    }
+
+    private static ViewSnapshot refreshView(Level world) {
+        final Minecraft minecraft = Minecraft.getInstance();
+        final Camera camera = minecraft.gameRenderer.getMainCamera();
+        final Vec3 cameraPosition = camera.getPosition();
+        final float cameraYaw = camera.getYRot();
+        final float cameraPitch = camera.getXRot();
+        final double fovTanHalf = getFovTanHalf();
+        final int width = minecraft.getWindow().getWidth();
+        final int height = minecraft.getWindow().getHeight();
+        final ViewSnapshot previous = currentView;
+        if (previous != null && previous.matches(world, cameraPosition, cameraYaw, cameraPitch, fovTanHalf, width, height)) {
+            return previous;
+        }
+        synchronized (VIEW_LOCK) {
+            final ViewSnapshot current = currentView;
+            if (current != null && current.matches(world, cameraPosition, cameraYaw, cameraPitch, fovTanHalf, width, height)) {
+                return current;
+            }
+            final ViewSnapshot refreshed = new ViewSnapshot(world, cameraPosition, cameraYaw, cameraPitch, fovTanHalf, width, height, currentViewGeneration + 1);
+            currentView = refreshed;
+            currentViewGeneration = refreshed.generation;
+            BLOCK_ENTITY_RENDER_CACHE.clear();
+            TRAIN_RENDER_CACHE.clear();
+            LIFT_RENDER_CACHE.clear();
+            return refreshed;
+        }
+    }
+
+    private static final class ViewSnapshot {
+
+        private final Level world;
+        private final Vec3 cameraPosition;
+        private final float cameraYaw;
+        private final float cameraPitch;
+        private final double fovTanHalf;
+        private final double aspect;
+        private final long generation;
+
+        private ViewSnapshot(Level world, Vec3 cameraPosition, float cameraYaw, float cameraPitch, double fovTanHalf, int width, int height, long generation) {
+            this.world = world;
+            this.cameraPosition = cameraPosition;
+            this.cameraYaw = cameraYaw;
+            this.cameraPitch = cameraPitch;
+            this.fovTanHalf = fovTanHalf;
+            this.aspect = (double) width / Math.max(1, height);
+            this.generation = generation;
+        }
+
+        private boolean matches(Level world, Vec3 position, float yaw, float pitch, double fov, int width, int height) {
+            return this.world == world
+                    && this.cameraPosition.x == position.x
+                    && this.cameraPosition.y == position.y
+                    && this.cameraPosition.z == position.z
+                    && this.cameraYaw == yaw
+                    && this.cameraPitch == pitch
+                    && this.fovTanHalf == fov
+                    && this.aspect == (double) width / Math.max(1, height);
+        }
+    }
+
+    private static final class MovingVisibilityState {
+
+        private final long generation;
+        private final Vec3 center;
+        private final float yaw;
+        private final float pitch;
+        private final boolean relative;
+        private volatile boolean visible;
+
+        private MovingVisibilityState(long generation, Vec3 center, float yaw, float pitch, boolean relative, boolean visible) {
+            this.generation = generation;
+            this.center = center;
+            this.yaw = yaw;
+            this.pitch = pitch;
+            this.relative = relative;
+            this.visible = visible;
+        }
+
+        private boolean matches(long generation, Vec3 center, float yaw, float pitch, boolean relative) {
+            return this.generation == generation
+                    && this.center.distanceToSqr(center) < 0.0001D
+                    && angleDifference(this.yaw, yaw) < 0.001F
+                    && angleDifference(this.pitch, pitch) < 0.001F
+                    && this.relative == relative;
+        }
     }
 
     /**
@@ -383,6 +617,21 @@ public final class TrainRenderOptimize {
         return blocked; // 返回不可变遮挡快照。
     }
 
+    private static boolean[] captureLiftOcclusionSnapshot(Level world, Vec3 camera, Vec3 center) {
+        double[] samples = {-1.0D, 0.0D, 1.0D};
+        boolean[] blocked = new boolean[samples.length * samples.length * samples.length];
+        BlockPos ignoredPos = new BlockPos((int) Math.floor(center.x), (int) Math.floor(center.y), (int) Math.floor(center.z));
+        int index = 0;
+        for (double x : samples) {
+            for (double y : samples) {
+                for (double z : samples) {
+                    blocked[index++] = isRayBlocked(world, camera, center.add(x, y, z), ignoredPos);
+                }
+            }
+        }
+        return blocked;
+    }
+
     private static boolean isRayBlocked(net.minecraft.world.level.Level world, Vec3 start, Vec3 end, BlockPos ignoredPos) {
         Vec3 direction = end.subtract(start); // 计算射线方向和长度向量。
         double distance = direction.length(); // 计算射线总长度。
@@ -487,20 +736,10 @@ public final class TrainRenderOptimize {
         return normal.dot(rel) - constant < -radius; // 判断包围球是否完全位于平面外侧。
     }
 
-    /**
-     * 反射读取 Lift（父类）的 currentPositionX/Y/Z 字段。
-     * 父类字段无法通过 @Shadow 在 LiftClient 目标上可靠定位，改用反射。
-     *
-     * @param liftClient 电梯实例（LiftClient 继承 Lift）
-     * @return [x, y, z]；失败时返回 null
-     */
+    /** 返回电梯当前的世界位置。 */
     public static double[] getLiftPosition(mtr.data.LiftClient liftClient) {
         try {
-            Class<?> clazz = liftClient.getClass().getSuperclass();
-            double x = clazz.getDeclaredField("currentPositionX").getDouble(liftClient);
-            double y = clazz.getDeclaredField("currentPositionY").getDouble(liftClient);
-            double z = clazz.getDeclaredField("currentPositionZ").getDouble(liftClient);
-            return new double[]{x, y, z};
+            return new double[]{liftClient.getPositionX(), liftClient.getPositionY(), liftClient.getPositionZ()};
         } catch (Exception e) {
             return null;
         }

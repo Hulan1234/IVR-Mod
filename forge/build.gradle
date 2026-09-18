@@ -1,12 +1,25 @@
 allprojects {
-    version = project.findProperty('mod_version') ?: '1.2-beta'
-    group = project.findProperty('maven_group') ?: 'net.hulan'
+    version = findProperty('mod_version') ?: '1.2-beta'
+    group = findProperty('maven_group') ?: 'net.hulan'
 
     repositories {
+        // Loom 1.13 upgrades Minecraft's LWJGL libraries to 3.3.2 and
+        // resolves them from this explicitly named repository.
+        maven {
+            name = 'MavenCentralLWJGL'
+            url = 'https://maven.aliyun.com/repository/central/'
+            content { includeGroup 'org.lwjgl' }
+        }
+        maven {
+            name = 'MavenCentralLWJGLFallback'
+            url = 'https://repo.maven.apache.org/maven2/'
+            content { includeGroup 'org.lwjgl' }
+        }
         mavenCentral()
-        maven { name = 'MavenCentralApache'; url = 'https://repo.maven.apache.org/maven2/' }
-        maven { url = 'https://maven.minecraftforge.net/' }
-        maven { url = 'https://libraries.minecraft.net/' }
+        maven { name = 'Forge'; url = 'https://maven.minecraftforge.net/' }
+        maven { name = 'Architectury'; url = 'https://maven.architectury.dev/' }
+        maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+        maven { name = 'MinecraftLibraries'; url = 'https://libraries.minecraft.net/' }
     }
 }
 
@@ -17,13 +30,6 @@ subprojects {
         implementation 'com.google.code.gson:gson:2.14.0'
     }
 
-    tasks.withType(JavaCompile).configureEach {
-        options.encoding = 'UTF-8'
-        // Architectury Loom 1.13 runs on Java 21, while these Minecraft
-        // targets remain Java 17 compatible.
-        options.release = 17
-    }
-
     sourceSets {
         main {
             java.srcDirs = ['../../common/main/java', '../src/main/java', 'src/main/java']
@@ -31,8 +37,30 @@ subprojects {
         }
     }
 
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.release = 17
+    }
+
     java {
         toolchain.languageVersion = JavaLanguageVersion.of(21)
+        withSourcesJar()
         archivesBaseName = "IVR-FORGE-${project.minecraft_version}"
+    }
+
+    // Keep the remapped Forge jars together in the root mods directory,
+    // matching the output workflow used by the Fabric project.
+    plugins.withId('dev.architectury.loom') {
+        tasks.named('remapJar') {
+            destinationDirectory = file('../mods')
+        }
+
+        tasks.register('copyJar', Delete) {
+            delete layout.buildDirectory.dir('devlibs')
+        }
+
+        tasks.named('assemble') {
+            finalizedBy 'copyJar'
+        }
     }
 }

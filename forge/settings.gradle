@@ -10,17 +10,23 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
+    // Architectury Loom adds its LWJGL repository to each project. Allow that
+    // repository to participate in resolution instead of discarding it here.
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         mavenCentral()
-        maven { name = 'MavenCentralApache'; url = 'https://repo.maven.apache.org/maven2/' }
         maven { name = 'Forge'; url = 'https://maven.minecraftforge.net/' }
         maven { name = 'Architectury'; url = 'https://maven.architectury.dev/' }
         maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+        maven { name = 'MinecraftLibraries'; url = 'https://libraries.minecraft.net/' }
     }
 }
 
 rootProject.name = 'forge'
-include('1_18_2', '1_19_2', '1_19_4')
+include('1_16_5', '1_17_1', '1_18_2', '1_19_2', '1_19_4')
+
+project(':1_16_5').projectDir = file('1_16_5')
+project(':1_17_1').projectDir = file('1_17_1')
 
 project(':1_18_2').projectDir = file('1_18_2')
 project(':1_19_2').projectDir = file('1_19_2')

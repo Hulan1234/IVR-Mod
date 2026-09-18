@@ -3,29 +3,19 @@ plugins {
     id 'dev.architectury.loom' version '1.13.469'
 }
 
-repositories {
-    maven { name = 'MavenCentralApache'; url = 'https://repo.maven.apache.org/maven2/' }
-    maven { url = 'https://maven.minecraftforge.net/' }
-    maven { url = 'https://maven.architectury.dev/' }
-    maven { url = 'https://maven.fabricmc.net/' }
-    maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
-}
-
 loom { silentMojangMappingsLicense() }
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings loom.officialMojangMappings()
-    modImplementation "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
+    forge "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
     modImplementation 'dev.architectury:architectury-forge:4.12.94'
     modImplementation(files("lib/MTR-forge-1.18.2-3.2.2-hotfix-1.jar"))
-
-
-    // Common:
+    compileOnly(annotationProcessor('io.github.llamalad7:mixinextras-common:0.5.5'))
+    implementation(include('io.github.llamalad7:mixinextras-forge:0.5.5'))
     annotationProcessor 'org.ow2.asm:asm-debug-all:5.2'
     annotationProcessor 'com.google.guava:guava:32.1.2-jre'
     annotationProcessor 'com.google.code.gson:gson:2.8.9'
 }
 
 architectury { minecraft = project.minecraft_version }
-
