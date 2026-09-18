@@ -1,7 +1,6 @@
 package net.hulan.ivr.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import mtr.block.BlockRailwaySign;
 import mtr.block.BlockStationNameBase;
 import mtr.block.IBlock;
 import mtr.client.CustomResources;

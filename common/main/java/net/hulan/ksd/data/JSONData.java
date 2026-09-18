@@ -3,8 +3,6 @@ package net.hulan.ksd.data;
 import com.google.gson.stream.JsonWriter;
 
 import java.io.IOException;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public abstract class JSONData {
 
@@ -18,11 +16,4 @@ public abstract class JSONData {
 
     public abstract boolean equals(Object obj);
 
-    protected static <T> T parseId(String id, Function<String, T> supplier, Supplier<T> supplierWhenException) {
-        try {
-            return supplier.apply(id);
-        } catch (RuntimeException e) {
-            return supplierWhenException.get();
-        }
-    }
 }

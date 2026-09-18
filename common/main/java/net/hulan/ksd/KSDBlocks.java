@@ -3,7 +3,6 @@ package net.hulan.ksd;
 import mtr.RegistryObject;
 import net.hulan.ksd.block.*;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 
 public interface KSDBlocks {
     RegistryObject<Block> KP_POLE_NORMAL = new RegistryObject<>(() -> new BlockKCRPlatformPole(BlockKCRPlatformPole.Style.NORMAL));

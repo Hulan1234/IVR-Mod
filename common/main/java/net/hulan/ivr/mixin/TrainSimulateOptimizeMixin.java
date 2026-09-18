@@ -9,9 +9,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * 列车模拟入口兼容 Mixin。
- *
  * 目的：保留 MTR 的整列模拟，让车厢级渲染优化能够获得每节车厢的实时坐标。
- *
  * 当前只保留注入点，不在整列模拟入口取消列车；具体渲染剔除由 renderCar 按车厢执行。
  */
 @Mixin(TrainClient.class)

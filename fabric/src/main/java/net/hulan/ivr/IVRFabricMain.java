@@ -8,7 +8,6 @@ import mtr.mappings.BlockEntityMapper;
 import mtr.mappings.FabricRegistryUtilities;
 import mtr.mappings.RegistryUtilities;
 import net.fabricmc.api.ModInitializer;
-import net.hulan.ksd.KSDMain;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;

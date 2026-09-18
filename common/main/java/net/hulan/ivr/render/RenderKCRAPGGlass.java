@@ -38,8 +38,8 @@ public class RenderKCRAPGGlass extends RenderKCRRouteBase<BlockKCRAPGGlass.TileE
             boolean isRight = isRight(state);
             RenderTrains.scheduleRender(KSDClientData.DATA_CACHE.getColorStrip(platformId).resourceLocation, false, RenderTrains.QueuedRenderLayer.EXTERIOR, (matrices, vertexConsumer) -> {
                 storedMatrixTransformations.transform(matrices);
-                IDrawing.drawTexture(matrices, vertexConsumer, isLeft ? sidePadding : 0.0F, 0.75F, 0.0F, isRight ? 1.0F - sidePadding : 1.0F, 0.78125F, 0.0F, facing, color, light);
-                IDrawing.drawTexture(matrices, vertexConsumer, isRight ? 1.0F - sidePadding : 1.0F, 0.75F, 0.125F, isLeft ? sidePadding : 0.0F, 0.78125F, 0.125F, facing, color, light);
+                IDrawing.drawTexture(matrices, vertexConsumer, isLeft ? sidePadding : 0.0F, COLOR_STRIP_START, 0.0F, isRight ? 1.0F - sidePadding : 1.0F, COLOR_STRIP_END, 0.0F, facing, color, light);
+                IDrawing.drawTexture(matrices, vertexConsumer, isRight ? 1.0F - sidePadding : 1.0F, COLOR_STRIP_START, 0.125F, isLeft ? sidePadding : 0.0F, COLOR_STRIP_END, 0.125F, facing, color, light);
                 matrices.popPose();
             });
             float width = (float)(leftBlocks + rightBlocks + 1) - sidePadding * 2.0F;
