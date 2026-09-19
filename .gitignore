@@ -123,3 +123,10 @@ run/
 *.psd
 *.psb
 /.gradle-codex/
+
+# Modrinth account credentials and private publishing configuration
+modrinth.properties
+**/modrinth.properties
+.env
+.env.*
+/CHANGELOG.md

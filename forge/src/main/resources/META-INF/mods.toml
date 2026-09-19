@@ -1,0 +1,79 @@
+modLoader = "javafml"
+loaderVersion = "[36,)"
+license = "MIT"
+
+[[mods]]
+modId = "ivr"
+version = "${mod_version}"
+displayName = "IVR"
+authors = "kfa-Textures, FrostyHulan-Coding"
+description = "Infrastructure and transportation additions for Minecraft Transit Railway."
+
+[[mods]]
+modId = "ksd"
+version = "${mod_version}"
+displayName = "KSD"
+authors = "kfa-Textures, FrostyHulan-Coding"
+description = "Railway and ticketing additions for Minecraft Transit Railway."
+
+[[mixins]]
+config = "IVR.mixins.json"
+
+[[mixins]]
+config = "ksd.mixins.json"
+
+[[dependencies.ivr]]
+modId = "forge"
+mandatory = true
+versionRange = "[36,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.ivr]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[${minecraft_version}]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.ivr]]
+modId = "architectury"
+mandatory = true
+versionRange = "[1.0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.ivr]]
+modId = "mtr"
+mandatory = true
+versionRange = "[1.0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.ksd]]
+modId = "forge"
+mandatory = true
+versionRange = "[36,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.ksd]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[${minecraft_version}]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.ksd]]
+modId = "architectury"
+mandatory = true
+versionRange = "[1.0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.ksd]]
+modId = "mtr"
+mandatory = true
+versionRange = "[1.0,)"
+ordering = "AFTER"
+side = "BOTH"

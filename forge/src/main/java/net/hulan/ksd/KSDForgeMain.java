@@ -62,10 +62,10 @@ public class KSDForgeMain {
         });
     }
 
-    private class KSDForgeEventBus {
+    public static class KSDForgeEventBus {
 
         @SubscribeEvent
-        private static void onClientSetup(final FMLClientSetupEvent event) {
+        public static void onClientSetup(final FMLClientSetupEvent event) {
             KSDClientMain.init();
         }
     }

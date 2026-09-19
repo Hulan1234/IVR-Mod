@@ -1,0 +1,4 @@
+token=YOUR_MODRINTH_TOKEN
+project_name=IVR
+project_id=YOUR_MODRINTH_PROJECT_ID
+version_type=release

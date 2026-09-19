@@ -1,3 +1,15 @@
+plugins {
+    id 'com.modrinth.minotaur' version '2.8.7' apply false
+}
+
+def modrinthConfig = new Properties()
+def modrinthConfigFile = file('../modrinth.properties')
+if (modrinthConfigFile.isFile()) {
+    modrinthConfigFile.withInputStream { modrinthConfig.load(it) }
+}
+ext.modrinthConfig = modrinthConfig
+ext.modrinthChangelogFile = file('../CHANGELOG.md')
+
 allprojects {
     version = findProperty('mod_version') ?: '1.2-beta'
     group = findProperty('maven_group') ?: 'net.hulan'
@@ -42,6 +54,18 @@ subprojects {
         options.release = 17
     }
 
+    tasks.withType(ProcessResources).configureEach {
+        filesMatching('META-INF/mods.toml') {
+            expand(project.properties)
+        }
+    }
+
+    tasks.withType(Jar).configureEach {
+        manifest {
+            attributes('MixinConfigs': 'IVR.mixins.json,ksd.mixins.json')
+        }
+    }
+
     java {
         toolchain.languageVersion = JavaLanguageVersion.of(21)
         withSourcesJar()
@@ -62,5 +86,41 @@ subprojects {
         tasks.named('assemble') {
             finalizedBy 'copyJar'
         }
+
+        def config = rootProject.ext.modrinthConfig
+        def modrinthToken = config.getProperty('token', '')
+        def modrinthProjectId = config.getProperty('project_id_forge',
+            config.getProperty('project_id', ''))
+        def modrinthProjectName = config.getProperty('project_name', 'IVR')
+        def modrinthVersionType = config.getProperty('version_type', 'release')
+        def version = rootProject.findProperty('mod_version') ?: project.version
+        def changelogFile = rootProject.ext.modrinthChangelogFile
+
+        modrinth {
+            token = modrinthToken
+            projectId = modrinthProjectId
+            versionNumber = "${version}-${project.minecraft_version}-forge"
+            versionName = "${modrinthProjectName} ${version} - Forge ${project.minecraft_version}"
+            versionType = modrinthVersionType
+            uploadFile = tasks.named('remapJar')
+            gameVersions = [project.minecraft_version]
+            loaders = ['forge']
+            if (changelogFile.isFile()) {
+                changelog = changelogFile.getText('UTF-8')
+            }
+        }
+
+        tasks.register('publishModrinth') {
+            group = 'publishing'
+            description = 'Uploads the remapped Forge jar to Modrinth.'
+            dependsOn tasks.named('remapJar')
+            dependsOn tasks.named('modrinth')
+        }
     }
+}
+
+tasks.register('publishModrinth') {
+    group = 'publishing'
+    description = 'Uploads all Forge versions to Modrinth.'
+    dependsOn subprojects.collect { it.tasks.named('publishModrinth') }
 }

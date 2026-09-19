@@ -13,6 +13,8 @@ def runChild = { String name, String directory, String childTask ->
 
 def fabricBuild = runChild('fabricBuild', 'fabric', 'build')
 def forgeBuild = runChild('forgeBuild', 'forge', 'build')
+def fabricPublishModrinth = runChild('fabricPublishModrinth', 'fabric', 'publishModrinth')
+def forgePublishModrinth = runChild('forgePublishModrinth', 'forge', 'publishModrinth')
 
 tasks.register('build') {
     group = 'build'
@@ -27,4 +29,10 @@ tasks.register('clean') {
         runChild('fabricClean', 'fabric', 'clean'),
         runChild('forgeClean', 'forge', 'clean')
     )
+}
+
+tasks.register('publishModrinth') {
+    group = 'publishing'
+    description = 'Uploads all Fabric and Forge versions to Modrinth.'
+    dependsOn(fabricPublishModrinth, forgePublishModrinth)
 }

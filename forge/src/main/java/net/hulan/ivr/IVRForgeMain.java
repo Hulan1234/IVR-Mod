@@ -82,10 +82,10 @@ public class IVRForgeMain {
         BLOCK_ENTITY_TYPES.register(path, blockEntityType::get);
     }
 
-    private class IVRForgeEventBus {
+    public static class IVRForgeEventBus {
 
         @SubscribeEvent
-        private static void onClientSetup(final FMLClientSetupEvent event) {
+        public static void onClientSetup(final FMLClientSetupEvent event) {
             IVRClient.init();
         }
     }

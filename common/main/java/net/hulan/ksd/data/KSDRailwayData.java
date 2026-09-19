@@ -117,6 +117,10 @@ public class KSDRailwayData extends PersistentStateMapper {
     }
 
     public void onPlayerJoin(ServerPlayer serverPlayer) {
+        // MTR may finish loading its RailwayData after this persistent state is created.
+        // Retry here so the first join does not receive an empty snapshot.
+        syncFromMTR();
+        dataCache.sync();
         KSDPacketServer.sendAllInChunks(serverPlayer, stations, platforms, routes);
     }
 
@@ -150,17 +154,22 @@ public class KSDRailwayData extends PersistentStateMapper {
 
     public void syncFromMTR() {
         try {
-            if (syncedFromMTR) return;
             RailwayData railwayData = RailwayData.getInstance(world);
-            if (railwayData != null) {
+            if (syncedFromMTR && (!stations.isEmpty() || !platforms.isEmpty() || !routes.isEmpty())) {
+                return;
+            }
+            if (railwayData != null && (!railwayData.stations.isEmpty()
+                    || !railwayData.platforms.isEmpty()
+                    || !railwayData.routes.isEmpty())) {
                 stations.clear();
                 stations.addAll(KSDStation.fromMTRStations(railwayData.stations));
                 platforms.clear();
                 platforms.addAll(KSDPlatform.fromMTRPlatforms(railwayData.platforms));
                 routes.clear();
                 routes.addAll(KSDRoute.fromMTRRoutes(railwayData.routes));
+                syncedFromMTR = true;
+                setDirty();
             }
-            syncedFromMTR = true;
         } catch (Exception e) {
             e.printStackTrace();
             syncedFromMTR = false;

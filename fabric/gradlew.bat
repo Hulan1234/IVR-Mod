@@ -38,6 +38,11 @@ for %%i in ("%APP_HOME%") do set APP_HOME=%%~fi
 @rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
 set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"
 
+@rem Use the shared IVR Gradle JVM before inspecting JAVA_HOME.
+for /f "tokens=1,* delims==" %%A in ('findstr /b "org.gradle.java.home=" "%APP_HOME%..\gradle.properties" 2^>NUL') do set "JAVA_HOME=%%B"
+@rem Use the shared IVR Gradle memory settings.
+for /f "tokens=1,* delims==" %%A in ('findstr /b "org.gradle.jvmargs=" "%APP_HOME%..\gradle.properties" 2^>NUL') do set "DEFAULT_JVM_OPTS=%DEFAULT_JVM_OPTS% %%B"
+
 @rem Find java.exe
 if defined JAVA_HOME goto findJavaFromJavaHome
 

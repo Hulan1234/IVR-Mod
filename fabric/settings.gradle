@@ -8,6 +8,20 @@ pluginManagement {
     }
 }
 
+def sharedProperties = new Properties()
+def sharedPropertiesFile = file('../gradle.properties')
+if (sharedPropertiesFile.isFile()) {
+    sharedPropertiesFile.withInputStream { sharedProperties.load(it) }
+}
+
+gradle.beforeProject { project ->
+    sharedProperties.each { key, value ->
+        if (!project.hasProperty(key)) {
+            project.ext.set(key.toString(), value.toString())
+        }
+    }
+}
+
 rootProject.name = 'fabric'
 
 // These are real Gradle subprojects. Keep the directory mapping explicit so
