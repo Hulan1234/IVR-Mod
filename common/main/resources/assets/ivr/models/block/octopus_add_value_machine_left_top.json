@@ -30,7 +30,7 @@
 			"to": [16, 16, -0.1],
 			"rotation": {"angle": 0, "axis": "y", "origin": [-16, -9, -2.1]},
 			"faces": {
-				"north": {"uv": [0, 0, 8, 4.65464], "texture": "#2"}
+				"north": {"uv": [0, 0, 8, 3.15259], "texture": "#2"}
 			}
 		},
 		{

@@ -15,6 +15,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
+import org.jetbrains.annotations.NotNull;
 
 public class FareAdjustmentsScreen extends ScreenMapper implements KSDGui {
 
@@ -24,17 +25,16 @@ public class FareAdjustmentsScreen extends ScreenMapper implements KSDGui {
     private final TextureButton buttonOpenOctopusFareAdjustmentScreen;
     private final TextureButton buttonOpenFCFareAdjustmentScreen;
 
-    public FareAdjustmentsScreen(int mtrBalance) {
+    public FareAdjustmentsScreen(int mtrBalance, BlockPos storeBlockPos) {
         super(Text.literal(""));
         buttonOpenSTFareAdjustmentScreen = new TextureButton(Text.translatable("gui.ksd.st_fare_adjustment"), button ->
-                openSTFAScreen(mtrBalance, this));
+                openSTFAScreen(mtrBalance, this, storeBlockPos));
         buttonOpenOctopusFareAdjustmentScreen = new TextureButton(Text.translatable("gui.ksd.octopus_fare_adjustment"), button ->
-                openOctopusFareAdjustmentScreen(mtrBalance, this));
+                openOctopusFareAdjustmentScreen(mtrBalance, this, storeBlockPos));
         buttonOpenFCFareAdjustmentScreen = new TextureButton(Text.translatable("gui.ksd.fc_fare_adjustment"), button ->
-                openFCFareAdjustmentScreen(mtrBalance, this));
+                openFCFareAdjustmentScreen(mtrBalance, this, storeBlockPos));
     }
 
-    @Override
     protected void init() {
         super.init();
         final int panelLeft = width / 2 - PANEL_WIDTH / 2;
@@ -52,24 +52,21 @@ public class FareAdjustmentsScreen extends ScreenMapper implements KSDGui {
         addDrawableChild(buttonOpenFCFareAdjustmentScreen);
     }
 
-    @Override
-    public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
+    public void render(@NotNull PoseStack matrices, int mouseX, int mouseY, float delta) {
         renderBackground(matrices);
         KSDGui.renderBg(matrices, width, height, PANEL_WIDTH, PANEL_HEIGHT);
         drawCenteredString(matrices, Minecraft.getInstance().font, title, width / 2, height / 2 - PANEL_HEIGHT / 2 + 7, IGui.ARGB_WHITE);
         super.render(matrices, mouseX, mouseY, delta);
     }
 
-    @Override
     public boolean isPauseScreen() {
         return false;
     }
 
-    public static void openSTFAScreen(int mtrBalance, ScreenMapper parent) {
+    public static void openSTFAScreen(int mtrBalance, ScreenMapper parent, BlockPos storeBlockPos) {
         Minecraft minecraft = Minecraft.getInstance();
         Player player = minecraft.player;
         if (player != null) {
-            BlockPos storeBlockPos = player.blockPosition();
             if (!(minecraft.screen instanceof STFareAdjustmentScreen)) {
                 UtilitiesClient.setScreen(minecraft, new PutItemScreen(
                         "item.ksd.single_ticket",
@@ -96,11 +93,10 @@ public class FareAdjustmentsScreen extends ScreenMapper implements KSDGui {
         }
     }
 
-    public static void openOctopusFareAdjustmentScreen(int mtrBalance, ScreenMapper parent) {
+    public static void openOctopusFareAdjustmentScreen(int mtrBalance, ScreenMapper parent, BlockPos storeBlockPos) {
         Minecraft minecraft = Minecraft.getInstance();
         Player player = minecraft.player;
         if (player != null) {
-            BlockPos storeBlockPos = player.blockPosition();
             if (!(minecraft.screen instanceof OctopusFareAdjustmentScreen)) {
                 UtilitiesClient.setScreen(minecraft, new PutItemScreen(
                         "item.ksd.octopus",
@@ -127,11 +123,10 @@ public class FareAdjustmentsScreen extends ScreenMapper implements KSDGui {
         }
     }
 
-    public static void openFCFareAdjustmentScreen(int mtrBalance, ScreenMapper parent) {
+    public static void openFCFareAdjustmentScreen(int mtrBalance, ScreenMapper parent, BlockPos storeBlockPos) {
         Minecraft minecraft = Minecraft.getInstance();
         Player player = minecraft.player;
         if (player != null) {
-            BlockPos storeBlockPos = player.blockPosition();
             if (!(minecraft.screen instanceof OctopusFareAdjustmentScreen)) {
                 UtilitiesClient.setScreen(minecraft, new FCFareAdjustmentScreen(
                         mtrBalance,

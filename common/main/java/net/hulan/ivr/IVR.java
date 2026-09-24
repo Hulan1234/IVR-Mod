@@ -34,6 +34,8 @@ public class IVR implements IVRPacket, IVRBlocks, IVRBlockEntityTypes, IVRCreati
         registerItem.accept("kcr_psd_door_2", IVRItems.KCR_PSD_DOOR_2);
         registerItem.accept("kcr_psd_glass_2", IVRItems.KCR_PSD_GLASS_2);
         registerItem.accept("kcr_psd_glass_end_2", IVRItems.KCR_PSD_GLASS_END_2);
+        registerItem.accept("tickets_spawn_egg", IVRItems.TICKETS_SPAWN_EGG);
+        registerItem.accept("fa_spawn_egg", IVRItems.FA_SPAWN_EGG);
         registerBlockItem.accept("classical_sign_1_even", CLASSICAL_SIGN_1_EVEN, IVR_);
         registerBlockItem.accept("classical_sign_1_odd", CLASSICAL_SIGN_1_ODD, IVR_);
         registerBlockItem.accept("classical_sign_2_even", CLASSICAL_SIGN_2_EVEN, IVR_);

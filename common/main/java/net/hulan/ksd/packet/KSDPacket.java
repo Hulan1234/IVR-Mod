@@ -10,6 +10,7 @@ public interface KSDPacket {
     ResourceLocation KSD_PACKET_OPEN_KCR_ST_MACHINE_SCREEN = new ResourceLocation("ksd", "packet_open_kcr_st_machine_screen");
     ResourceLocation KSD_PACKET_OPEN_APPLY_OCTOPUS_SCREEN = new ResourceLocation("ksd", "packet_open_apply_octopus_screen");
     ResourceLocation KSD_PACKET_OPEN_ADD_VALUE_SCREEN = new ResourceLocation("ksd", "packet_open_add_value_screen");
+    ResourceLocation KSD_PACKET_NPC_INTERACTION = new ResourceLocation("ksd", "packet_npc_interaction");
     ResourceLocation KSD_PACKET_PURCHASE_ST = new ResourceLocation("ksd", "packet_purchase_st");
     ResourceLocation KSD_PACKET_ADJUST_ST_FARE = new ResourceLocation("ksd", "packet_adjust_st_fare");
     ResourceLocation KSD_PACKET_ADJUST_OCTOPUS_FARE = new ResourceLocation("ksd", "packet_adjust_octopus_fare");

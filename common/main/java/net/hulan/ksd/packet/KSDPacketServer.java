@@ -6,9 +6,12 @@ import mtr.data.*;
 import mtr.mappings.Utilities;
 import mtr.packet.PacketTrainDataBase;
 import net.hulan.ivr.block.StorableBlockEntity;
+import net.hulan.ivr.item.NPCSpawnEgg;
+import net.hulan.ivr.entity.NPC;
 import net.hulan.ksd.data.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -26,6 +29,33 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
+
+    public static final String NPC_ROLE_TAG = "ivr_role";
+
+    public static String getNPCRole(NPC npc) {
+        CompoundTag tag = new CompoundTag();
+        npc.saveWithoutId(tag);
+        if (tag.contains(NPC_ROLE_TAG)) {
+            return tag.getString(NPC_ROLE_TAG);
+        }
+        return npc.getRole();
+    }
+
+    public static void receiveNPCInteraction(MinecraftServer server, ServerPlayer player, FriendlyByteBuf packet) {
+        final int entityId = packet.readVarInt();
+        server.execute(() -> {
+            if (!(player.level.getEntity(entityId) instanceof NPC npc)
+                    || npc.distanceToSqr(player) > 36.0D) {
+                return;
+            }
+            final String role = getNPCRole(npc);
+            if (NPCSpawnEgg.TICKETS_ROLE.equals(role)) {
+                openTicketsScreenS2C(player, npc.blockPosition());
+            } else if (NPCSpawnEgg.FA_ROLE.equals(role)) {
+                openFareAdjustmentsScreenS2C(player, npc.blockPosition());
+            }
+        });
+    }
     
     private static final int PACKET_CHUNK_SIZE = (int) Math.pow(2.0F, 14.0F);
 
@@ -53,9 +83,10 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
         Registry.sendToPlayer(player, KSD_PACKET_OPEN_KCR_ST_MACHINE_SCREEN, packet);
     }
 
-    public static void openFareAdjustmentsScreenS2C(ServerPlayer player) {
+    public static void openFareAdjustmentsScreenS2C(ServerPlayer player, BlockPos pos) {
         int balance = TicketSystem.getPlayerScore(player.getLevel(), player, "mtr_balance").getScore();
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
+        packet.writeBlockPos(pos);
         packet.writeInt(balance);
         Registry.sendToPlayer(player, KSD_PACKET_OPEN_FARE_ADJUSTMENT_SCREEN, packet);
     }

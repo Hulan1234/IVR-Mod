@@ -50,5 +50,9 @@
   "item.ivr.kcr_psd_glass": "KCR Platform Screen Doors",
   "item.ivr.kcr_psd_glass_2": "KCR Platform Screen Doors",
   "item.ivr.kcr_psd_glass_end": "KCR Platform Screen Doors",
-  "item.ivr.kcr_psd_glass_end_2": "KCR Platform Screen Doors"
+  "item.ivr.kcr_psd_glass_end_2": "KCR Platform Screen Doors",
+  "item.ivr.tickets_spawn_egg": "Staff Spawn Egg(Tickets)",
+  "item.ivr.fa_spawn_egg": "Staff Spawn Egg(Fare Adjustments)",
+  "entity.ivr.tickets_npc": "Ticket Clerk",
+  "entity.ivr.fare_adjustments_npc": "Fare Inspector"
 }

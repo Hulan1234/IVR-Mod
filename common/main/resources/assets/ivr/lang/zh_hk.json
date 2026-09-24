@@ -50,5 +50,9 @@
   "item.ivr.kcr_psd_glass": "九鐵月台幕門",
   "item.ivr.kcr_psd_glass_2": "九鐵半玻璃月台幕門",
   "item.ivr.kcr_psd_glass_end": "九鐵半玻璃月台幕門",
-  "item.ivr.kcr_psd_glass_end_2": "九鐵半玻璃月台幕門"
+  "item.ivr.kcr_psd_glass_end_2": "九鐵半玻璃月台幕門",
+  "item.ivr.tickets_spawn_egg": "站務刷怪蛋（購票）",
+  "item.ivr.fa_spawn_egg": "站務刷怪蛋（補票）",
+  "entity.ivr.tickets_npc": "售票員",
+  "entity.ivr.fare_adjustments_npc": "補票員"
 }

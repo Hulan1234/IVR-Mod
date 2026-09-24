@@ -18,6 +18,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import net.hulan.ivr.entity.NPC;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,12 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 
 public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
+
+    public static void sendNPCInteraction(NPC npc) {
+        FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
+        packet.writeVarInt(npc.getId());
+        RegistryClient.sendToServer(KSD_PACKET_NPC_INTERACTION, packet);
+    }
 
     private static final Map<Integer, ByteBuf> TEMP_PACKETS_RECEIVER = new HashMap<>();
     private static long tempPacketId = 0L;
@@ -53,11 +60,12 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
     }
 
     public static void openFareAdjustmentsScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
+        BlockPos storeBlockPos = packet.readBlockPos();
         int balance = packet.readInt();
         minecraftClient.execute(() -> {
             Player player = minecraftClient.player;
             if (player != null && !(minecraftClient.screen instanceof TicketsScreen)) {
-                UtilitiesClient.setScreen(minecraftClient, new FareAdjustmentsScreen(balance));
+                UtilitiesClient.setScreen(minecraftClient, new FareAdjustmentsScreen(balance, storeBlockPos));
             }
         });
     }

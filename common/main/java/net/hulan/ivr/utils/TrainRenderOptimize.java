@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 /**
  * 渲染优化工具类（客户端）。
  * 核心思路：在 GPU 压力大的密集场景（大站台、多列车）下，
- * 通过距离、保守视锥和遮挡结果，在真正把顶点提交给 GPU 之前跳过不必要的渲染。
+ * 通过距离和保守视锥，在真正把顶点提交给 GPU 之前跳过不必要的渲染。
  * 覆盖两类目标：
  *   - 列车（TrainRenderOptimizeMixin）：≤TRAIN_RENDER_DISTANCE（250 格）完整渲染；
  *     >250 格完全不渲染。
@@ -195,21 +195,9 @@ public final class TrainRenderOptimize {
             return false;
         }
 
-        final CachedBlockEntityVisibility pending = new CachedBlockEntityVisibility(view.generation, true);
-        BLOCK_ENTITY_RENDER_CACHE.put(blockEntity, pending);
-        final boolean[] blockedSamples = captureBlockEntityOcclusionSnapshot(world, view.cameraPosition, pos, radius);
-        OCCLUSION_EXECUTOR.execute(() -> {
-            boolean occluded = true;
-            for (boolean blocked : blockedSamples) {
-                if (!blocked) {
-                    occluded = false;
-                    break;
-                }
-            }
-            if (occluded && pending.generation == currentViewGeneration && BLOCK_ENTITY_RENDER_CACHE.get(blockEntity) == pending) {
-                pending.visible = false;
-            }
-        });
+        // Do not raycast block entities here. A dense sign wall would otherwise
+        // synchronously perform 27 world traces per entity on every new view.
+        BLOCK_ENTITY_RENDER_CACHE.put(blockEntity, new CachedBlockEntityVisibility(view.generation, true));
         return true;
     }
 
@@ -246,23 +234,9 @@ public final class TrainRenderOptimize {
             return false;
         }
 
-        final MovingVisibilityState pending = new MovingVisibilityState(view.generation, center, yaw, pitch, relative, true);
-        TRAIN_RENDER_CACHE.put(key, pending);
-        if (!relative) {
-            final boolean[] blockedSamples = captureOcclusionSnapshot(world, view.cameraPosition, center, yaw);
-            OCCLUSION_EXECUTOR.execute(() -> {
-                boolean occluded = true;
-                for (boolean blocked : blockedSamples) {
-                    if (!blocked) {
-                        occluded = false;
-                        break;
-                    }
-                }
-                if (occluded && pending.generation == currentViewGeneration && TRAIN_RENDER_CACHE.get(key) == pending) {
-                    pending.visible = false;
-                }
-            });
-        }
+        // Do not hide an object from asynchronous ray samples. A car or sign
+        // can be partially visible even when all sampled points are blocked.
+        TRAIN_RENDER_CACHE.put(key, new MovingVisibilityState(view.generation, center, yaw, pitch, relative, true));
         return true;
     }
 
@@ -284,23 +258,7 @@ public final class TrainRenderOptimize {
             return false;
         }
 
-        final MovingVisibilityState pending = new MovingVisibilityState(view.generation, center, 0.0F, 0.0F, relative, true);
-        LIFT_RENDER_CACHE.put(liftId, pending);
-        if (!relative) {
-            final boolean[] blockedSamples = captureLiftOcclusionSnapshot(world, view.cameraPosition, center);
-            OCCLUSION_EXECUTOR.execute(() -> {
-                boolean occluded = true;
-                for (boolean blocked : blockedSamples) {
-                    if (!blocked) {
-                        occluded = false;
-                        break;
-                    }
-                }
-                if (occluded && pending.generation == currentViewGeneration && LIFT_RENDER_CACHE.get(liftId) == pending) {
-                    pending.visible = false;
-                }
-            });
-        }
+        LIFT_RENDER_CACHE.put(liftId, new MovingVisibilityState(view.generation, center, 0.0F, 0.0F, relative, true));
         return true;
     }
 

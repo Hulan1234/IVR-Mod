@@ -14,6 +14,9 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.hulan.ivr.platform.NPCPlatform;
+import net.hulan.ivr.entity.NPC;
+import net.minecraft.world.entity.EntityType;
 
 import java.util.Objects;
 
@@ -29,6 +32,8 @@ public class IVRFabricMain implements ModInitializer {
                 IVRFabricMain::registerBlockItem,
                 IVRFabricMain::registerBlockEntityType,
                 IVRFabricMain::registerEnchantedBlockItem);
+        NPCPlatform.getInstance().registerEntities(IVRFabricMain::registerEntity);
+        NPCPlatform.getInstance().registerAttributes();
     }
 
     private static void registerItem(String path, RegistryObject<Item> item) {
@@ -62,5 +67,9 @@ public class IVRFabricMain implements ModInitializer {
 
     private static void registerBlockEntityType(String path, RegistryObject<? extends BlockEntityType<? extends BlockEntityMapper>> blockEntityType) {
         Registry.register(RegistryUtilities.registryGetBlockEntityType(), new ResourceLocation(MOD_ID, path), (BlockEntityType<? extends BlockEntityMapper>)blockEntityType.get());
+    }
+
+    private static void registerEntity(String path, RegistryObject<? extends EntityType<? extends NPC>> entity) {
+        Registry.register(RegistryUtilities.registryGetEntityType(), new ResourceLocation(MOD_ID, path), entity.get());
     }
 }

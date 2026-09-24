@@ -9,7 +9,6 @@
   ],
   "client": [
     "TrainRenderOptimizeMixin",
-    "MTRTrainDistanceMixin",
     "TrainSimulateOptimizeMixin",
     "BlockEntityRenderOptimizeMixin",
     "LiftRenderOptimizeMixin",

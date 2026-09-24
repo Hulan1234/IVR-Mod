@@ -50,5 +50,9 @@
   "item.ivr.kcr_psd_glass": "九铁高站台门",
   "item.ivr.kcr_psd_glass_2": "九铁高站台门",
   "item.ivr.kcr_psd_glass_end": "九铁高站台门",
-  "item.ivr.kcr_psd_glass_end_2": "九铁高站台门"
+  "item.ivr.kcr_psd_glass_end_2": "九铁高站台门",
+  "item.ivr.tickets_spawn_egg": "站务刷怪蛋（购票）",
+  "item.ivr.fa_spawn_egg": "站务刷怪蛋（补票）",
+  "entity.ivr.tickets_npc": "售票员",
+  "entity.ivr.fare_adjustments_npc": "补票员"
 }

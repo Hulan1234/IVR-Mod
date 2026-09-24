@@ -13,6 +13,9 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.entity.EntityType;
+import net.hulan.ivr.platform.NPCPlatform;
+import net.hulan.ivr.entity.IVRNPC;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -25,6 +28,7 @@ public class IVRForgeMain {
     private static final DeferredRegisterHolder<Item> ITEMS = new DeferredRegisterHolder<>(IVR.MOD_ID, ForgeUtilities.registryGetItem());
     private static final DeferredRegisterHolder<Block> BLOCKS = new DeferredRegisterHolder<>(IVR.MOD_ID, ForgeUtilities.registryGetBlock());
     private static final DeferredRegisterHolder<BlockEntityType<?>> BLOCK_ENTITY_TYPES = new DeferredRegisterHolder<>(IVR.MOD_ID, ForgeUtilities.registryGetBlockEntityType());
+    private static final DeferredRegisterHolder<EntityType<?>> ENTITY_TYPES = new DeferredRegisterHolder<>(IVR.MOD_ID, ForgeUtilities.registryGetEntityType());
 
     static {
         IVR.init(
@@ -33,6 +37,7 @@ public class IVRForgeMain {
                 IVRForgeMain::registerBlock,
                 IVRForgeMain::registerBlockEntityType,
                 IVRForgeMain::registerEnchantedBlock);
+        NPCPlatform.getInstance().registerEntities(IVRForgeMain::registerEntity);
     }
 
     public IVRForgeMain() {
@@ -41,6 +46,7 @@ public class IVRForgeMain {
         ITEMS.register();
         BLOCKS.register();
         BLOCK_ENTITY_TYPES.register();
+        ENTITY_TYPES.register();
         eventBus.register(IVRForgeEventBus.class);
     }
 
@@ -80,6 +86,10 @@ public class IVRForgeMain {
 
     private static void registerBlockEntityType(String path, RegistryObject<? extends BlockEntityType<? extends BlockEntityMapper>> blockEntityType) {
         BLOCK_ENTITY_TYPES.register(path, blockEntityType::get);
+    }
+
+    private static void registerEntity(String path, RegistryObject<? extends EntityType<? extends IVRNPC>> entity) {
+        ENTITY_TYPES.register(path, entity::get);
     }
 
     public static class IVRForgeEventBus {

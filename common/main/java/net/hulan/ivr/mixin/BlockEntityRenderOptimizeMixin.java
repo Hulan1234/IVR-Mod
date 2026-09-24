@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 规则：
  *   - 距离 < BLOCK_ENTITY_RENDER_DISTANCE（50 格）：完全渲染；
  *   - 距离 ≥ 50 格：完全不渲染。
- *   - 仅缓存当前视角下距离内且可能可见的方块实体；其余对象不调用具体渲染器。
+ *   - 仅缓存当前视角下距离内且位于视锥内的方块实体；其余对象不调用具体渲染器。
  */
 @Mixin(BlockEntityRenderDispatcher.class)
 public abstract class BlockEntityRenderOptimizeMixin {
@@ -26,7 +26,8 @@ public abstract class BlockEntityRenderOptimizeMixin {
     private static final double BLOCK_ENTITY_BOUNDING_RADIUS = 8.0D; // 覆盖站牌等可能跨出方块的方块实体模型。
 
     /**
-     * 注入到 BlockEntityRenderDispatcher.render 方法开头。
+     * 注入到 Minecraft 通用 BlockEntityRenderDispatcher.render 方法开头。
+     * 这里不检查 MTR、IVR 或任何特定接口，因此其他模组的方块实体也会经过同一判定。
      *
      * @param blockEntity       当前要渲染的块实体
      * @param tickDelta         渲染插值（游戏 tick 与渲染帧之间的小数偏移）
@@ -35,7 +36,7 @@ public abstract class BlockEntityRenderOptimizeMixin {
      * @param ci                回调，可调用 cancel() 取消原方法执行
      */
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
-    private void ivr$cullBlockEntity(BlockEntity blockEntity, float tickDelta, PoseStack matrices, MultiBufferSource multiBufferSource, CallbackInfo ci) {
+    private void ivr$cullAnyBlockEntity(BlockEntity blockEntity, float tickDelta, PoseStack matrices, MultiBufferSource multiBufferSource, CallbackInfo ci) {
         if (!TrainRenderOptimize.shouldRenderBlockEntity(blockEntity, BLOCK_ENTITY_BOUNDING_RADIUS)) {
             ci.cancel();
         }

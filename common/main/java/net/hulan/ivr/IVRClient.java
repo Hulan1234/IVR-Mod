@@ -7,10 +7,12 @@ import net.hulan.ivr.packet.IVRPacketTrainDataGuiClient;
 import net.hulan.ivr.render.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
+import net.hulan.ivr.platform.NPCPlatform;
 
 public class IVRClient implements IVRPacket, IVRBlockEntityTypes, IVRBlocks, IPacket {
 
     public static void init() {
+        NPCPlatform.getInstance().registerClientRenderers();
         RegistryClient.registerBlockRenderType(RenderType.cutout(), KCR_CLOCK.get());
         RegistryClient.registerBlockRenderType(RenderType.cutout(), IVR_LOGO.get());
         RegistryClient.registerBlockRenderType(RenderType.cutout(), KCR_PLATFORM_INDENTED.get());

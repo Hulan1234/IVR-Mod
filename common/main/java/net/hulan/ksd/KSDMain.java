@@ -56,6 +56,7 @@ public class KSDMain implements KSDBlocks, KSDItems, KSDCreativeModTabs, KSDPack
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_PAYMENT, KSDPacketServer::receivePayment);
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_PURCHASE_OCTOPUS, KSDPacketServer::receivePurchaseOctopusC2S);
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_ADD_VALUE, KSDPacketServer::receiveOctopusAddValueC2S);
+        mtr.Registry.registerNetworkReceiver(KSD_PACKET_NPC_INTERACTION, KSDPacketServer::receiveNPCInteraction);
         mtr.Registry.registerNetworkReceiver(KSD_PACKET_UPDATE_STATION,
                 (minecraftServer, player, packet) -> KSDPacketServer.receiveUpdateOrDeleteC2S(
                         minecraftServer,
