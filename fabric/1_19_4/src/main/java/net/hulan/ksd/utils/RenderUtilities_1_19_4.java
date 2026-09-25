@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 
+@SuppressWarnings("unused")
 public class RenderUtilities_1_19_4 extends RenderUtilities {
 
     public void beginDrawingCircle(BufferBuilder buffer) {

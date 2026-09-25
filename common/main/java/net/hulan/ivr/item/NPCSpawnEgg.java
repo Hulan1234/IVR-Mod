@@ -17,9 +17,11 @@ public class NPCSpawnEgg extends SpawnEggItem {
 
     public static final String TICKETS_ROLE = "tickets";
     public static final String FA_ROLE = "fare_adjustments";
+    private final EntityType<? extends NPC> npcType;
 
     public NPCSpawnEgg(mtr.RegistryObject<? extends EntityType<? extends NPC>> entityType, int backgroundColor, int highlightColor, CreativeModeTabs.Wrapper creativeModeTab) {
         super(entityType.get(), backgroundColor, highlightColor, RegistryUtilities.createItemProperties(creativeModeTab::get));
+        this.npcType = entityType.get();
     }
 
     public @NotNull InteractionResult useOn(UseOnContext context) {
@@ -28,7 +30,7 @@ public class NPCSpawnEgg extends SpawnEggItem {
             return InteractionResult.SUCCESS;
         }
         BlockPos pos = context.getClickedPos().relative(context.getClickedFace());
-        NPC npc = (NPC) getType(context.getItemInHand().getTag()).create(level);
+        NPC npc = npcType.create(level);
         if (npc == null) {
             return InteractionResult.FAIL;
         }

@@ -6,8 +6,6 @@ import net.minecraft.SharedConstants;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 
-import java.lang.reflect.InvocationTargetException;
-
 /** Version-specific bridge for NPC registration, attributes, and rendering. */
 public abstract class NPCPlatform {
 
@@ -17,7 +15,6 @@ public abstract class NPCPlatform {
         if (instance != null) {
             return instance;
         }
-
         String version = minecraftVersion();
         String className = "net.hulan.ivr.platform.NPCPlatform_" + version;
         try {
@@ -57,28 +54,14 @@ public abstract class NPCPlatform {
     public void registerAttributes() {}
 
     public static boolean isCreative(Player player) {
-        try {
-            Object abilities = player.getClass().getMethod("getAbilities").invoke(player);
-            return abilities.getClass().getField("instabuild").getBoolean(abilities);
-        } catch (ReflectiveOperationException ignored) {
-            try {
-                Object abilities = player.getClass().getField("abilities").get(player);
-                return abilities.getClass().getField("instabuild").getBoolean(abilities);
-            } catch (ReflectiveOperationException ignoredLegacy) {
-                return false;
-            }
-        }
+        return getInstance().isCreativePlayer(player);
     }
 
     public static float getYaw(Player player) {
-        try {
-            return ((Number) player.getClass().getMethod("getYRot").invoke(player)).floatValue();
-        } catch (ReflectiveOperationException ignored) {
-            try {
-                return player.getClass().getField("rotationYaw").getFloat(player);
-            } catch (ReflectiveOperationException ignoredLegacy) {
-                return 0;
-            }
-        }
+        return getInstance().getPlayerYaw(player);
     }
+
+    protected abstract boolean isCreativePlayer(Player player);
+
+    protected abstract float getPlayerYaw(Player player);
 }

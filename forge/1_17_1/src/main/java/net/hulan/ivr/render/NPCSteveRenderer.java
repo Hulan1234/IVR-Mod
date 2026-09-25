@@ -3,7 +3,6 @@ package net.hulan.ivr.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.mappings.EntityRendererMapper;
 import net.hulan.ivr.entity.NPC;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -19,18 +18,13 @@ import java.util.UUID;
 public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
 
     private static final float MODEL_SCALE = 1.2F;
-    private static final ResourceLocation STEVE_TEXTURE = DefaultPlayerSkin.getDefaultSkin(
-            UUID.nameUUIDFromBytes("Steve".getBytes())
-    );
+    private static final ResourceLocation STEVE_TEXTURE = DefaultPlayerSkin.getDefaultSkin(UUID.nameUUIDFromBytes("Steve".getBytes()));
 
     private final PlayerModel<T> model;
 
     public NPCSteveRenderer(Object context) {
         super(context);
-        this.model = new PlayerModel<>(
-                ((EntityRendererProvider.Context) context).bakeLayer(ModelLayers.PLAYER),
-                false
-        );
+        this.model = new PlayerModel<>(((EntityRendererProvider.Context) context).bakeLayer(ModelLayers.PLAYER), false);
     }
 
     public void render(@NotNull T entity, float yaw, float partialTick, PoseStack poseStack,
@@ -47,15 +41,12 @@ public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
                 1,
                 1,
                 1,
-                1
-        );
+                1);
         poseStack.popPose();
     }
 
     public @NotNull ResourceLocation getTextureLocation(T entity) {
         ResourceLocation texture = entity.getTexture();
-        return texture != null && Minecraft.getInstance().getResourceManager().hasResource(texture)
-                ? texture
-                : STEVE_TEXTURE;
+        return texture == null ? STEVE_TEXTURE : texture;
     }
 }
