@@ -19,7 +19,7 @@ import java.util.UUID;
 public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
 
     private static final float MODEL_SCALE = 1.0F;
-    private static final float HEAD_SCALE = 1.0F / MODEL_SCALE;
+    private static final float HEAD_Y_OFFSET = 21.5F / 16.0F / MODEL_SCALE;
     private static final float NAME_TAG_VERTICAL_OFFSET = 0F;
     private static final ResourceLocation STEVE = DefaultPlayerSkin.getDefaultSkin(UUID.nameUUIDFromBytes("Steve".getBytes()));
     private final PlayerModel<T> model;
@@ -39,6 +39,8 @@ public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
                 RenderType.entityTranslucent(getTextureLocation(e))
         );
 
+        model.head.visible = false;
+        model.hat.visible = false;
         model.renderToBuffer(
                 s,
                 vertexConsumer,
@@ -48,6 +50,16 @@ public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
                 1,
                 1,
                 1);
+        model.head.visible = true;
+        model.hat.visible = true;
+        s.pushPose();
+        s.translate(0.0F, HEAD_Y_OFFSET, 0.0F);
+        s.translate(model.head.x / 16.0F, model.head.y / 16.0F, model.head.z / 16.0F);
+        s.scale(1.0F / MODEL_SCALE, 1.0F / MODEL_SCALE, 1.0F / MODEL_SCALE);
+        s.translate(-model.head.x / 16.0F, -model.head.y / 16.0F, -model.head.z / 16.0F);
+        model.head.render(s, vertexConsumer, l, OverlayTexture.NO_OVERLAY);
+        model.hat.render(s, vertexConsumer, l, OverlayTexture.NO_OVERLAY);
+        s.popPose();
         s.popPose();
         renderAdjustedNameTag(e, s, b, l);
     }
@@ -58,9 +70,9 @@ public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
         renderNameTag(entity, entity.getName(), poseStack, bufferSource, light);
         poseStack.popPose();
     }
-`r`n    public @NotNull ResourceLocation getTextureLocation(T e) {
+
+    public @NotNull ResourceLocation getTextureLocation(T e) {
         ResourceLocation texture = e.getTexture();
         return texture == null ? STEVE : texture;
     }
 }
-

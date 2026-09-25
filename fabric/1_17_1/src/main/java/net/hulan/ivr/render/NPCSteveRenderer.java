@@ -13,13 +13,14 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
 public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
 
     private static final float MODEL_SCALE = 1.3333333F;
-    private static final float HEAD_SCALE = 1.0F / MODEL_SCALE;
+    private static final float HEAD_Y_OFFSET = 21.5F / 16.0F / MODEL_SCALE;
     private static final float NAME_TAG_VERTICAL_OFFSET = 0F;
     private static final ResourceLocation STEVE_TEXTURE = DefaultPlayerSkin.getDefaultSkin(
             UUID.nameUUIDFromBytes("Steve".getBytes())
@@ -45,6 +46,8 @@ public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
         VertexConsumer vertexConsumer = bufferSource.getBuffer(
                 RenderType.entityTranslucent(getTextureLocation(entity))
         );
+        model.head.visible = false;
+        model.hat.visible = false;
         model.renderToBuffer(
                 poseStack,
                 vertexConsumer,
@@ -55,6 +58,16 @@ public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
                 1,
                 1
         );
+        model.head.visible = true;
+        model.hat.visible = true;
+        poseStack.pushPose();
+        poseStack.translate(0.0F, HEAD_Y_OFFSET, 0.0F);
+        poseStack.translate(model.head.x / 16.0F, model.head.y / 16.0F, model.head.z / 16.0F);
+        poseStack.scale(1.0F / MODEL_SCALE, 1.0F / MODEL_SCALE, 1.0F / MODEL_SCALE);
+        poseStack.translate(-model.head.x / 16.0F, -model.head.y / 16.0F, -model.head.z / 16.0F);
+        model.head.render(poseStack, vertexConsumer, light, OverlayTexture.NO_OVERLAY);
+        model.hat.render(poseStack, vertexConsumer, light, OverlayTexture.NO_OVERLAY);
+        poseStack.popPose();
         poseStack.popPose();
         renderAdjustedNameTag(entity, poseStack, bufferSource, light);
     }
@@ -65,11 +78,11 @@ public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
         renderNameTag(entity, entity.getName(), poseStack, bufferSource, light);
         poseStack.popPose();
     }
-`r`n    public ResourceLocation getTextureLocation(T entity) {
+
+    public @NotNull ResourceLocation getTextureLocation(T entity) {
         ResourceLocation texture = entity.getTexture();
         return texture != null && Minecraft.getInstance().getResourceManager().hasResource(texture)
                 ? texture
                 : STEVE_TEXTURE;
     }
 }
-
