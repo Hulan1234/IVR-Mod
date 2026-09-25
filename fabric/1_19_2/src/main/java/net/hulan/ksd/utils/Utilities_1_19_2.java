@@ -14,6 +14,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Material;
 
+@SuppressWarnings("unused")
 public class Utilities_1_19_2 extends Utilities {
 
     public void registerCommand(LiteralArgumentBuilder<CommandSourceStack> command) {

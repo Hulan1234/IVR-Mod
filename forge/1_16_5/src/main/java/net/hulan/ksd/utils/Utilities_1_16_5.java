@@ -11,6 +11,7 @@ import net.minecraft.world.level.material.Material;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 
+@SuppressWarnings("unused")
 public class Utilities_1_16_5 extends Utilities {
 
     public void registerCommand(LiteralArgumentBuilder<CommandSourceStack> command) {

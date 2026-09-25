@@ -5,8 +5,20 @@ import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRe
 import net.hulan.ivr.entity.IVRNPC;
 import net.hulan.ivr.entity.IVRNPCs;
 import net.hulan.ivr.render.NPCSteveRenderer;
+import net.minecraft.world.entity.player.Player;
 
+@SuppressWarnings("unused")
 public class NPCPlatform_1_16_5 extends NPCPlatform {
+    @Override
+    protected boolean isCreativePlayer(Player player) {
+        return player.abilities.instabuild;
+    }
+
+    @Override
+    protected float getPlayerYaw(Player player) {
+        return player.yRot;
+    }
+
     @Override
     public void registerEntities(EntityRegistrar registrar) {
         registrar.register("tickets", IVRNPCs.TICKETS);

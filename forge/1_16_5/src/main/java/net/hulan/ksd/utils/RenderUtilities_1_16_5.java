@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
+@SuppressWarnings("unused")
 public class RenderUtilities_1_16_5 extends RenderUtilities {
 
     public void beginDrawingCircle(BufferBuilder buffer) {
