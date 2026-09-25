@@ -28,7 +28,7 @@ public class Utilities_1_19_2 extends Utilities {
         itemRenderer.renderGuiItemDecorations(font, itemStack, x, y);
     }
 
-    public void registerTicketItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor) {
+    public void registerItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor) {
         ItemProperties.register(
                 item,
                 id,

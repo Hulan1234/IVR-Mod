@@ -1,6 +1,7 @@
 package net.hulan.ivr.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import mtr.mappings.EntityRendererMapper;
 import net.hulan.ivr.entity.NPC;
 import net.minecraft.client.Minecraft;
@@ -18,6 +19,8 @@ import java.util.UUID;
 public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
 
     private static final float MODEL_SCALE = 1.3333333F;
+    private static final float HEAD_SCALE = 1.0F / MODEL_SCALE;
+    private static final float NAME_TAG_VERTICAL_OFFSET = 0F;
     private static final ResourceLocation STEVE_TEXTURE = DefaultPlayerSkin.getDefaultSkin(
             UUID.nameUUIDFromBytes("Steve".getBytes())
     );
@@ -30,6 +33,7 @@ public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
                 ((EntityRendererProvider.Context) context).bakeLayer(ModelLayers.PLAYER),
                 false
         );
+        this.model.hat.visible = true;
     }
 
     public void render(T entity, float yaw, float partialTick, PoseStack poseStack,
@@ -38,9 +42,12 @@ public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
         poseStack.pushPose();
         poseStack.scale(-MODEL_SCALE, -MODEL_SCALE, MODEL_SCALE);
         poseStack.translate(0.0F, -1.501F, 0.0F);
+        VertexConsumer vertexConsumer = bufferSource.getBuffer(
+                RenderType.entityTranslucent(getTextureLocation(entity))
+        );
         model.renderToBuffer(
                 poseStack,
-                bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
+                vertexConsumer,
                 light,
                 OverlayTexture.NO_OVERLAY,
                 1,
@@ -49,12 +56,20 @@ public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
                 1
         );
         poseStack.popPose();
+        renderAdjustedNameTag(entity, poseStack, bufferSource, light);
     }
 
-    public ResourceLocation getTextureLocation(T entity) {
+    private void renderAdjustedNameTag(T entity, PoseStack poseStack, MultiBufferSource bufferSource, int light) {
+        poseStack.pushPose();
+        poseStack.translate(0.0F, NAME_TAG_VERTICAL_OFFSET, 0.0F);
+        renderNameTag(entity, entity.getName(), poseStack, bufferSource, light);
+        poseStack.popPose();
+    }
+`r`n    public ResourceLocation getTextureLocation(T entity) {
         ResourceLocation texture = entity.getTexture();
         return texture != null && Minecraft.getInstance().getResourceManager().hasResource(texture)
                 ? texture
                 : STEVE_TEXTURE;
     }
 }
+

@@ -54,6 +54,11 @@ public abstract class NPC extends IVRNPC {
         setDeltaMovement(0, 0, 0);
     }
 
+    @Override
+    public boolean removeWhenFarAway(double distanceToClosestPlayer) {
+        return false;
+    }
+
     public boolean isPushable() {
         return false;
     }

@@ -39,6 +39,7 @@ public class NPCSpawnEgg extends SpawnEggItem {
             facing = NPCPlatform.getYaw(context.getPlayer()) + 180.0F;
         }
         npc.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, facing, 0.0F);
+        npc.setPersistenceRequired();
         level.addFreshEntity(npc);
         ItemStack stack = context.getItemInHand();
         if (!NPCPlatform.isCreative(context.getPlayer())) {

@@ -79,7 +79,7 @@ public abstract class Utilities {
 
     public abstract void renderGuiItem(PoseStack poseStack, ItemRenderer itemRenderer, Font font, ItemStack itemStack, int x, int y);
 
-    public abstract void registerTicketItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor);
+    public abstract void registerItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor);
 
     public abstract BlockBehaviour.Properties createBlockProperties();
 
@@ -91,7 +91,7 @@ public abstract class Utilities {
         public void renderGuiItem(PoseStack poseStack, ItemRenderer itemRenderer, Font font, ItemStack itemStack, int x, int y) {
         }
 
-        public void registerTicketItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor) {
+        public void registerItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor) {
 
         }
 

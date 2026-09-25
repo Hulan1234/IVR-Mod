@@ -26,7 +26,7 @@ public class Utilities_1_18_2 extends Utilities {
     }
 
     @SuppressWarnings("deprecation")
-    public void registerTicketItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor) {
+    public void registerItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor) {
         FabricModelPredicateProviderRegistry.register(item, id, (itemStack, clientLevel, livingEntity, i)
                 -> modelPredictor.predictor(itemStack, clientLevel, livingEntity));
     }

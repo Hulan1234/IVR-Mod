@@ -6,11 +6,22 @@ import net.hulan.ksd.data.KSDDataCache;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.Set;
 
 public class RailDataUtilities {
+
+    public static boolean equals(@Nullable NameColorDataBase b1, @Nullable NameColorDataBase b2) {
+        if (b1 == null || b2 == null) {
+            return false;
+        }
+        if (b1 == b2) {
+            return true;
+        }
+        return b1.id == b2.id;
+    }
 
     public static boolean isSameStation(KSDStation station1, KSDStation station2) {
         if (station1 == null || station2 == null) {

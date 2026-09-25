@@ -96,7 +96,7 @@ public class IVRForgeMain {
 
         @SubscribeEvent
         public static void onClientSetup(final FMLClientSetupEvent event) {
-            IVRClient.init();
+            event.enqueueWork(IVRClient::init);
         }
     }
 }

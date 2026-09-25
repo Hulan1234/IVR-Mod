@@ -125,7 +125,7 @@ public class WayFinder {
             Set<StationContext> otherContexts = stationIdToStationContexts.getOrDefault(next.id, Set.of());
             for (StationContext otherContext : otherContexts) {
                 if (RailDataUtilities.isSameRoute(currentContext.route(), otherContext.route())
-                        && RailDataUtilities.isSameStation(currentContext.current(), otherContext.previous())) {
+                        && RailDataUtilities.equals(currentContext.current(), otherContext.previous())) {
                     return otherContext;
                 }
             }
@@ -140,7 +140,7 @@ public class WayFinder {
             Set<StationContext> otherContexts = stationIdToStationContexts.getOrDefault(previous.id, Set.of());
             for (StationContext otherContext : otherContexts) {
                 if (RailDataUtilities.isSameRoute(currentContext.route(), otherContext.route())
-                        && RailDataUtilities.isSameStation(currentContext.current(), otherContext.next())) {
+                        && RailDataUtilities.equals(currentContext.current(), otherContext.next())) {
                     return otherContext;
                 }
             }
@@ -243,9 +243,9 @@ public class WayFinder {
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof StationContext state) {
-                return RailDataUtilities.isSameStation(current, state.current)
-                        && RailDataUtilities.isSameStation(previous, state.previous)
-                        && RailDataUtilities.isSameStation(next, state.next)
+                return RailDataUtilities.equals(current, state.current)
+                        && RailDataUtilities.equals(previous, state.previous)
+                        && RailDataUtilities.equals(next, state.next)
                         && RailDataUtilities.isSameRoute(route, state.route);
             }
             return false;

@@ -62,7 +62,7 @@ public abstract class TrainMixin {
                                  float pitch,
                                  double halfSpacing,
                                  int dwellTicks) {
-        return spanishCheck((TrainInvoker) instance, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks, KSDPlatform.DoorOpeningSide.LEFT);
+        return iVR$spanishCheck((TrainInvoker) instance, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks, KSDPlatform.DoorOpeningSide.LEFT);
     }
 
     @Redirect(method = "calculateCar", at = @At(value = "INVOKE", target = "Lmtr/data/Train;scanDoors(Lnet/minecraft/world/level/Level;DDDFFDI)Z", ordinal = 1))
@@ -75,7 +75,7 @@ public abstract class TrainMixin {
                                   float pitch,
                                   double halfSpacing,
                                   int dwellTicks) {
-        return spanishCheck((TrainInvoker) instance, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks, KSDPlatform.DoorOpeningSide.RIGHT);
+        return iVR$spanishCheck((TrainInvoker) instance, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks, KSDPlatform.DoorOpeningSide.RIGHT);
     }
 
     @Inject(method = "simulateTrain",
@@ -90,29 +90,29 @@ public abstract class TrainMixin {
     }
 
     @Unique
-    private boolean spanishCheck(TrainInvoker invoker,
-                                 Level world,
-                                 double trainX,
-                                 double trainY,
-                                 double trainZ,
-                                 float checkYaw,
-                                 float pitch,
-                                 double halfSpacing,
-                                 int dwellTicks,
-                                 KSDPlatform.DoorOpeningSide leftOrRight) {
+    private boolean iVR$spanishCheck(TrainInvoker invoker,
+                                     Level world,
+                                     double trainX,
+                                     double trainY,
+                                     double trainZ,
+                                     float checkYaw,
+                                     float pitch,
+                                     double halfSpacing,
+                                     int dwellTicks,
+                                     KSDPlatform.DoorOpeningSide leftOrRight) {
         boolean scanDoor;
         float phase = (float) getTotalDwellTicks() / 2;
         long platformId = path.get(nextPlatformIndex).savedRailBaseId;
         KSDPlatform platform = getPlatform(world, platformId);
         if (platform != null && platform.isSpanishPlatform && !platform.doorOpeningSide.equals(KSDPlatform.DoorOpeningSide.DEFAULT)) {
-            boolean spanishCheck, original = scanDoors(invoker, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing);
+            boolean spanishCheck, original = iVR$scanDoors(invoker, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing);
             spanishCheck = platform.doorOpeningSide.equals(leftOrRight);
             if (phase + DOOR_DELAY <= elapsedDwellTicks && elapsedDwellTicks < phase * 2) {
                 spanishCheck = !spanishCheck;
             }
             scanDoor = original && spanishCheck;
             if (scanDoor) {
-                openPSDOrAPG(invoker, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks);
+                iVR$openPSDOrAPG(invoker, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks);
             }
             return scanDoor;
         } else {
@@ -121,14 +121,14 @@ public abstract class TrainMixin {
     }
 
     @Unique
-    private boolean scanDoors(TrainInvoker invoker,
-                              Level world,
-                              double trainX,
-                              double trainY,
-                              double trainZ,
-                              float checkYaw,
-                              float pitch,
-                              double halfSpacing) {
+    private boolean iVR$scanDoors(TrainInvoker invoker,
+                                  Level world,
+                                  double trainX,
+                                  double trainY,
+                                  double trainZ,
+                                  float checkYaw,
+                                  float pitch,
+                                  double halfSpacing) {
         if (invoker.invokeSkipScanBlocks(world, trainX, trainY, trainZ)) {
             return false;
         } else {
@@ -151,15 +151,15 @@ public abstract class TrainMixin {
     }
 
     @Unique
-    private void openPSDOrAPG(TrainInvoker invoker,
-                              Level world,
-                              double trainX,
-                              double trainY,
-                              double trainZ,
-                              float checkYaw,
-                              float pitch,
-                              double halfSpacing,
-                              int dwellTicks) {
+    private void iVR$openPSDOrAPG(TrainInvoker invoker,
+                                  Level world,
+                                  double trainX,
+                                  double trainY,
+                                  double trainZ,
+                                  float checkYaw,
+                                  float pitch,
+                                  double halfSpacing,
+                                  int dwellTicks) {
         Vec3 offsetVec = (new Vec3(1.0F, 0.0F, 0.0F)).yRot(checkYaw).xRot(pitch);
         Vec3 traverseVec = (new Vec3(0.0F, 0.0F, 1.0F)).yRot(checkYaw).xRot(pitch);
         for(int checkX = 1; checkX <= 3; ++checkX) {

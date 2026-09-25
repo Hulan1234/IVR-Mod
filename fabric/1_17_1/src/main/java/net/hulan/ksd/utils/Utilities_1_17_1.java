@@ -25,7 +25,7 @@ public class Utilities_1_17_1 extends Utilities {
         itemRenderer.renderGuiItemDecorations(font, itemStack, x, y);
     }
 
-    public void registerTicketItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor) {
+    public void registerItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor) {
         FabricModelPredicateProviderRegistry.register(item, id, (itemStack, clientLevel, livingEntity, i)
                 -> modelPredictor.predictor(itemStack, clientLevel, livingEntity));
     }
