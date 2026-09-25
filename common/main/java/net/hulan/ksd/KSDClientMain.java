@@ -1,12 +1,17 @@
 package net.hulan.ksd;
 
 import mtr.RegistryClient;
+import mtr.data.EnumHelper;
 import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
+import net.hulan.ksd.data.SingleTicketSystem;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketClient;
+import net.hulan.ksd.utils.Utilities;
 import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 
 public class KSDClientMain implements KSDPacket {
 
@@ -74,5 +79,17 @@ public class KSDClientMain implements KSDPacket {
                 KSDClientData.DATA_CACHE.routeIdMap,
                 KSDRoute::new,
                 true));
+        Utilities.getInstance().registerTicketItemModelPredicator(
+                KSDItems.SINGLE_TICKET.get(),
+                new ResourceLocation(KSDMain.MOD_ID, "ticket_variant"),
+                (ticketItem, world, entity) -> {
+                    CompoundTag ticketTag = ticketItem.getOrCreateTag();
+                    SingleTicketSystem.TicketType ticketType = EnumHelper.valueOf(
+                            SingleTicketSystem.TicketType.MTR,
+                            ticketTag.getString("ticket_type"));
+                    boolean isConcessionary = ticketTag.getBoolean("is_concessionary");
+                    boolean fcAvailable = ticketTag.getBoolean("fc_available");
+                    return ticketType.getModelPredicateValue(isConcessionary, fcAvailable);
+                });
     }
 }

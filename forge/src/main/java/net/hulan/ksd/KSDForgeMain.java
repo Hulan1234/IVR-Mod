@@ -66,7 +66,7 @@ public class KSDForgeMain {
 
         @SubscribeEvent
         public static void onClientSetup(final FMLClientSetupEvent event) {
-            KSDClientMain.init();
+            event.enqueueWork(KSDClientMain::init);
         }
     }
 }

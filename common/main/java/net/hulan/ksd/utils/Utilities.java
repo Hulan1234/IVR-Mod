@@ -8,8 +8,10 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -77,7 +79,7 @@ public abstract class Utilities {
 
     public abstract void renderGuiItem(PoseStack poseStack, ItemRenderer itemRenderer, Font font, ItemStack itemStack, int x, int y);
 
-    public abstract void registerTicketItemModelPredicator(ModelPredictor modelPredictor);
+    public abstract void registerTicketItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor);
 
     public abstract BlockBehaviour.Properties createBlockProperties();
 
@@ -89,7 +91,7 @@ public abstract class Utilities {
         public void renderGuiItem(PoseStack poseStack, ItemRenderer itemRenderer, Font font, ItemStack itemStack, int x, int y) {
         }
 
-        public void registerTicketItemModelPredicator(ModelPredictor modelPredictor) {
+        public void registerTicketItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor) {
 
         }
 
