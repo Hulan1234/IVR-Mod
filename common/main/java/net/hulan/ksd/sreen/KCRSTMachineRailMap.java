@@ -1089,7 +1089,7 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
                 KSDStation station = KSDClientData.DATA_CACHE.wayFinder.platformIdToStation.get(routePlatform.platformId); // 通过 WayFinder 索引平台所属车站
                 if (KSDAreaBase.nonNullCorners(station) && isStationInRouteGroup(route, station)) {
                     // 连续相同车站跳过（站内多站台或同名同色车站）
-                    if (!stationList.isEmpty() && RailDataUtilities.isSameStation(stationList.get(stationList.size() - 1), station)) {
+                    if (!stationList.isEmpty() && RailDataUtilities.equals(stationList.get(stationList.size() - 1), station)) {
                         continue;
                     }
                     // 加入去重站点列表
