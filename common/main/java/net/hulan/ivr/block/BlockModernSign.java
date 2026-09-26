@@ -24,6 +24,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -274,7 +275,9 @@ public class BlockModernSign extends BlockDirectionalMapper implements EntityBlo
             BlockPos middlePos, lastPos = firstPos.relative(facing.getClockWise(), middleLength + 1);
             if (level != null) {
                 BlockState middleState, lastState = level.getBlockState(lastPos);
-                TileEntityModernSign lastEntity = (TileEntityModernSign) level.getBlockEntity(lastPos);
+                BlockEntity lastBlockEntity = level.getBlockEntity(lastPos);
+                TileEntityModernSign lastEntity = lastBlockEntity instanceof TileEntityModernSign ?
+                        (TileEntityModernSign) lastBlockEntity : null;
                 level.setBlock(firstPos, firstState.setValue(LIT, luminance), 3);
                 level.getLightEngine().checkBlock(firstPos);
                 for (int i = 1; i <= middleLength + 1; i++) {
@@ -286,8 +289,9 @@ public class BlockModernSign extends BlockDirectionalMapper implements EntityBlo
                 if (!firstState.getBlock().equals(IVRBlocks.MODERN_SIGN_1_ODD.get())) {
                     level.setBlock(lastPos, lastState.setValue(LIT, luminance), 3);
                     level.getLightEngine().checkBlock(lastPos);
-                    assert lastEntity != null;
-                    lastEntity.luminance = luminance;
+                    if (lastEntity != null) {
+                        lastEntity.luminance = luminance;
+                    }
                 }
             }
         }

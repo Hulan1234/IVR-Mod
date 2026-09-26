@@ -2,9 +2,7 @@ package net.hulan.ksd.utils;
 
 import mtr.data.NameColorDataBase;
 import mtr.data.RouteType;
-import net.hulan.ksd.data.KSDDataCache;
 import net.hulan.ksd.data.KSDRoute;
-import net.hulan.ksd.data.KSDStation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,10 +33,6 @@ public class RailDataUtilities {
             return false;
         }
         return Objects.equals(getRouteKey(route1), getRouteKey(route2));
-    }
-
-    public static int routeHashCode(KSDRoute route) {
-        return getRouteKey(route).hashCode();
     }
 
     public static String getMainName(@NotNull NameColorDataBase data) {
@@ -75,16 +69,6 @@ public class RailDataUtilities {
 
     public static boolean isLightRailRoute(KSDRoute route) {
         return route.routeType.equals(RouteType.LIGHT_RAIL) && route.isLightRailRoute;
-    }
-
-    public static boolean hasFirstClassService(KSDStation station, KSDDataCache dataCache) {
-        Set<KSDRoute> routesInStation = dataCache.stationIdToRoutes.get(station.id);
-        for (KSDRoute route : routesInStation) {
-            if (hasFirstClassService(route)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public static boolean hasFirstClassService(KSDRoute route) {

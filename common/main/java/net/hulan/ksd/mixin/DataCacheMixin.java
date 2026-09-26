@@ -2,7 +2,6 @@ package net.hulan.ksd.mixin;
 
 import mtr.client.ClientData;
 import mtr.data.*;
-import net.hulan.ksd.KSDMain;
 import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.KSDRailwayData;
 import net.minecraft.core.BlockPos;
@@ -14,6 +13,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import static net.hulan.ksd.KSDMain.overworld;
+import static net.hulan.ksd.KSDMain.the_nether;
+import static net.hulan.ksd.KSDMain.the_end;
 
 @Mixin(DataCache.class)
 public class DataCacheMixin {
@@ -27,12 +30,12 @@ public class DataCacheMixin {
                     return;
                 }
                 map.clear();
-                RailwayData mtrOverworld = RailwayData.getInstance(KSDMain.overworld);
-                KSDRailwayData ksdOverworld = KSDRailwayData.getInstance(KSDMain.overworld);
-                RailwayData mtrTheNether = RailwayData.getInstance(KSDMain.the_nether);
-                KSDRailwayData ksdTheNether = KSDRailwayData.getInstance(KSDMain.the_nether);
-                RailwayData mtrTheEnd = RailwayData.getInstance(KSDMain.the_end);
-                KSDRailwayData ksdTheEnd = KSDRailwayData.getInstance(KSDMain.the_end);
+                RailwayData mtrOverworld = RailwayData.getInstance(overworld);
+                KSDRailwayData ksdOverworld = KSDRailwayData.getInstance(overworld);
+                RailwayData mtrTheNether = RailwayData.getInstance(the_nether);
+                KSDRailwayData ksdTheNether = KSDRailwayData.getInstance(the_nether);
+                RailwayData mtrTheEnd = RailwayData.getInstance(the_end);
+                KSDRailwayData ksdTheEnd = KSDRailwayData.getInstance(the_end);
                 if (areas == ClientData.STATIONS) {
                     KSDClientData.STATIONS.forEach(station -> {
                         for(V area : areas) {
@@ -42,42 +45,44 @@ public class DataCacheMixin {
                             }
                         }
                     });
-                    return;
-                }
-                if (ksdOverworld != null && mtrOverworld != null && areas == mtrOverworld.stations) {
-                    ksdOverworld.stations.forEach(station -> {
-                        for(V area : areas) {
-                            if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos)) {
-                                map.put(savedRail.id, area);
-                                break;
-                            }
+                } else {
+                    if (overworld != null && the_nether != null && the_end != null) {
+                        if (ksdOverworld != null && mtrOverworld != null && areas == mtrOverworld.stations) {
+                            ksdOverworld.stations.forEach(station -> {
+                                for(V area : areas) {
+                                    if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos)) {
+                                        map.put(savedRail.id, area);
+                                        break;
+                                    }
+                                }
+                            });
+                            return;
                         }
-                    });
-                    return;
-                }
-                if (ksdTheNether != null && mtrTheNether != null && areas == mtrTheNether.stations) {
-                    ksdTheNether.stations.forEach(station -> {
-                        for(V area : areas) {
-                            if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos)) {
-                                map.put(savedRail.id, area);
-                                break;
-                            }
+                        if (ksdTheNether != null && mtrTheNether != null && areas == mtrTheNether.stations) {
+                            ksdTheNether.stations.forEach(station -> {
+                                for(V area : areas) {
+                                    if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos)) {
+                                        map.put(savedRail.id, area);
+                                        break;
+                                    }
+                                }
+                            });
+                            return;
                         }
-                    });
-                    return;
-                }
-                if (ksdTheEnd != null && mtrTheEnd != null && areas == mtrTheEnd.stations) {
-                    ksdTheEnd.stations.forEach(station -> {
-                        for(V area : areas) {
-                            if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos)) {
-                                map.put(savedRail.id, area);
-                                break;
-                            }
+                        if (ksdTheEnd != null && mtrTheEnd != null && areas == mtrTheEnd.stations) {
+                            ksdTheEnd.stations.forEach(station -> {
+                                for(V area : areas) {
+                                    if (Objects.equals(station.id, area.id) && station.isTransportMode(savedRail.transportMode) && station.inArea(pos)) {
+                                        map.put(savedRail.id, area);
+                                        break;
+                                    }
+                                }
+                            });
                         }
-                    });
+                    }
                 }
-                ci.cancel();
             }
         });
+        ci.cancel();
     }
 }

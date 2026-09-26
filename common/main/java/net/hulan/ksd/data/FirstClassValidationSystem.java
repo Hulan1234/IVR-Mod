@@ -56,13 +56,11 @@ public final class FirstClassValidationSystem {
                 KSDRoute route = DataUtilities.getRoute(ksd.routes, routeId);
                 if (RailDataUtilities.hasFirstClassService(route) && newCar == route.firstClassCar) {
                     ItemStack holdingItem = player.getMainHandItem();
-                    KSDStation firstStation = ksd.dataCache.routeIdToStationsWithIndex.get(route.id).get(0);
-                    if ((holdingItem.getItem() instanceof ItemSingleTicket || holdingItem.getItem() instanceof ItemOctopus) && firstStation != null) {
+                    if ((holdingItem.getItem() instanceof ItemSingleTicket || holdingItem.getItem() instanceof ItemOctopus)) {
                         validate(
                                 world,
                                 ksd,
                                 player,
-                                firstStation,
                                 holdingItem,
                                 holdingItem.getItem() instanceof ItemOctopus);
                     } else {
@@ -118,21 +116,32 @@ public final class FirstClassValidationSystem {
         phpScore.setScore(0);
     }
 
+    public static FirstClassState validateOnMachine(Level world,
+                                                    KSDRailwayData railwayData,
+                                                    Player player,
+                                                    KSDStation currentStation,
+                                                    ItemStack item,
+                                                    boolean isOctopus) {
+        Set<KSDRoute> routesInStation = railwayData.dataCache.stationIdToRoutes.get(currentStation.id);
+        for (KSDRoute route : routesInStation) {
+            if (RailDataUtilities.hasFirstClassService(route)) {
+                return validate(world, railwayData, player, item, isOctopus);
+            }
+        }
+        playSoundAndSendMessage(
+                world,
+                player.blockPosition(),
+                player,
+                "gui.ksd.fc_denied_no_matched_route");
+        return FirstClassState.DENIED;
+    }
+
     public static FirstClassState validate(Level world,
                                            KSDRailwayData railwayData,
                                            Player player,
-                                           KSDStation validateStation,
                                            ItemStack item,
                                            boolean isOctopus) {
         CompoundTag itemTag = item.getOrCreateTag();
-        if (!RailDataUtilities.hasFirstClassService(validateStation, railwayData.dataCache)) {
-            playSoundAndSendMessage(
-                    world,
-                    player.blockPosition(),
-                    player,
-                    "gui.ksd.fc_denied_no_matched_route");
-            return FirstClassState.DENIED;
-        }
         if (!KCRTicketSystem.isEntered(itemTag, railwayData.stations, isOctopus)) {
             playSoundAndSendMessage(
                     world,
@@ -152,7 +161,7 @@ public final class FirstClassValidationSystem {
             return FirstClassState.DENIED;
         }
         if (!isValidated(itemTag)) {
-            validate(itemTag, validateStation.id);
+            validate(itemTag);
             if (!isValidated(world, player)) {
                 setValidated(world, player);
             }
@@ -172,18 +181,16 @@ public final class FirstClassValidationSystem {
         }
     }
 
-    public static void validate(CompoundTag itemTag, long validatedStationId) {
+    public static void validate(CompoundTag itemTag) {
         itemTag.putBoolean("fc_validated", true);
-        itemTag.putLong("fc_validated_station_id", validatedStationId);
     }
 
     public static boolean isValidated(CompoundTag itemTag) {
-        return itemTag.getBoolean("fc_validated") && itemTag.contains("fc_validated_station_id");
+        return itemTag.getBoolean("fc_validated");
     }
 
     public static void devalidate(CompoundTag itemTag) {
         itemTag.remove("fc_validated");
-        itemTag.remove("fc_validated_station_id");
     }
 
     private static Score getPlayerCarScore(Level world, Player player) {
