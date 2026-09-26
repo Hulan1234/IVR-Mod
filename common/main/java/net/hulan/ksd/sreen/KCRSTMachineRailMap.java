@@ -1001,7 +1001,7 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
         }
     }
 
-    private void updateCursor(boolean hovering) {
+    void updateCursor(boolean hovering) {
         long window = Minecraft.getInstance().getWindow().getWindow();
         if (window == 0L) {
             return;

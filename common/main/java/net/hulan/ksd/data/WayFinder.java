@@ -17,6 +17,8 @@ public class WayFinder {
     public final Map<KSDStation, Set<KSDStation>> stationIdToConnectingStations;
     public final Map<Long, Set<KSDRoute>> stationIdToNetwork = new HashMap<>();
     public final Map<Long, Set<StationContext>> stationIdToStationContexts = new HashMap<>();
+    private final Map<StationContext, Set<StationContext>> nextStationContexts = new HashMap<>();
+    private final Map<StationContext, Set<StationContext>> previousStationContexts = new HashMap<>();
 
     public WayFinder(KSDDataCache dataCache) {
         stations = dataCache.stations;
@@ -30,8 +32,11 @@ public class WayFinder {
     public void sync() {
         stationIdToNetwork.clear();
         stationIdToStationContexts.clear();
+        previousStationContexts.clear();
+        nextStationContexts.clear();
         stations.forEach(s -> stationIdToNetwork.put(s.id, generateNetwork(s)));
         stations.forEach(s -> stationIdToStationContexts.put(s.id, generateStationContexts(s)));
+        syncPreviousAndNextStationContexts();
     }
 
     public Set<KSDRoute> getNetwork(long stationId) {
@@ -76,8 +81,8 @@ public class WayFinder {
                 bestCost.getOrDefault(a, PathCost.MAX).compare(bestCost.getOrDefault(b, PathCost.MAX)));
         for (StationContext startContext : stationIdToStationContexts.getOrDefault(start.id, Set.of())) {
             if (discovered.add(startContext)) {
-                priorityQueue.offer(startContext);
                 bestCost.put(startContext, PathCost.ZERO);
+                priorityQueue.offer(startContext);
             }
         }
         while (!priorityQueue.isEmpty()) {
@@ -86,12 +91,10 @@ public class WayFinder {
                 List<StationContext> statePath = reconstructContextPath(currentContext, previous); // 从终点向前恢复完整状态路径
                 return buildRouteSegments(statePath); // 将状态路径合并成最终的 RouteSegment 列表
             }
-            StationContext previousContext = findPreviousStationContext(currentContext);
-            StationContext nextContext = findNextStationContext(currentContext);
-            if (previousContext != null) {
+            for (StationContext previousContext : previousStationContexts.getOrDefault(currentContext, Set.of())) {
                 updateNext(currentContext, previousContext, priorityQueue, bestCost, previous, discovered);
             }
-            if (nextContext != null) {
+            for (StationContext nextContext : nextStationContexts.getOrDefault(currentContext, Set.of())) {
                 updateNext(currentContext, nextContext, priorityQueue, bestCost, previous, discovered);
             }
             for (StationContext otherContext : stationIdToStationContexts.getOrDefault(currentContext.current().id, Set.of())) {
@@ -119,33 +122,34 @@ public class WayFinder {
         return routeSections;
     }
 
-    private StationContext findNextStationContext(StationContext currentContext) {
-        KSDStation next = currentContext.next();
-        if (next != null) {
-            Set<StationContext> otherContexts = stationIdToStationContexts.getOrDefault(next.id, Set.of());
-            for (StationContext otherContext : otherContexts) {
-                if (RailDataUtilities.equals(currentContext.route(), otherContext.route())
-                        && RailDataUtilities.equals(currentContext.current(), otherContext.previous())) {
-                    return otherContext;
+    private void syncPreviousAndNextStationContexts() {
+        stationIdToStationContexts.forEach((stationId, stationContexts) -> {
+            for (StationContext currentContext : stationContexts) {
+                if (!previousStationContexts.containsKey(currentContext)) {
+                    previousStationContexts.put(currentContext, new HashSet<>());
+                }
+                if (!nextStationContexts.containsKey(currentContext)) {
+                    nextStationContexts.put(currentContext, new HashSet<>());
+                }
+                KSDStation next = currentContext.next();
+                if (next != null) {
+                    Set<StationContext> otherContexts = stationIdToStationContexts.getOrDefault(next.id, Set.of());
+                    for (StationContext otherContext : otherContexts) {
+                        if (!previousStationContexts.containsKey(otherContext)) {
+                            previousStationContexts.put(otherContext, new HashSet<>());
+                        }
+                        if (!nextStationContexts.containsKey(otherContext)) {
+                            nextStationContexts.put(otherContext, new HashSet<>());
+                        }
+                        if (RailDataUtilities.equals(currentContext.route(), otherContext.route())
+                                && RailDataUtilities.equals(currentContext.current(), otherContext.previous())) {
+                            nextStationContexts.get(currentContext).add(otherContext);
+                            previousStationContexts.get(otherContext).add(currentContext);
+                        }
+                    }
                 }
             }
-        }
-        return null;
-    }
-
-
-    private StationContext findPreviousStationContext(StationContext currentContext) {
-        KSDStation previous = currentContext.previous();
-        if (previous != null) {
-            Set<StationContext> otherContexts = stationIdToStationContexts.getOrDefault(previous.id, Set.of());
-            for (StationContext otherContext : otherContexts) {
-                if (RailDataUtilities.equals(currentContext.route(), otherContext.route())
-                        && RailDataUtilities.equals(currentContext.current(), otherContext.next())) {
-                    return otherContext;
-                }
-            }
-        }
-        return null;
+        });
     }
 
     /**
@@ -246,7 +250,7 @@ public class WayFinder {
                 return RailDataUtilities.equals(current, state.current)
                         && RailDataUtilities.equals(previous, state.previous)
                         && RailDataUtilities.equals(next, state.next)
-                        && RailDataUtilities.isSameRoute(route, state.route);
+                        && RailDataUtilities.equals(route, state.route);
             }
             return false;
         }
@@ -257,7 +261,7 @@ public class WayFinder {
                     RailDataUtilities.hashCode(current),
                     RailDataUtilities.hashCode(previous),
                     RailDataUtilities.hashCode(next),
-                    RailDataUtilities.routeHashCode(route));
+                    RailDataUtilities.hashCode(route));
         }
     }
 

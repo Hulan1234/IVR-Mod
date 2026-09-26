@@ -70,6 +70,11 @@ public class KCRSTMachineScreen extends ScreenMapper implements KSDGui {
         return false;
     }
 
+    public void onClose() {
+        railMap.updateCursor(false);
+        super.onClose();
+    }
+
     public void onClickedOnDestination(KSDStation destination) {
         if (minecraft != null) {
             UtilitiesClient.setScreen(minecraft, new STProcessingScreen(current, destination, balance, this));
