@@ -14,20 +14,20 @@ import java.util.Set;
 public class RailDataUtilities {
 
     public static boolean equals(@Nullable NameColorDataBase b1, @Nullable NameColorDataBase b2) {
-        if (b1 == null || b2 == null) {
-            return false;
-        }
         if (b1 == b2) {
             return true;
+        }
+        if (b1 == null || b2 == null) {
+            return false;
         }
         return b1.id == b2.id;
     }
 
-    public static boolean isSameStation(KSDStation station1, KSDStation station2) {
-        if (station1 == null || station2 == null) {
-            return false;
+    public static int hashCode(@Nullable NameColorDataBase b1) {
+        if (b1 == null) {
+            return Long.hashCode(0);
         }
-        return Objects.equals(getStationKey(station1), getStationKey(station2));
+        return Long.hashCode(b1.id);
     }
 
     public static boolean isSameRoute(KSDRoute route1, KSDRoute route2) {
@@ -35,10 +35,6 @@ public class RailDataUtilities {
             return false;
         }
         return Objects.equals(getRouteKey(route1), getRouteKey(route2));
-    }
-
-    public static int stationHashCode(KSDStation station) {
-        return station != null? getStationKey(station).hashCode() : 0;
     }
 
     public static int routeHashCode(KSDRoute route) {
@@ -51,10 +47,6 @@ public class RailDataUtilities {
 
     public static String[] getSplitName(@NotNull NameColorDataBase data) {
         return getMainName(data).split("\\|");
-    }
-
-    public static String getStationKey(@NotNull KSDStation station) {
-        return getMainName(station) + "\u0000" + station.color;
     }
 
     public static String getRouteKey(@NotNull KSDRoute route) {

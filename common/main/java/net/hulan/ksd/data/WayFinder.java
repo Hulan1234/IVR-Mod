@@ -82,7 +82,7 @@ public class WayFinder {
         }
         while (!priorityQueue.isEmpty()) {
             StationContext currentContext = priorityQueue.poll();
-            if (destination.equals(currentContext.current())) { // 如果当前状态已经到达目标站
+            if (RailDataUtilities.equals(destination, currentContext.current())) { // 如果当前状态已经到达目标站
                 List<StationContext> statePath = reconstructContextPath(currentContext, previous); // 从终点向前恢复完整状态路径
                 return buildRouteSegments(statePath); // 将状态路径合并成最终的 RouteSegment 列表
             }
@@ -124,7 +124,7 @@ public class WayFinder {
         if (next != null) {
             Set<StationContext> otherContexts = stationIdToStationContexts.getOrDefault(next.id, Set.of());
             for (StationContext otherContext : otherContexts) {
-                if (RailDataUtilities.isSameRoute(currentContext.route(), otherContext.route())
+                if (RailDataUtilities.equals(currentContext.route(), otherContext.route())
                         && RailDataUtilities.equals(currentContext.current(), otherContext.previous())) {
                     return otherContext;
                 }
@@ -139,7 +139,7 @@ public class WayFinder {
         if (previous != null) {
             Set<StationContext> otherContexts = stationIdToStationContexts.getOrDefault(previous.id, Set.of());
             for (StationContext otherContext : otherContexts) {
-                if (RailDataUtilities.isSameRoute(currentContext.route(), otherContext.route())
+                if (RailDataUtilities.equals(currentContext.route(), otherContext.route())
                         && RailDataUtilities.equals(currentContext.current(), otherContext.next())) {
                     return otherContext;
                 }
@@ -254,9 +254,9 @@ public class WayFinder {
         @Override
         public int hashCode() {
             return Objects.hash(
-                    RailDataUtilities.stationHashCode(current),
-                    RailDataUtilities.stationHashCode(previous),
-                    RailDataUtilities.stationHashCode(next),
+                    RailDataUtilities.hashCode(current),
+                    RailDataUtilities.hashCode(previous),
+                    RailDataUtilities.hashCode(next),
                     RailDataUtilities.routeHashCode(route));
         }
     }
