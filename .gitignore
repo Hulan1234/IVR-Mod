@@ -131,3 +131,4 @@ modrinth.properties
 .env.*
 /CHANGELOG.md
 /Description.md
+/.gradle-user/
