@@ -3,7 +3,7 @@ package net.hulan.ivr.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mtr.mappings.EntityRendererMapper;
-import net.hulan.ivr.entity.NPC;
+import net.hulan.ivr.entity.InteractiveNPC;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
+public class NPCSteveRenderer<T extends InteractiveNPC> extends EntityRendererMapper<T> {
 
     private static final float MODEL_SCALE = 1.3333333F;
     private static final float HEAD_Y_OFFSET = 21.5F / 16.0F / MODEL_SCALE;

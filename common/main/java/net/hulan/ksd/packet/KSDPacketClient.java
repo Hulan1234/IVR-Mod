@@ -18,7 +18,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
-import net.hulan.ivr.entity.NPC;
+import net.hulan.ivr.entity.InteractiveNPC;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,9 +28,9 @@ import java.util.function.BiFunction;
 
 public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
 
-    public static void sendNPCInteraction(NPC npc) {
+    public static void sendNPCInteraction(InteractiveNPC interactiveNpc) {
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
-        packet.writeVarInt(npc.getId());
+        packet.writeVarInt(interactiveNpc.getId());
         RegistryClient.sendToServer(KSD_PACKET_NPC_INTERACTION, packet);
     }
 

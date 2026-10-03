@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Vector3f;
 import mtr.mappings.EntityRendererMapper;
-import net.hulan.ivr.entity.NPC;
+import net.hulan.ivr.entity.InteractiveNPC;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-public class NPCSteveRenderer<T extends NPC> extends EntityRendererMapper<T> {
+public class NPCSteveRenderer<T extends InteractiveNPC> extends EntityRendererMapper<T> {
 
     private static final float MODEL_SCALE = 1.0F;
     private static final float NAME_TAG_VERTICAL_OFFSET = 0F;

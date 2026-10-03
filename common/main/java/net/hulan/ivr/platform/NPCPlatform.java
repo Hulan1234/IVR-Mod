@@ -2,14 +2,14 @@ package net.hulan.ivr.platform;
 
 import mtr.RegistryClient;
 import mtr.RegistryObject;
-import net.hulan.ivr.entity.NPC;
-import net.hulan.ivr.entity.IVRNPCs;
+import net.hulan.ivr.entity.InteractiveNPC;
+import net.hulan.ivr.IVREntities;
 import net.hulan.ivr.render.NPCSteveRenderer;
 import net.minecraft.SharedConstants;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 
-/** Version-specific bridge for NPC registration, attributes, and rendering. */
+/** Version-specific bridge for InteractiveNPC registration, attributes, and rendering. */
 public abstract class NPCPlatform {
 
     private static NPCPlatform instance;
@@ -24,7 +24,7 @@ public abstract class NPCPlatform {
             instance = (NPCPlatform) Class.forName(className).getDeclaredConstructor().newInstance();
             return instance;
         } catch (ReflectiveOperationException exception) {
-            throw new IllegalStateException("No NPC platform implementation for " + version, exception);
+            throw new IllegalStateException("No InteractiveNPC platform implementation for " + version, exception);
         }
     }
 
@@ -47,14 +47,16 @@ public abstract class NPCPlatform {
 
     @FunctionalInterface
     public interface EntityRegistrar {
-        void register(String id, RegistryObject<? extends EntityType<? extends NPC>> entity);
+        void register(String id, RegistryObject<? extends EntityType<? extends InteractiveNPC>> entity);
+    }
+    public void registerEntities(EntityRegistrar registrar) {
+        registrar.register("tickets", IVREntities.TICKETS);
+        registrar.register("fare_adjustments", IVREntities.FARE_ADJUSTMENTS);
     }
 
-    public abstract void registerEntities(EntityRegistrar registrar);
-
     public void registerClientRenderers() {
-        RegistryClient.registerEntityRenderer(IVRNPCs.TICKETS.get(), NPCSteveRenderer::new);
-        RegistryClient.registerEntityRenderer(IVRNPCs.FARE_ADJUSTMENTS.get(), NPCSteveRenderer::new);
+        RegistryClient.registerEntityRenderer(IVREntities.TICKETS.get(), NPCSteveRenderer::new);
+        RegistryClient.registerEntityRenderer(IVREntities.FARE_ADJUSTMENTS.get(), NPCSteveRenderer::new);
     }
 
     public void registerAttributes() {}

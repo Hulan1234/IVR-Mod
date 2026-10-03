@@ -6,8 +6,8 @@ import mtr.data.*;
 import mtr.mappings.Utilities;
 import mtr.packet.PacketTrainDataBase;
 import net.hulan.ivr.block.StorableBlockEntity;
+import net.hulan.ivr.entity.InteractiveNPC;
 import net.hulan.ivr.item.ItemNPCSpawnEgg;
-import net.hulan.ivr.entity.NPC;
 import net.hulan.ksd.data.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -32,27 +32,27 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
 
     public static final String NPC_ROLE_TAG = "ivr_role";
 
-    public static String getNPCRole(NPC npc) {
+    public static String getNPCRole(InteractiveNPC interactiveNpc) {
         CompoundTag tag = new CompoundTag();
-        npc.saveWithoutId(tag);
+        interactiveNpc.saveWithoutId(tag);
         if (tag.contains(NPC_ROLE_TAG)) {
             return tag.getString(NPC_ROLE_TAG);
         }
-        return npc.getRole();
+        return interactiveNpc.getRole();
     }
 
     public static void receiveNPCInteraction(MinecraftServer server, ServerPlayer player, FriendlyByteBuf packet) {
         final int entityId = packet.readVarInt();
         server.execute(() -> {
-            if (!(player.level.getEntity(entityId) instanceof NPC npc)
-                    || npc.distanceToSqr(player) > 36.0D) {
+            if (!(player.level.getEntity(entityId) instanceof InteractiveNPC interactiveNpc)
+                    || interactiveNpc.distanceToSqr(player) > 36.0D) {
                 return;
             }
-            final String role = getNPCRole(npc);
+            final String role = getNPCRole(interactiveNpc);
             if (ItemNPCSpawnEgg.TICKETS_ROLE.equals(role)) {
-                openTicketsScreenS2C(player, npc.blockPosition());
+                openTicketsScreenS2C(player, interactiveNpc.blockPosition());
             } else if (ItemNPCSpawnEgg.FA_ROLE.equals(role)) {
-                openFareAdjustmentsScreenS2C(player, npc.blockPosition());
+                openFareAdjustmentsScreenS2C(player, interactiveNpc.blockPosition());
             }
         });
     }

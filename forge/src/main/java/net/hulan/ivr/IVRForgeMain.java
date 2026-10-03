@@ -10,15 +10,14 @@ import mtr.mappings.DeferredRegisterHolder;
 import mtr.mappings.ForgeUtilities;
 import mtr.mappings.RegistryUtilities;
 import net.hulan.ivr.item.ItemNPCSpawnEgg;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.entity.EntityType;
 import net.hulan.ivr.platform.NPCPlatform;
-import net.hulan.ivr.entity.IVRNPC;
-import net.hulan.ivr.entity.NPC;
-import net.hulan.ivr.entity.NPCs;
+import net.hulan.ivr.entity.InteractiveNPC;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -99,7 +98,7 @@ public class IVRForgeMain {
         BLOCK_ENTITY_TYPES.register(path, blockEntityType::get);
     }
 
-    private static void registerEntity(String path, RegistryObject<? extends EntityType<? extends IVRNPC>> entity) {
+    private static void registerEntity(String path, RegistryObject<? extends EntityType<? extends Entity>> entity) {
         ENTITY_TYPES.register(path, entity::get);
     }
 
@@ -107,8 +106,8 @@ public class IVRForgeMain {
 
         @SubscribeEvent
         public static void onEntityAttributeCreation(final EntityAttributeCreationEvent event) {
-            event.put(NPCs.TICKETS.get(), NPC.createAttributes().build());
-            event.put(NPCs.FARE_ADJUSTMENTS.get(), NPC.createAttributes().build());
+            event.put(IVREntities.TICKETS.get(), InteractiveNPC.createAttributes().build());
+            event.put(IVREntities.FARE_ADJUSTMENTS.get(), InteractiveNPC.createAttributes().build());
         }
 
         @SubscribeEvent

@@ -10,12 +10,12 @@ import mtr.mappings.RegistryUtilities;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.hulan.ivr.platform.NPCPlatform;
-import net.hulan.ivr.entity.NPC;
 import net.hulan.ivr.item.ItemNPCSpawnEgg;
 import net.minecraft.world.entity.EntityType;
 
@@ -72,9 +72,9 @@ public class IVRFabricMain implements ModInitializer {
         Registry.register(RegistryUtilities.registryGetBlockEntityType(), new ResourceLocation(MOD_ID, path), (BlockEntityType<? extends BlockEntityMapper>)blockEntityType.get());
     }
 
-    private static void registerEntity(String path, RegistryObject<? extends EntityType<? extends NPC>> entity) {
+    private static void registerEntity(String path, RegistryObject<? extends EntityType<? extends Entity>> entity) {
         ResourceLocation id = new ResourceLocation(MOD_ID, path);
         Registry.register(RegistryUtilities.registryGetEntityType(), id, entity.get());
-        IVR.LOGGER.info("Registered NPC entity {}", id);
+        IVR.LOGGER.info("Registered InteractiveNPC entity {}", id);
     }
 }

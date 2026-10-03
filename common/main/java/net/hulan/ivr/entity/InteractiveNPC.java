@@ -13,7 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class NPC extends IVRNPC {
+public abstract class InteractiveNPC extends PathfinderMob {
 
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
@@ -22,7 +22,7 @@ public abstract class NPC extends IVRNPC {
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D);
     }
 
-    protected NPC(EntityType<? extends NPC> type, Level level) {
+    protected InteractiveNPC(EntityType<? extends InteractiveNPC> type, Level level) {
         super(type, level);
         setNoAi(true);
         setInvulnerable(false);
@@ -55,12 +55,15 @@ public abstract class NPC extends IVRNPC {
         setDeltaMovement(0, 0, 0);
     }
 
-    @Override
     public boolean removeWhenFarAway(double distanceToClosestPlayer) {
         return false;
     }
 
     public boolean isPushable() {
         return false;
+    }
+
+    public net.minecraft.resources.ResourceLocation getTexture() {
+        return null;
     }
 }

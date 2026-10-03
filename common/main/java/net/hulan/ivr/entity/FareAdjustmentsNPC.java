@@ -5,7 +5,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.resources.ResourceLocation;
 import mtr.mappings.Text;
 
-public class FareAdjustmentsNPC extends NPC {
+public class FareAdjustmentsNPC extends InteractiveNPC {
 
     private static final ResourceLocation TEXTURE = new ResourceLocation("ivr", "textures/entity/fare_adjustments_npc.png");
 

@@ -5,7 +5,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.resources.ResourceLocation;
 import mtr.mappings.Text;
 
-public class TicketsNPC extends NPC {
+public class TicketsNPC extends InteractiveNPC {
 
     private static final ResourceLocation TEXTURE = new ResourceLocation("ivr", "textures/entity/tickets_npc.png");
 
