@@ -21,7 +21,8 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 
@@ -86,7 +87,7 @@ public abstract class TrainMixin {
                      opcode = Opcodes.GETFIELD),
             remap = false)
     private void tempDoorOpen(Level world, float ticksElapsed, Depot depot, CallbackInfo ci) {
-        doorTarget = openDoors(world, doorTarget);
+        doorTarget = iVR$openDoors(world, doorTarget);
     }
 
     @Unique
@@ -103,7 +104,7 @@ public abstract class TrainMixin {
         boolean scanDoor;
         float phase = (float) getTotalDwellTicks() / 2;
         long platformId = path.get(nextPlatformIndex).savedRailBaseId;
-        KSDPlatform platform = getPlatform(world, platformId);
+        KSDPlatform platform = iVR$getPlatform(world, platformId);
         if (platform != null && platform.isSpanishPlatform && !platform.doorOpeningSide.equals(KSDPlatform.DoorOpeningSide.DEFAULT)) {
             boolean spanishCheck, original = iVR$scanDoors(invoker, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing);
             spanishCheck = platform.doorOpeningSide.equals(leftOrRight);
@@ -176,9 +177,9 @@ public abstract class TrainMixin {
     }
 
     @Unique
-    private boolean openDoors(Level world, boolean original) {
+    private boolean iVR$openDoors(Level world, boolean original) {
         long platformId = path.get(nextPlatformIndex).savedRailBaseId;
-        KSDPlatform platform = getPlatform(world, platformId);
+        KSDPlatform platform = iVR$getPlatform(world, platformId);
         if (platform == null || !platform.isSpanishPlatform || platform.doorOpeningSide.equals(KSDPlatform.DoorOpeningSide.DEFAULT)) {
             return original;
         }
@@ -199,7 +200,7 @@ public abstract class TrainMixin {
     }
 
     @Unique
-    private KSDPlatform getPlatform(Level world, long platformId) {
+    private KSDPlatform iVR$getPlatform(Level world, long platformId) {
         if (world.isClientSide) {
             return DataUtilities.getPlatform(KSDClientData.PLATFORMS, platformId);
         } else {

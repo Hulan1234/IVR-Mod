@@ -4,10 +4,7 @@ import io.netty.buffer.Unpooled;
 import mtr.RegistryClient;
 import mtr.mappings.UtilitiesClient;
 import mtr.packet.PacketTrainDataBase;
-import net.hulan.ivr.screen.ClassicalSign1OddScreen;
-import net.hulan.ivr.screen.ClassicalSignScreen;
-import net.hulan.ivr.screen.ModernSign1OddScreen;
-import net.hulan.ivr.screen.ModernSignScreen;
+import net.hulan.ivr.screen.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -15,6 +12,14 @@ import net.minecraft.network.FriendlyByteBuf;
 import java.util.Set;
 
 public class IVRPacketTrainDataGuiClient extends PacketTrainDataBase implements IVRPacket {
+
+    public static void openIVRConfigScreenS2C(Minecraft minecraftClient) {
+        minecraftClient.execute(() -> {
+            if (!(minecraftClient.screen instanceof IVRConfigScreen)) {
+                UtilitiesClient.setScreen(minecraftClient, new IVRConfigScreen(() -> minecraftClient.setScreen(null)));
+            }
+        });
+    }
 
     public static void openClassicalSignScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
         final BlockPos pos = packet.readBlockPos();
@@ -105,6 +110,6 @@ public class IVRPacketTrainDataGuiClient extends PacketTrainDataBase implements 
         packet.writeInt(1);
         packet.writeUtf(signId2[0] == null ? "" : signId2[0]);
         packet.writeBoolean(luminance);
-        RegistryClient.sendToServer(PACKET_CLASSICAL_1ODD_SIGN_TYPES, packet);
+        RegistryClient.sendToServer(PACKET_MODERN_1ODD_SIGN_TYPES, packet);
     }
 }

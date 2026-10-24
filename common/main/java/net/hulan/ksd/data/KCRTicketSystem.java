@@ -56,15 +56,13 @@ public final class KCRTicketSystem {
                                                               KSDStation enteredStation,
                                                               CompoundTag itemTag,
                                                               boolean isOctopus) {
-        if (isEntered(itemTag, railwayData.stations, isOctopus)) {
-            playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.already_entered");
-            return TicketSystem.EnumTicketBarrierOpen.CLOSED;
-        }
         if (isOctopus && itemTag.getInt("balance") < 0){
             playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.insufficient_octopus");
             return TicketSystem.EnumTicketBarrierOpen.CLOSED;
         }
-        enterStation(itemTag, enteredStation.id, isOctopus);
+        if (!isEntered(itemTag, railwayData.stations, isOctopus)) {
+            enterStation(itemTag, enteredStation.id, isOctopus);
+        }
         boolean isConcessionary = itemTag.getBoolean("is_concessionary");
         playSoundAndSendMessage(world, player.blockPosition(), player,
                 isConcessionary ? SoundEvents.TICKET_BARRIER_CONCESSIONARY : SoundEvents.TICKET_BARRIER,

@@ -15,7 +15,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.hulan.ivr.platform.NPCPlatform;
+import net.hulan.ksd.utils.NPCUtilities;
 import net.hulan.ivr.item.ItemNPCSpawnEgg;
 import net.minecraft.world.entity.EntityType;
 
@@ -32,9 +32,9 @@ public class IVRFabricMain implements ModInitializer {
                 IVRFabricMain::registerBlock,
                 IVRFabricMain::registerBlockItem,
                 IVRFabricMain::registerBlockEntityType,
-                IVRFabricMain::registerEnchantedBlockItem);
-        NPCPlatform.getInstance().registerEntities(IVRFabricMain::registerEntity);
-        NPCPlatform.getInstance().registerAttributes();
+                IVRFabricMain::registerEnchantedBlockItem,
+                IVRFabricMain::registerEntity);
+        NPCUtilities.getInstance().registerAttributes();
     }
 
     private static void registerItem(String path, RegistryObject<Item> item) {

@@ -43,9 +43,7 @@ public class NPCSteveRenderer<T extends InteractiveNPC> extends EntityRendererMa
         poseStack.mulPose(Vector3f.YP.rotationDegrees(180.0F - yaw));
         poseStack.scale(-MODEL_SCALE, -MODEL_SCALE, MODEL_SCALE);
         poseStack.translate(0.0F, -1.501F, 0.0F);
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(
-                RenderType.entityTranslucent(getTextureLocation(entity))
-        );
+        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity)));
         model.head.visible = false;
         model.hat.visible = false;
         model.renderToBuffer(

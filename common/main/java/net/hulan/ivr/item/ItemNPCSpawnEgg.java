@@ -6,7 +6,7 @@ import net.hulan.ivr.entity.InteractiveNPC;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
-import net.hulan.ivr.platform.NPCPlatform;
+import net.hulan.ksd.utils.NPCUtilities;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.context.UseOnContext;
@@ -38,13 +38,13 @@ public class ItemNPCSpawnEgg extends SpawnEggItem {
         }
         float facing = 180.0F;
         if (context.getPlayer() != null) {
-            facing = NPCPlatform.getYaw(context.getPlayer()) + 180.0F;
+            facing = NPCUtilities.getYaw(context.getPlayer()) + 180.0F;
         }
         interactiveNpc.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, facing, 0.0F);
         interactiveNpc.setPersistenceRequired();
         level.addFreshEntity(interactiveNpc);
         ItemStack stack = context.getItemInHand();
-        if (context.getPlayer() == null || !NPCPlatform.isCreative(context.getPlayer())) {
+        if (context.getPlayer() == null || !NPCUtilities.isCreative(context.getPlayer())) {
             stack.shrink(1);
         }
         return InteractionResult.CONSUME;

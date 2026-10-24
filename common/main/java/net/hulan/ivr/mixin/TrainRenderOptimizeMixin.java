@@ -2,10 +2,12 @@ package net.hulan.ivr.mixin;
 
 import mtr.data.TrainClient;
 import mtr.render.JonModelTrainRenderer;
-import net.hulan.ivr.utils.TrainRenderOptimize;
-import net.hulan.ivr.utils.TrainVisibility;
-import net.hulan.ivr.utils.RenderTimingDebug;
+import net.hulan.ivr.render_promotion.utils.TrainRenderPolicy;
+import net.hulan.ivr.render_promotion.cache.FrustumCache;
+import net.hulan.ivr.render_promotion.visibility.TrainVisibility;
+import net.hulan.ivr.render_promotion.debug.RenderDebugStats;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.AABB;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -14,27 +16,21 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * 列车渲染优化 Mixin。
- * 目的：降低列车渲染开销。
- * 规则：
- *   - 距离 ≤ 75 格：完整渲染；75～200 格：按乘车状态渲染模型阶段；
- *   - 距离 > 200 格：完全不渲染。
- *   - 只有整节车厢所有采样点都被实心方块遮挡时才剔除。
- * 所有列车（含玩家乘坐的）都按此距离规则渲染。
- */
+    /**
+     * 在 MTR 车厢与连接件入口执行保守可见性判断。
+     * 相对坐标乘车视图始终放行，只有完整遮挡证据才隐藏车厢。
+     */
 @Mixin(value = JonModelTrainRenderer.class)
 public abstract class TrainRenderOptimizeMixin {
 
-    /** 当前列车（MTR 客户端数据），用于读取视角偏移。 */
+    /** 当前列车的客户端数据。
+     * 用于读取乘车相对视角及车厢标识。 */
     @Shadow(remap = false)
     @Final
     private TrainClient train;
 
-    /**
-     * 注入到 renderCar（每节车厢渲染）开头。
-     * 75 格内保持完整渲染；超出距离、视锥或整节车厢完全被遮挡时跳过。
-     */
+    /** 在车厢渲染入口选择模型阶段并检查可见性。
+     * 取消绘制时同步清理阶段模式，防止影响后续车厢。 */
     @Inject(method = "renderCar", at = @At("HEAD"), cancellable = true, remap = false)
     private void ivr$optimizeRenderCar(int carIndex,
                                        double x,
@@ -45,23 +41,22 @@ public abstract class TrainRenderOptimizeMixin {
                                        boolean doorLeftOpen,
                                        boolean doorRightOpen,
                                        CallbackInfo ci) {
-        long started = RenderTimingDebug.begin(RenderTimingDebug.TRAIN_CULL);
-        boolean visible;
-        try {
-            boolean relative = this.train.getViewOffset() != null;
-            TrainVisibility.prepareRenderMode(net.minecraft.client.Minecraft.getInstance().level, this.train,
-                    new Vec3(x, y, z), relative);
-            visible = TrainVisibility.shouldRenderCar(net.minecraft.client.Minecraft.getInstance().level,
-                    this.train.id, carIndex, new Vec3(x, y, z), yaw, pitch, relative);
-        } finally {
-            RenderTimingDebug.end(RenderTimingDebug.TRAIN_CULL, started);
-        }
+        long started = RenderDebugStats.startTiming();
+        boolean relative = this.train.getViewOffset() != null;
+        TrainVisibility.getInstance().prepareRenderMode(net.minecraft.client.Minecraft.getInstance().level, this.train,
+                new Vec3(x, y, z), relative);
+        boolean visible = TrainVisibility.getInstance().shouldRenderCar(net.minecraft.client.Minecraft.getInstance().level,
+                this.train, carIndex, new Vec3(x, y, z), yaw, pitch, relative);
+        RenderDebugStats.recordOutcome(RenderDebugStats.Category.TRAIN, visible,
+                RenderDebugStats.elapsedSince(started));
         if (!visible) {
-            TrainVisibility.clearRenderMode();
+            TrainVisibility.getInstance().clearRenderMode();
             ci.cancel();
         }
     }
 
+    /** 在正常渲染返回后恢复默认模型阶段。
+     * 与取消路径共同保证状态不泄漏。 */
     @Inject(method = "renderCar", at = @At("RETURN"), remap = false)
     private void ivr$finishRenderCar(int carIndex,
                                      double x,
@@ -72,13 +67,11 @@ public abstract class TrainRenderOptimizeMixin {
                                      boolean doorLeftOpen,
                                      boolean doorRightOpen,
                                      CallbackInfo ci) {
-        TrainVisibility.clearRenderMode();
+        TrainVisibility.getInstance().clearRenderMode();
     }
 
-    /**
-     * 注入到 renderConnection（车厢连接件渲染）开头。
-     * 与车厢使用相同的 200 格距离上限。
-     */
+    /** 连接件入口收集前后两侧的完整角点。
+     * 只执行宽松距离和视锥判断，不做遮挡剔除。 */
     @Inject(method = "renderConnection", at = @At("HEAD"), cancellable = true, remap = false)
     private void ivr$optimizeRenderConnection(Vec3 prevPos1,
                                               Vec3 prevPos2,
@@ -107,10 +100,8 @@ public abstract class TrainRenderOptimizeMixin {
                 ci); // 使用连接件的全部角点进行距离判断。
     }
 
-    /**
-     * 注入到 renderBarrier（屏蔽门/屏障渲染）开头。
-     * 与连接件同样处理。
-     */
+    /** 屏障入口收集八个角点以覆盖完整几何。
+     * 缺失角点时辅助判断会直接放行。 */
     @Inject(method = "renderBarrier", at = @At("HEAD"), cancellable = true, remap = false)
     private void ivr$optimizeRenderBarrier(Vec3 prevPos1,
                                            Vec3 prevPos2,
@@ -134,38 +125,74 @@ public abstract class TrainRenderOptimizeMixin {
                         prevPos4,
                         thisPos1,
                         thisPos2,
+                        thisPos3,
                         thisPos4},
                 ci); // 使用屏障的全部角点进行距离判断。
     }
 
-    /** 辅助部件保持完整显示，直到超出列车渲染距离或当前视锥。 */
+    /** 由完整角点生成带余量的边界球和距离包围盒。
+     * 玩家乘车视角、异常角点和世界缺失时放行。 */
     @Unique
     private void ivr$cullAuxiliary(Vec3[] corners, CallbackInfo ci) {
+        long started = RenderDebugStats.startTiming();
         if (corners == null || corners.length == 0) {
+            RenderDebugStats.recordOutcome(RenderDebugStats.Category.TRAIN, true,
+                    RenderDebugStats.elapsedSince(started));
             return;
         }
-        double x = 0.0D;
-        double y = 0.0D;
-        double z = 0.0D;
-        int count = 0;
+        double minX = Double.POSITIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
         for (Vec3 corner : corners) {
-            if (corner != null) {
-                x += corner.x;
-                y += corner.y;
-                z += corner.z;
-                count++;
+            if (corner == null || !Double.isFinite(corner.x)
+                    || !Double.isFinite(corner.y) || !Double.isFinite(corner.z)) {
+                RenderDebugStats.recordOutcome(RenderDebugStats.Category.TRAIN, true,
+                        RenderDebugStats.elapsedSince(started));
+                return;
             }
+            minX = Math.min(minX, corner.x);
+            minY = Math.min(minY, corner.y);
+            minZ = Math.min(minZ, corner.z);
+            maxX = Math.max(maxX, corner.x);
+            maxY = Math.max(maxY, corner.y);
+            maxZ = Math.max(maxZ, corner.z);
         }
-        if (count == 0) {
+        if (train.getViewOffset() != null || net.minecraft.client.Minecraft.getInstance().level == null) {
+            RenderDebugStats.recordOutcome(RenderDebugStats.Category.TRAIN, true,
+                    RenderDebugStats.elapsedSince(started));
             return;
         }
-        boolean relative = train.getViewOffset() != null;
-        Vec3 center = new Vec3(x / count, y / count, z / count);
-        Vec3 rel = TrainRenderOptimize.toCameraRelative(center, relative);
-        double renderReach = TrainRenderOptimize.getTrainRenderDistance() + 12.0D;
-        if (rel != null && (rel.lengthSqr() > renderReach * renderReach
-                || TrainRenderOptimize.isOutsideFrustum(rel, 12.0D))) {
+        double padding = 2.0D;
+        AABB bounds = new AABB(minX - padding, minY - padding, minZ - padding,
+                maxX + padding, maxY + padding, maxZ + padding);
+        Vec3 center = bounds.getCenter();
+        FrustumCache.CameraSnapshot view = FrustumCache.capture(net.minecraft.client.Minecraft.getInstance().level);
+        Vec3 rel = view.relative(center);
+        double halfX = bounds.getXsize() * 0.5D;
+        double halfY = bounds.getYsize() * 0.5D;
+        double halfZ = bounds.getZsize() * 0.5D;
+        double dx = Math.max(0.0D, Math.abs(rel.x) - halfX);
+        double dy = Math.max(0.0D, Math.abs(rel.y) - halfY);
+        double dz = Math.max(0.0D, Math.abs(rel.z) - halfZ);
+        double renderReach = TrainRenderPolicy.getTrainRenderDistance() + 12.0D;
+        if (dx * dx + dy * dy + dz * dz > renderReach * renderReach) {
+            RenderDebugStats.recordOutcome(RenderDebugStats.Category.TRAIN, false,
+                    RenderDebugStats.elapsedSince(started));
             ci.cancel();
+            return;
+        }
+        // Use the complete auxiliary AABB with a small conservative margin;
+        // a box touching a frustum plane must remain renderable.
+        if (view.outsideFrustum(bounds, FrustumCache.FRUSTUM_BOUNDARY_MARGIN)) {
+            RenderDebugStats.recordOutcome(RenderDebugStats.Category.TRAIN, false,
+                    RenderDebugStats.elapsedSince(started));
+            ci.cancel();
+        } else {
+            RenderDebugStats.recordOutcome(RenderDebugStats.Category.TRAIN, true,
+                    RenderDebugStats.elapsedSince(started));
         }
     }
 }

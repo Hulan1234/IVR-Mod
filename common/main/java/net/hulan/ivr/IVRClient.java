@@ -2,22 +2,19 @@ package net.hulan.ivr;
 
 import mtr.RegistryClient;
 import mtr.packet.IPacket;
+import net.hulan.ivr.client.IVRConfig;
 import net.hulan.ivr.packet.IVRPacket;
 import net.hulan.ivr.packet.IVRPacketTrainDataGuiClient;
 import net.hulan.ivr.render.*;
+import net.hulan.ivr.render_promotion.bounds.BlockEntityBoundsRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
-import net.hulan.ivr.platform.NPCPlatform;
-import net.hulan.ivr.block.BlockKCRClock;
-import net.hulan.ivr.utils.BlockEntityVisibility;
-import net.minecraft.world.phys.AABB;
 
 public class IVRClient implements IVRPacket, IVRBlockEntityTypes, IVRBlocks, IPacket {
 
     public static void init() {
-        NPCPlatform.getInstance().registerClientRenderers();
-        BlockEntityVisibility.registerStaticBoundsProvider(BlockKCRClock.TileEntityKCRClock.class,
-                entity -> new AABB(entity.getBlockPos()));
+        IVRConfig.load();
+        BlockEntityBoundsRegistry.registerBEBounds();
         RegistryClient.registerBlockRenderType(RenderType.cutout(), KCR_CLOCK.get());
         RegistryClient.registerBlockRenderType(RenderType.cutout(), IVR_LOGO.get());
         RegistryClient.registerBlockRenderType(RenderType.cutout(), KCR_PLATFORM_INDENTED.get());
@@ -77,6 +74,9 @@ public class IVRClient implements IVRPacket, IVRBlockEntityTypes, IVRBlocks, IPa
         RegistryClient.registerTileEntityRenderer(KCR_STATION_NAME_WALL_GRAY_TILE_ENTITY.get(), (dispatcher) -> new RenderKCRStationNameTiled<>(dispatcher, false));
         RegistryClient.registerTileEntityRenderer(KCR_STATION_NAME_WALL_BLACK_TILE_ENTITY.get(), (dispatcher) -> new RenderKCRStationNameTiled<>(dispatcher, false));
         RegistryClient.registerTileEntityRenderer(MODERN_ROUTE_SIGN_TILE_ENTITY.get(), RenderModernRouteSign::new);
+        RegistryClient.registerEntityRenderer(IVREntities.TICKETS.get(), NPCSteveRenderer::new);
+        RegistryClient.registerEntityRenderer(IVREntities.FARE_ADJUSTMENTS.get(), NPCSteveRenderer::new);
+        RegistryClient.registerNetworkReceiver(PACKET_OPEN_IVR_CONFIG_SCREEN, packet -> IVRPacketTrainDataGuiClient.openIVRConfigScreenS2C(Minecraft.getInstance()));
         RegistryClient.registerNetworkReceiver(PACKET_OPEN_CLASSICAL_SIGN_SCREEN, packet -> IVRPacketTrainDataGuiClient.openClassicalSignScreenS2C(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(PACKET_OPEN_CLASSICAL_1ODD_SIGN_SCREEN, packet -> IVRPacketTrainDataGuiClient.openClassicalSign1OddScreenS2C(Minecraft.getInstance(), packet));
         RegistryClient.registerNetworkReceiver(PACKET_OPEN_MODERN_SIGN_SCREEN, packet -> IVRPacketTrainDataGuiClient.openModernSignScreenS2C(Minecraft.getInstance(), packet));

@@ -7,13 +7,13 @@ import mtr.render.RenderTrains;
 import mtr.render.StoredMatrixTransformations;
 import net.hulan.ivr.block.BlockKCRStationNameBase;
 import net.hulan.ivr.block.BlockKCRStationNameEntrance;
+import net.hulan.ivr.render_promotion.cache.SignLengthCache;
 import net.hulan.ksd.client.KSDClientData;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class RenderKCRStationNameTiled<T extends BlockKCRStationNameBase.TileEntityKCRStationNameBase> extends RenderKCRStationNameBase<T> {
@@ -48,19 +48,9 @@ public class RenderKCRStationNameTiled<T extends BlockKCRStationNameBase.TileEnt
     }
 
     private int getLength(BlockGetter world, BlockPos pos, boolean lookRight) {
-        if (world == null) {
-            return 1;
-        } else {
-            Direction facing = IBlock.getStatePropertySafe(world, pos, BlockKCRStationNameBase.FACING);
-            Block thisBlock = world.getBlockState(pos).getBlock();
-            int length = 1;
-            while(true) {
-                Block checkBlock = world.getBlockState(pos.relative(lookRight ? facing.getClockWise() : facing.getCounterClockWise(), length)).getBlock();
-                if (!(checkBlock instanceof BlockKCRStationNameBase) || checkBlock != thisBlock) {
-                    return length;
-                }
-                ++length;
-            }
-        }
+        if (world == null) return 1;
+        Direction facing = IBlock.getStatePropertySafe(world, pos, BlockKCRStationNameBase.FACING);
+        return SignLengthCache.get(world, pos, facing, lookRight, false);
     }
+
 }

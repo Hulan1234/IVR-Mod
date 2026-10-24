@@ -17,6 +17,9 @@
     "main": [
       "net.hulan.ivr.IVRFabricMain",
       "net.hulan.ksd.KSDFabricMain"
+    ],
+    "modmenu": [
+      "net.hulan.ivr.IVRModMenuIntegration"
     ]
   },
   "mixins": [
@@ -27,6 +30,7 @@
     "fabricloader": ">=0.15.7",
     "fabric": "*",
     "minecraft": "*",
-    "mtr": "*"
+    "mtr": "*",
+    "mtrsteamloco": "*"
   }
 }

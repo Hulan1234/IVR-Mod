@@ -16,7 +16,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.entity.EntityType;
-import net.hulan.ivr.platform.NPCPlatform;
+import net.hulan.ksd.utils.NPCUtilities;
 import net.hulan.ivr.entity.InteractiveNPC;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -41,8 +41,8 @@ public class IVRForgeMain {
                 IVRForgeMain::registerBlock,
                 IVRForgeMain::registerBlock,
                 IVRForgeMain::registerBlockEntityType,
-                IVRForgeMain::registerEnchantedBlock);
-        NPCPlatform.getInstance().registerEntities(IVRForgeMain::registerEntity);
+                IVRForgeMain::registerEnchantedBlock,
+                IVRForgeMain::registerEntity);
     }
 
     public IVRForgeMain() {
@@ -54,7 +54,7 @@ public class IVRForgeMain {
         ENTITY_TYPES.register();
         eventBus.register(IVRForgeEventBus.class);
         if (FMLEnvironment.dist == Dist.CLIENT) {
-            eventBus.register(NPCPlatform.getInstance().getClass());
+            eventBus.register(NPCUtilities.getInstance().getClass());
         }
     }
 

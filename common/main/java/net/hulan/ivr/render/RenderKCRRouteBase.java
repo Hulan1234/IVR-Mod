@@ -9,6 +9,7 @@ import mtr.mappings.UtilitiesClient;
 import mtr.render.RenderTrains;
 import mtr.render.StoredMatrixTransformations;
 import net.hulan.ivr.block.BlockKCRPSDTop;
+import net.hulan.ivr.render_promotion.cache.SignLengthCache;
 import net.hulan.ksd.client.KSDClientData;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
@@ -17,10 +18,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class RenderKCRRouteBase <T extends BlockKCRPSDTop.TileEntityKCRRouteBase> extends BlockEntityRendererMapper<T> implements IGui, IBlock {
 
@@ -42,7 +43,12 @@ public abstract class RenderKCRRouteBase <T extends BlockKCRPSDTop.TileEntityKCR
     }
 
     @Override
-    public final void render(T entity, float tickDelta, PoseStack matrices, MultiBufferSource vertexConsumers, int light, int overlay) {
+    public final void render(T entity,
+                             float tickDelta,
+                             @NotNull PoseStack matrices,
+                             @NotNull MultiBufferSource vertexConsumers,
+                             int light,
+                             int overlay) {
         Level world = entity.getLevel();
         if (world != null) {
             BlockPos pos = entity.getBlockPos();
@@ -130,34 +136,7 @@ public abstract class RenderKCRRouteBase <T extends BlockKCRPSDTop.TileEntityKCR
     protected abstract void renderAdditional(StoredMatrixTransformations var1, long var2, BlockState var4, int var5, int var6, Direction var7, int var8, int var9);
 
     private int getTextureNumber(BlockGetter world, BlockPos pos, Direction facing, boolean searchLeft) {
-        int number = 0;
-        Block thisBlock = world.getBlockState(pos).getBlock();
-        while(true) {
-            BlockState state = world.getBlockState(pos.relative(searchLeft ? facing.getCounterClockWise() : facing.getClockWise(), number));
-            if (state.getBlock() != thisBlock) {
-                break;
-            }
-            boolean isLeft = this.isLeft(state);
-            boolean isRight = this.isRight(state);
-            if (number != 0) {
-                if (searchLeft) {
-                    if (isRight) {
-                        break;
-                    }
-                } else if (isLeft) {
-                    break;
-                }
-            }
-            ++number;
-            if (searchLeft) {
-                if (isLeft) {
-                    break;
-                }
-            } else if (isRight) {
-                break;
-            }
-        }
-        return number - 1;
+        return SignLengthCache.get(world, pos, facing, !searchLeft, true);
     }
 
     public static int getShadingColor(Direction facing, int grayscaleColorByte) {

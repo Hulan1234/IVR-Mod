@@ -19,8 +19,7 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 public class Utilities_1_19_2 extends Utilities {
 
     public void registerCommand(LiteralArgumentBuilder<CommandSourceStack> command) {
-        MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent event) ->
-                event.getDispatcher().register(command));
+        MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent event) -> event.getDispatcher().register(command));
     }
 
     public void renderGuiItem(PoseStack poseStack, ItemRenderer itemRenderer, Font font, ItemStack itemStack, int x, int y) {
@@ -29,11 +28,8 @@ public class Utilities_1_19_2 extends Utilities {
     }
 
     public void registerItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor) {
-        ItemProperties.register(
-                item,
-                id,
-                (itemStack, clientLevel, livingEntity, seed) -> modelPredictor.predictor(itemStack, clientLevel, livingEntity)
-        );
+        ItemProperties.register(item, id, (itemStack, clientLevel, livingEntity, seed) ->
+                modelPredictor.predictor(itemStack, clientLevel, livingEntity));
     }
 
     public BlockBehaviour.Properties createBlockProperties() {

@@ -25,6 +25,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Tuple;
 import net.minecraft.world.level.levelgen.Heightmap;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ConcurrentModificationException;
 import java.util.List;
@@ -80,7 +81,10 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
         scale = 1.0F;
     }
 
-    public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
+    public void render(@NotNull PoseStack matrices, int mouseX, int mouseY, float delta) {
+        if (player == null) {
+            return;
+        }
         Tesselator tesselator = Tesselator.getInstance();
         BufferBuilder buffer = tesselator.getBuilder();
         UtilitiesClient.beginDrawingRectangle(buffer);
@@ -112,7 +116,7 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                                     platformPos.getY() - 1,
                                     -1));
                     for(KSDStation station : KSDClientData.STATIONS) {
-                        if (KSDAreaBase.nonNullCorners(station)) {
+                        if (KSDAreaBase.nonNullCorners(station) && station.inArea(player.blockPosition())) {
                             drawRectangleFromWorldCords(buffer, station.corner1.toTupleWithXY(), station.corner2.toTupleWithXY(), ARGB_BLACK_TRANSLUCENT + station.color);
                         }
                     }
@@ -123,13 +127,11 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                 if (mapState == MapState.EDITING_AREA && drawArea1 != null && drawArea2 != null) {
                     drawRectangleFromWorldCords(buffer, drawArea1, drawArea2, Integer.MAX_VALUE);
                 }
-                if (player != null) {
-                    drawFromWorldCords(player.getX(), player.getY(), (x1, y1) -> {
-                        drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 3.0F, x1 + (double) 2.0F, y1 + (double) 3.0F, -1);
-                        drawRectangle(buffer, x1 - (double) 3.0F, y1 - (double) 2.0F, x1 + (double) 3.0F, y1 + (double) 2.0F, -1);
-                        drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 2.0F, x1 + (double) 2.0F, y1 + (double) 2.0F, ARGB_BLUE);
-                    });
-                }
+                drawFromWorldCords(player.getX(), player.getY(), (x1, y1) -> {
+                    drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 3.0F, x1 + (double) 2.0F, y1 + (double) 3.0F, -1);
+                    drawRectangle(buffer, x1 - (double) 3.0F, y1 - (double) 2.0F, x1 + (double) 3.0F, y1 + (double) 2.0F, -1);
+                    drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 2.0F, x1 + (double) 2.0F, y1 + (double) 2.0F, ARGB_BLUE);
+                });
                 tesselator.end();
                 RenderSystem.disableBlend();
                 UtilitiesClient.finishDrawingRectangle();
@@ -147,7 +149,7 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                 }
                 MultiBufferSource.BufferSource immediate = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
                 for (KSDStation station : KSDClientData.STATIONS) {
-                    if (canDrawAreaText(station)) {
+                    if (canDrawAreaText(station) && station.inArea(player.blockPosition())) {
                         BlockPos pos = station.getCenter();
                         String stationString = String.format("%s|(%s)", station.name, Text.translatable("gui.mtr.zone_number", station.zone).getString());
                         drawFromWorldCords(pos.getX(), pos.getY(), (x1, y1) -> IDrawing.drawStringWithFont(matrices, this.textRenderer, immediate, stationString, (float) this.x + x1.floatValue(), (float) this.y + y1.floatValue(), 15728880));
@@ -182,7 +184,7 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                                     platformPos.getZ() + 1,
                                     -1));
                     for(KSDStation station : KSDClientData.STATIONS) {
-                        if (KSDAreaBase.nonNullCorners(station)) {
+                        if (KSDAreaBase.nonNullCorners(station) && station.inArea(player.blockPosition())) {
                             drawRectangleFromWorldCords(buffer, station.corner1.toTupleWithXZ(), station.corner2.toTupleWithXZ(), ARGB_BLACK_TRANSLUCENT + station.color);
                         }
                     }
@@ -193,13 +195,11 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                 if (mapState == MapState.EDITING_AREA && drawArea1 != null && drawArea2 != null) {
                     drawRectangleFromWorldCords(buffer, drawArea1, drawArea2, Integer.MAX_VALUE);
                 }
-                if (player != null) {
-                    drawFromWorldCords(player.getX(), player.getZ(), (x1, y1) -> {
-                        drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 3.0F, x1 + (double) 2.0F, y1 + (double) 3.0F, -1);
-                        drawRectangle(buffer, x1 - (double) 3.0F, y1 - (double) 2.0F, x1 + (double) 3.0F, y1 + (double) 2.0F, -1);
-                        drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 2.0F, x1 + (double) 2.0F, y1 + (double) 2.0F, ARGB_BLUE);
-                    });
-                }
+                drawFromWorldCords(player.getX(), player.getZ(), (x1, y1) -> {
+                    drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 3.0F, x1 + (double) 2.0F, y1 + (double) 3.0F, -1);
+                    drawRectangle(buffer, x1 - (double) 3.0F, y1 - (double) 2.0F, x1 + (double) 3.0F, y1 + (double) 2.0F, -1);
+                    drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 2.0F, x1 + (double) 2.0F, y1 + (double) 2.0F, ARGB_BLUE);
+                });
                 tesselator.end();
                 RenderSystem.disableBlend();
                 UtilitiesClient.finishDrawingRectangle();
@@ -217,7 +217,7 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                 }
                 MultiBufferSource.BufferSource immediate = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
                 for (KSDStation station : KSDClientData.STATIONS) {
-                    if (canDrawAreaText(station)) {
+                    if (canDrawAreaText(station) && station.inArea(player.blockPosition())) {
                         BlockPos pos = station.getCenter();
                         String stationString = String.format("%s|(%s)", station.name, Text.translatable("gui.mtr.zone_number", station.zone).getString());
                         drawFromWorldCords(pos.getX(), pos.getZ(), (x1, y1) -> IDrawing.drawStringWithFont(matrices, this.textRenderer, immediate, stationString, (float) this.x + x1.floatValue(), (float) this.y + y1.floatValue(), 15728880));
@@ -252,7 +252,7 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                                     platformPos.getY() - 1,
                                     -1));
                     for(KSDStation station : KSDClientData.STATIONS) {
-                        if (KSDAreaBase.nonNullCorners(station)) {
+                        if (KSDAreaBase.nonNullCorners(station) && station.inArea(player.blockPosition())) {
                             drawRectangleFromWorldCords(buffer, station.corner1.toTupleWithZY(), station.corner2.toTupleWithZY(), ARGB_BLACK_TRANSLUCENT + station.color);
                         }
                     }
@@ -260,13 +260,11 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                if (player != null) {
-                    drawFromWorldCords(player.getZ(), player.getY(), (x1, y1) -> {
-                        drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 3.0F, x1 + (double) 2.0F, y1 + (double) 3.0F, -1);
-                        drawRectangle(buffer, x1 - (double) 3.0F, y1 - (double) 2.0F, x1 + (double) 3.0F, y1 + (double) 2.0F, -1);
-                        drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 2.0F, x1 + (double) 2.0F, y1 + (double) 2.0F, ARGB_BLUE);
-                    });
-                }
+                drawFromWorldCords(player.getZ(), player.getY(), (x1, y1) -> {
+                    drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 3.0F, x1 + (double) 2.0F, y1 + (double) 3.0F, -1);
+                    drawRectangle(buffer, x1 - (double) 3.0F, y1 - (double) 2.0F, x1 + (double) 3.0F, y1 + (double) 2.0F, -1);
+                    drawRectangle(buffer, x1 - (double) 2.0F, y1 - (double) 2.0F, x1 + (double) 2.0F, y1 + (double) 2.0F, ARGB_BLUE);
+                });
                 if (mapState == MapState.EDITING_AREA && drawArea1 != null && drawArea2 != null) {
                     drawRectangleFromWorldCords(buffer, drawArea1, drawArea2, Integer.MAX_VALUE);
                 }
@@ -287,7 +285,7 @@ public class KSDWidgetMap implements WidgetMapper, SelectableMapper, GuiEventLis
                 }
                 MultiBufferSource.BufferSource immediate = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
                 for (KSDStation station : KSDClientData.STATIONS) {
-                    if (canDrawAreaText(station)) {
+                    if (canDrawAreaText(station) && station.inArea(player.blockPosition())) {
                         BlockPos pos = station.getCenter();
                         String stationString = String.format("%s|(%s)", station.name, Text.translatable("gui.mtr.zone_number", station.zone).getString());
                         drawFromWorldCords(pos.getZ(), pos.getY(), (x1, y1) -> IDrawing.drawStringWithFont(matrices, textRenderer, immediate, stationString, (float) x + x1.floatValue(), (float) y + y1.floatValue(), 15728880));

@@ -11,6 +11,7 @@ import mtr.packet.IPacket;
 import mtr.packet.PacketTrainDataGuiClient;
 import mtr.screen.*;
 import net.hulan.Tuples;
+import net.hulan.ivr.screen.IVRConfigScreen;
 import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.*;
 import net.hulan.ksd.packet.KSDPacket;
@@ -20,6 +21,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.util.Tuple;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +53,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
     private final WidgetColorSelector colorSelector;
     private final DashboardList dashboardList;
 
-    public KSDDashboardScreen(TransportMode transportMode, boolean useTimeAndWindSync) {
+    public KSDDashboardScreen(TransportMode transportMode) {
         super(Text.literal(""));
         textFieldName = new WidgetBetterTextField(Text.translatable("gui.mtr.name").getString());
         textFieldCustomDestination = new WidgetBetterTextField(Text.translatable("gui.mtr.custom_destination_suggestion").getString());
@@ -73,7 +75,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         });
         buttonOptions = UtilitiesClient.newButton(Text.translatable("menu.options"), (button) -> {
             if (minecraft != null) {
-                UtilitiesClient.setScreen(minecraft, new ConfigScreen(useTimeAndWindSync));
+                UtilitiesClient.setScreen(minecraft, new IVRConfigScreen(() -> minecraft.setScreen(null)));
             }
         });
         buttonSelectMapType = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_value"), (button) -> selectMapType(widgetMap.mapType.next()));
@@ -125,7 +127,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         selectMapType(KSDWidgetMap.MapType.X_Z);
     }
 
-    public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
+    public void render(@NotNull PoseStack matrices, int mouseX, int mouseY, float delta) {
         try {
             renderBackground(matrices);
             widgetMap.render(matrices, mouseX, mouseY, delta);

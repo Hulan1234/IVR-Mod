@@ -23,7 +23,6 @@ atlassian-ide-plugin.xml
 *.ctxt
 
 # Package Files #
-*.jar
 *.war
 *.nar
 *.ear
@@ -33,8 +32,6 @@ atlassian-ide-plugin.xml
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
-
-*~
 
 # temporary files which can be created if a process still has a handle open of a deleted file
 .fuse_hidden*
@@ -122,7 +119,6 @@ run/
 *.ai
 *.psd
 *.psb
-/.gradle-codex/
 
 # Modrinth account credentials and private publishing configuration
 modrinth.properties
@@ -131,5 +127,5 @@ modrinth.properties
 .env.*
 /CHANGELOG.md
 /Description.md
-/.gradle-user/
-/.gradle-user-home/
+/.run/
+/fabric/mods/

@@ -1,5 +1,12 @@
 package net.hulan.ivr.render;
 
+import net.hulan.ivr.render_promotion.cache.VertexMesh;
+import net.hulan.ivr.render_promotion.cache.VertexMeshKey;
+import net.hulan.ivr.render_promotion.cache.VertexRecorder;
+import net.hulan.ivr.render_promotion.mesh.RenderCacheLifecycle;
+import net.hulan.ivr.render_promotion.mesh.GpuInstanceBatch;
+import mtr.render.MoreRenderLayers;
+import java.util.List;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mtr.MTRClient;
@@ -25,9 +32,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import org.jetbrains.annotations.NotNull;
 
 public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGDoorBase> extends BlockEntityRendererMapper<T> implements IGui, IBlock {
-    
+
     private final int type;
     private static final ModelSingleCube MODEL_PSD = new ModelSingleCube(36, 18, 0, 0, 0, 16, 16, 2);
     private static final ModelSingleCube MODEL_PSD_END_LEFT_1 = new ModelSingleCube(20, 18, 0, 0, 0, 8, 16, 2);
@@ -50,7 +58,12 @@ public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGD
     }
 
     @Override
-    public void render(T entity, float tickDelta, PoseStack matrices, MultiBufferSource vertexConsumers, int light, int overlay) {
+    public void render(T entity,
+                       float tickDelta,
+                       @NotNull PoseStack matrices,
+                       @NotNull MultiBufferSource vertexConsumers,
+                       int light,
+                       int overlay) {
         Level world = entity.getLevel();
         if (world != null) {
             BlockPos pos = entity.getBlockPos();
@@ -74,7 +87,7 @@ public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGD
                         if (half) {
                             RenderTrains.scheduleRender(new ResourceLocation(String.format("mtr:textures/block/light_%s.png", open > 0.0F ? "on" : "off")), false, open > 0.0F ? RenderTrains.QueuedRenderLayer.LIGHT : RenderTrains.QueuedRenderLayer.EXTERIOR, (matricesNew, vertexConsumer) -> {
                                 storedMatrixTransformationsLight.transform(matricesNew);
-                                (side ? MODEL_PSD_LIGHT_RIGHT : MODEL_PSD_LIGHT_LEFT).renderToBuffer(matricesNew, vertexConsumer, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                                renderCached((side ? MODEL_PSD_LIGHT_RIGHT : MODEL_PSD_LIGHT_LEFT), matricesNew, vertexConsumer, light, overlay);
                                 matricesNew.popPose();
                             });
                         }
@@ -82,7 +95,7 @@ public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGD
                             RenderTrains.scheduleRender(new ResourceLocation(String.format("%s:textures/block/%s" + "psd_door_end_%s_%s_2_%s.png", type == 1 ? "ivr" : "mtr", this.type == 1 ? "kcr_" : "", half ? "top" : "bottom", side ? "right" : "left", this.type == 1 ? "2" : "1")), false, RenderTrains.QueuedRenderLayer.EXTERIOR, (matricesNew, vertexConsumer) -> {
                                 storedMatrixTransformationsLight.transform(matricesNew);
                                 matricesNew.translate(open / 2.0F * (float)(side ? -1 : 1), 0.0D, 0.0D);
-                                (side ? MODEL_PSD_END_RIGHT_2 : MODEL_PSD_END_LEFT_2).renderToBuffer(matricesNew, vertexConsumer, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                                renderCached((side ? MODEL_PSD_END_RIGHT_2 : MODEL_PSD_END_LEFT_2), matricesNew, vertexConsumer, light, overlay);
                                 matricesNew.popPose();
                             });
                         }
@@ -95,7 +108,7 @@ public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGD
                                     storedMatrixTransformationsLight.transform(matricesNew);
                                     matricesNew.translate(side ? -0.515625D : 0.515625D, 0.0D, 0.0D);
                                     matricesNew.scale(0.5F, 1.0F, 1.0F);
-                                    MODEL_APG_LIGHT.renderToBuffer(matricesNew, vertexConsumer, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                                    renderCached(MODEL_APG_LIGHT, matricesNew, vertexConsumer, light, overlay);
                                     matricesNew.popPose();
                                 });
                             }
@@ -108,13 +121,14 @@ public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGD
                         if (end) {
                             RenderTrains.scheduleRender(new ResourceLocation(String.format("%s:textures/block/%s" + "psd_door_end_%s_%s_1_%s.png", this.type == 1 ? "ivr" : "mtr", this.type == 1 ? "kcr_" : "", half ? "top" : "bottom", side ? "right" : "left", this.type == 1 ? "2" : "1")), false, RenderTrains.QueuedRenderLayer.EXTERIOR, (matricesNew, vertexConsumer) -> {
                                 storedMatrixTransformations.transform(matricesNew);
-                                (side ? MODEL_PSD_END_RIGHT_1 : MODEL_PSD_END_LEFT_1).renderToBuffer(matricesNew, vertexConsumer, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                                renderCached((side ? MODEL_PSD_END_RIGHT_1 : MODEL_PSD_END_LEFT_1), matricesNew, vertexConsumer, light, overlay);
                                 matricesNew.popPose();
                             });
                         } else {
-                            RenderTrains.scheduleRender(new ResourceLocation(String.format("ivr:textures/block/kcr_psd_door_%s_%s_%s.png", half ? "top" : "bottom", side ? "right" : "left", this.type == 1 ? "2" : "1")), false, RenderTrains.QueuedRenderLayer.EXTERIOR, (matricesNew, vertexConsumer) -> {
+                            ResourceLocation texture = new ResourceLocation(String.format("ivr:textures/block/kcr_psd_door_%s_%s_%s.png", half ? "top" : "bottom", side ? "right" : "left", this.type == 1 ? "2" : "1"));
+                            RenderTrains.scheduleRender(texture, false, RenderTrains.QueuedRenderLayer.EXTERIOR, (matricesNew, vertexConsumer) -> {
                                 storedMatrixTransformations.transform(matricesNew);
-                                MODEL_PSD.renderToBuffer(matricesNew, vertexConsumer, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                                renderCachedExterior(MODEL_PSD, texture, matricesNew, vertexConsumer, light, overlay);
                                 matricesNew.popPose();
                             });
                         }
@@ -125,21 +139,22 @@ public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGD
                                     matricesNew.translate(side ? 0.25D : -0.25D, 0.0D, 0.0D);
                                 }
 
-                                MODEL_PSD_DOOR_LOCKED.renderToBuffer(matricesNew, vertexConsumer, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                                renderCached(MODEL_PSD_DOOR_LOCKED, matricesNew, vertexConsumer, light, overlay);
                                 matricesNew.popPose();
                             });
                         }
                         break;
                     case 2:
-                        RenderTrains.scheduleRender(new ResourceLocation(String.format("ivr:textures/block/kcr_apg_door_%s_%s.png", half ? "top" : "bottom", side ? "right" : "left")), false, RenderTrains.QueuedRenderLayer.EXTERIOR, (matricesNew, vertexConsumer) -> {
+                        ResourceLocation texture = new ResourceLocation(String.format("ivr:textures/block/kcr_apg_door_%s_%s.png", half ? "top" : "bottom", side ? "right" : "left"));
+                        RenderTrains.scheduleRender(texture, false, RenderTrains.QueuedRenderLayer.EXTERIOR, (matricesNew, vertexConsumer) -> {
                             storedMatrixTransformations.transform(matricesNew);
-                            (half ? MODEL_APG_TOP : MODEL_APG_BOTTOM).renderToBuffer(matricesNew, vertexConsumer, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                            renderCachedExterior((half ? MODEL_APG_TOP : MODEL_APG_BOTTOM), texture, matricesNew, vertexConsumer, light, overlay);
                             matricesNew.popPose();
                         });
                         if (half && !unlocked) {
                             RenderTrains.scheduleRender(new ResourceLocation("ivr:textures/block/sign/door_not_in_use.png"), false, RenderTrains.QueuedRenderLayer.EXTERIOR, (matricesNew, vertexConsumer) -> {
                                 storedMatrixTransformations.transform(matricesNew);
-                                MODEL_APG_DOOR_LOCKED.renderToBuffer(matricesNew, vertexConsumer, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                                renderCached(MODEL_APG_DOOR_LOCKED, matricesNew, vertexConsumer, light, overlay);
                                 matricesNew.popPose();
                             });
                         }
@@ -152,14 +167,14 @@ public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGD
                     case 3:
                         RenderTrains.scheduleRender(new ResourceLocation(String.format("mtr:textures/block/lift_door_%s_%s_1.png", half ? "top" : "bottom", side ? "right" : "left")), false, RenderTrains.QueuedRenderLayer.EXTERIOR, (matricesNew, vertexConsumer) -> {
                             storedMatrixTransformations.transform(matricesNew);
-                            (side ? MODEL_LIFT_RIGHT : MODEL_LIFT_LEFT).renderToBuffer(matricesNew, vertexConsumer, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                            renderCached((side ? MODEL_LIFT_RIGHT : MODEL_LIFT_LEFT), matricesNew, vertexConsumer, light, overlay);
                             matricesNew.popPose();
                         });
                         if (half && !unlocked) {
                             RenderTrains.scheduleRender(new ResourceLocation("ivr:textures/block/sign/door_not_in_use.png"), false, RenderTrains.QueuedRenderLayer.EXTERIOR, (matricesNew, vertexConsumer) -> {
                                 storedMatrixTransformations.transform(matricesNew);
                                 matricesNew.translate(side ? 0.125D : -0.125D, 0.0D, 0.0D);
-                                MODEL_PSD_DOOR_LOCKED.renderToBuffer(matricesNew, vertexConsumer, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                                renderCached(MODEL_PSD_DOOR_LOCKED, matricesNew, vertexConsumer, light, overlay);
                                 matricesNew.popPose();
                             });
                         }
@@ -168,7 +183,48 @@ public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGD
         }
     }
 
-    public boolean shouldRenderOffScreen(T blockEntity) {
+    private static final List<EntityModel<Entity>> LOCAL_MODELS = List.of(
+            MODEL_PSD, MODEL_PSD_END_LEFT_1, MODEL_PSD_END_RIGHT_1,
+            MODEL_PSD_END_LEFT_2, MODEL_PSD_END_RIGHT_2, MODEL_PSD_LIGHT_LEFT,
+            MODEL_PSD_LIGHT_RIGHT, MODEL_APG_TOP, MODEL_APG_BOTTOM, MODEL_APG_LIGHT,
+            MODEL_APG_DOOR_LOCKED, MODEL_PSD_DOOR_LOCKED, MODEL_LIFT_LEFT, MODEL_LIFT_RIGHT);
+
+    /** Only explicitly known static EXTERIOR door bodies enter the optional collector. */
+    private static void renderCachedExterior(EntityModel<Entity> model, ResourceLocation texture,
+                                              PoseStack matrices, VertexConsumer consumer, int light, int overlay) {
+        VertexMeshKey key = new VertexMeshKey("ivr:door", LOCAL_MODELS.indexOf(model), 0);
+        VertexMesh mesh = RenderCacheLifecycle.get(key);
+        if (mesh != null && !RenderCacheLifecycle.isReloading()) {
+            GpuInstanceBatch.submitOrFallback(MoreRenderLayers.getExterior(texture), texture,
+                    key, mesh, matrices, light, overlay, consumer);
+        } else if (!RenderCacheLifecycle.shouldAttemptBuild(key)) {
+            model.renderToBuffer(matrices, consumer, light, overlay, 1, 1, 1, 1);
+        } else {
+            renderCached(model, matrices, consumer, light, overlay);
+        }
+    }
+
+    /** Only static local model geometry is recorded; animation and lighting stay live. */
+    private static void renderCached(EntityModel<Entity> model, PoseStack matrices,
+                                     VertexConsumer consumer, int light, int overlay) {
+        VertexMeshKey key = new VertexMeshKey("ivr:door", LOCAL_MODELS.indexOf(model), 0);
+        VertexMesh mesh = RenderCacheLifecycle.get(key);
+        if (mesh != null) {
+            mesh.replay(matrices, consumer, light, overlay);
+        } else if (RenderCacheLifecycle.isReloading() || RenderCacheLifecycle.isPending(key)) {
+            model.renderToBuffer(matrices, consumer, light, overlay, 1, 1, 1, 1);
+        } else if (!RenderCacheLifecycle.shouldAttemptBuild(key)) {
+            model.renderToBuffer(matrices, consumer, light, overlay, 1, 1, 1, 1);
+        } else {
+            // ModelMapper is only touched here on the client render thread.
+            VertexRecorder recorder = new VertexRecorder();
+            model.renderToBuffer(new PoseStack(), recorder, 0, 0, 1, 1, 1, 1);
+            List<VertexMesh.Vertex> snapshot = recorder.snapshot();
+            RenderCacheLifecycle.request(key, snapshot);
+            new VertexMesh(snapshot).replay(matrices, consumer, light, overlay);
+        }
+    }
+    public boolean shouldRenderOffScreen(@NotNull T blockEntity) {
         return true;
     }
 
@@ -185,12 +241,12 @@ public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGD
         }
 
         @Override
-        public void renderToBuffer(PoseStack matrices, VertexConsumer vertices, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+        public void renderToBuffer(@NotNull PoseStack matrices, @NotNull VertexConsumer vertices, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
             this.cube.render(matrices, vertices, 0.0F, 0.0F, 0.0F, packedLight, packedOverlay);
         }
 
         @Override
-        public void setupAnim(Entity entity, float limbAngle, float limbDistance, float animationProgress, float headYaw, float headPitch) {
+        public void setupAnim(@NotNull Entity entity, float limbAngle, float limbDistance, float animationProgress, float headYaw, float headPitch) {
         }
     }
 
@@ -213,12 +269,12 @@ public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGD
         }
 
         @Override
-        public void renderToBuffer(PoseStack matrices, VertexConsumer vertices, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+        public void renderToBuffer(@NotNull PoseStack matrices, @NotNull VertexConsumer vertices, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
             this.bone.render(matrices, vertices, 0.0F, 0.0F, 0.0F, packedLight, packedOverlay);
         }
 
         @Override
-        public void setupAnim(Entity entity, float limbAngle, float limbDistance, float animationProgress, float headYaw, float headPitch) {
+        public void setupAnim(@NotNull Entity entity, float limbAngle, float limbDistance, float animationProgress, float headYaw, float headPitch) {
         }
     }
 
@@ -240,12 +296,12 @@ public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGD
         }
 
         @Override
-        public void renderToBuffer(PoseStack matrices, VertexConsumer vertices, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+        public void renderToBuffer(@NotNull PoseStack matrices, @NotNull VertexConsumer vertices, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
             this.bone.render(matrices, vertices, 0.0F, 0.0F, 0.0F, packedLight, packedOverlay);
         }
 
         @Override
-        public void setupAnim(Entity entity, float limbAngle, float limbDistance, float animationProgress, float headYaw, float headPitch) {
+        public void setupAnim(@NotNull Entity entity, float limbAngle, float limbDistance, float animationProgress, float headYaw, float headPitch) {
         }
     }
 }

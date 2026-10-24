@@ -20,6 +20,11 @@ import java.util.function.Consumer;
 
 public class IVRPacketTrainDataGuiServer extends PacketTrainDataBase implements IVRPacket {
 
+    public static void openIVRConfigScreenS2C(ServerPlayer player) {
+        final FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
+        Registry.sendToPlayer(player, PACKET_OPEN_IVR_CONFIG_SCREEN, packet);
+    }
+
     public static void openClassicalSignScreenS2C(ServerPlayer player, BlockPos signPos) {
         final FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
         packet.writeBlockPos(signPos);

@@ -7,6 +7,8 @@ import mtr.packet.IPacket;
 import net.hulan.ivr.commands.CommandManager;
 import net.hulan.ivr.packet.IVRPacket;
 import net.hulan.ivr.packet.IVRPacketTrainDataGuiServer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -24,7 +26,9 @@ public class IVR implements IVRPacket, IVRBlocks, IVRBlockEntityTypes, IVRCreati
                             BiConsumer<String, RegistryObject<Block>> registerBlock,
                             MTR.RegisterBlockItem registerBlockItem,
                             BiConsumer<String, RegistryObject<? extends BlockEntityType<? extends BlockEntityMapper>>> registerBlockEntityType,
-                            MTR.RegisterBlockItem registerEnchantedBlockItem) {
+                            MTR.RegisterBlockItem registerEnchantedBlockItem,
+                            EntityRegistrar registerEntity) {
+        DependenciesChecker.refreshPresence();
         registerItem.accept("kcr_apg_door", IVRItems.KCR_APG_DOOR);
         registerItem.accept("kcr_apg_glass", IVRItems.KCR_APG_GLASS);
         registerItem.accept("kcr_apg_glass_end", IVRItems.KCR_APG_GLASS_END);
@@ -155,10 +159,17 @@ public class IVR implements IVRPacket, IVRBlocks, IVRBlockEntityTypes, IVRCreati
         registerBlockEntityType.accept("kcr_single_ticket_machine_light_rail_wall", KCR_SINGLE_TICKET_MACHINE_LIGHT_RAIL_WALL_TILE_ENTITY);
         registerBlockEntityType.accept("octopus_add_value_machine", OCTOPUS_ADD_VALUE_MACHINE_WALL_TILE_ENTITY);
         registerBlockEntityType.accept("modern_route_sign", MODERN_ROUTE_SIGN_TILE_ENTITY);
+        registerEntity.accept("tickets", IVREntities.TICKETS);
+        registerEntity.accept("fare_adjustments", IVREntities.FARE_ADJUSTMENTS);
         mtr.Registry.registerNetworkReceiver(PACKET_CLASSICAL_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveClassicalSignIdsC2S);
         mtr.Registry.registerNetworkReceiver(PACKET_CLASSICAL_1ODD_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveClassicalSign1OddIdsC2S);
         mtr.Registry.registerNetworkReceiver(PACKET_MODERN_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveModernSignIdsC2S);
         mtr.Registry.registerNetworkReceiver(PACKET_MODERN_1ODD_SIGN_TYPES, IVRPacketTrainDataGuiServer::receiveModernSign1OddIdsC2S);
         CommandManager.registerCommands();
+    }
+
+    @FunctionalInterface
+    public interface EntityRegistrar {
+        void accept(String id, RegistryObject<? extends EntityType<? extends Entity>> entity);
     }
 }

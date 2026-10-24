@@ -54,5 +54,14 @@
   "item.ivr.tickets_spawn_egg": "Staff Spawn Egg(Tickets)",
   "item.ivr.fa_spawn_egg": "Staff Spawn Egg(Fare Adjustments)",
   "entity.ivr.tickets_npc": "Ticket Clerk",
-  "entity.ivr.fare_adjustments_npc": "Fare Inspector"
+  "entity.ivr.fare_adjustments_npc": "Fare Inspector",
+  "gui.ivr.render_config.title": "IVR Render Distances",
+  "gui.ivr.render_config.block_entity": "Block entities",
+  "gui.ivr.render_config.train": "Trains",
+  "gui.ivr.render_config.catenary": "Catenary",
+  "gui.ivr.render_config.ante_rail_box": "ANTE rail boxes",
+  "gui.ivr.render_config.save": "Save",
+  "gui.ivr.render_config.cancel": "Cancel",
+  "gui.ivr.render_config.defaults": "Defaults",
+  "gui.ivr.render_config.save_failed": "Could not save configuration"
 }

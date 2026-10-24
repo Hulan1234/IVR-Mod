@@ -36,6 +36,11 @@ subprojects {
         }
         mavenCentral()
         maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+        maven {
+            name = 'TerraformersMC'
+            url = 'https://maven.terraformersmc.com/releases/'
+            content { includeGroup 'com.terraformersmc' }
+        }
     }
 
     tasks.withType(JavaCompile).configureEach {

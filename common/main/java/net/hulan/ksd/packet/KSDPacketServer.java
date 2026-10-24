@@ -59,10 +59,9 @@ public class KSDPacketServer extends PacketTrainDataBase implements KSDPacket {
     
     private static final int PACKET_CHUNK_SIZE = (int) Math.pow(2.0F, 14.0F);
 
-    public static void openKSDDashboardScreenS2C(ServerPlayer player, TransportMode transportMode, boolean useTimeAndWindSync) {
+    public static void openKSDDashboardScreenS2C(ServerPlayer player, TransportMode transportMode) {
         FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
         packet.writeUtf(transportMode.toString());
-        packet.writeBoolean(useTimeAndWindSync);
         Registry.sendToPlayer(player, KSD_PACKET_OPEN_KSD_DASHBOARD_SCREEN, packet);
     }
 

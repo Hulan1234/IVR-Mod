@@ -1,7 +1,7 @@
 package net.hulan.ivr.entity;
 
 import net.hulan.ksd.packet.KSDPacketClient;
-import net.hulan.ivr.platform.NPCPlatform;
+import net.hulan.ksd.utils.NPCUtilities;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -40,7 +40,7 @@ public abstract class InteractiveNPC extends PathfinderMob {
 
     public boolean hurt(DamageSource source, float amount) {
         if (source.getEntity() instanceof Player player) {
-            if (NPCPlatform.isCreative(player)) {
+            if (NPCUtilities.isCreative(player)) {
                 kill();
                 return true;
             }

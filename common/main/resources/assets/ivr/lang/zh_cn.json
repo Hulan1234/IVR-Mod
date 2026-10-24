@@ -54,5 +54,14 @@
   "item.ivr.tickets_spawn_egg": "站务刷怪蛋（购票）",
   "item.ivr.fa_spawn_egg": "站务刷怪蛋（补票）",
   "entity.ivr.tickets_npc": "售票员",
-  "entity.ivr.fare_adjustments_npc": "补票员"
+  "entity.ivr.fare_adjustments_npc": "补票员",
+  "gui.ivr.render_config.title": "IVR 渲染距离",
+  "gui.ivr.render_config.block_entity": "方块实体",
+  "gui.ivr.render_config.train": "列车",
+  "gui.ivr.render_config.catenary": "接触网",
+  "gui.ivr.render_config.ante_rail_box": "ANTE 轨道判定箱",
+  "gui.ivr.render_config.save": "保存",
+  "gui.ivr.render_config.cancel": "取消",
+  "gui.ivr.render_config.defaults": "恢复默认",
+  "gui.ivr.render_config.save_failed": "保存失败，请检查配置文件"
 }

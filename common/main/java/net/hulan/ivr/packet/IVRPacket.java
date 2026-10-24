@@ -4,6 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 
 public interface IVRPacket {
 
+    ResourceLocation PACKET_OPEN_IVR_CONFIG_SCREEN = new ResourceLocation("ivr", "packet_open_ivr_config_screen");
     ResourceLocation PACKET_OPEN_CLASSICAL_SIGN_SCREEN = new ResourceLocation("ivr", "packet_open_classical_sign_screen");
     ResourceLocation PACKET_OPEN_CLASSICAL_1ODD_SIGN_SCREEN = new ResourceLocation("ivr", "packet_open_classical_1odd_sign_screen");
     ResourceLocation PACKET_OPEN_MODERN_SIGN_SCREEN = new ResourceLocation("ivr", "packet_open_modern_sign_screen");

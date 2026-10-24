@@ -22,11 +22,11 @@ public class ItemKSDDashBoard extends ItemWithCreativeTabBase {
     }
 
     @Override
-    public @NotNull InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand interactionHand) {
+    public @NotNull InteractionResultHolder<ItemStack> use(Level world, @NotNull Player player, @NotNull InteractionHand interactionHand) {
         if (!world.isClientSide()) {
             RailwayData railwayData = RailwayData.getInstance(world);
             if (railwayData != null) {
-                KSDPacketServer.openKSDDashboardScreenS2C((ServerPlayer)player, this.transportMode, railwayData.getUseTimeAndWindSync());
+                KSDPacketServer.openKSDDashboardScreenS2C((ServerPlayer)player, this.transportMode);
             }
         }
         return super.use(world, player, interactionHand);

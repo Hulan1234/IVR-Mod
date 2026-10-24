@@ -1,20 +1,22 @@
 package net.hulan.ivr.mixin;
 
 import mtr.data.Rail;
-import net.hulan.ivr.utils.SegmentVisibility;
-import net.hulan.ivr.utils.RenderTimingDebug;
+import net.hulan.ivr.render_promotion.visibility.SegmentVisibility;
+import net.hulan.ivr.render_promotion.debug.RenderDebugStats;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.At;
 
-/** Skips MTR rail quads only when their generated bounds are outside view. */
+/**
+ * 在 MTR 轨道细分四边形提交前检查实际几何边界。
+ * 可见性判定仅跳过确定不可见的片段。
+ */
 @Mixin(Rail.class)
 public abstract class RailRenderOptimizeMixin {
 
     /**
-     * Rail.render subdivides a curve into many quads.  Keep the rail callback
-     * alive for visible quads, but avoid submitting quads whose four corners
-     * are all outside the 300-block render volume or camera frustum.
+     * 对曲线生成的每个四边形执行分段可见性判断。
+     * 可见时调用原渲染回调。
      */
     @Redirect(method = "renderSegment",
             at = @At(value = "INVOKE",
@@ -26,13 +28,10 @@ public abstract class RailRenderOptimizeMixin {
                                                double x3, double z3,
                                                double x4, double z4,
                                                double y1, double y2) {
-        long started = RenderTimingDebug.begin(RenderTimingDebug.RAIL);
-        boolean visible;
-        try {
-            visible = SegmentVisibility.shouldRenderRailQuad(x1, z1, x2, z2, x3, z3, x4, z4, y1, y2);
-        } finally {
-            RenderTimingDebug.end(RenderTimingDebug.RAIL, started);
-        }
+        long started = RenderDebugStats.startTiming();
+        boolean visible = SegmentVisibility.getInstance().shouldRenderRailQuad(x1, z1, x2, z2, x3, z3, x4, z4, y1, y2);
+        RenderDebugStats.recordOutcome(RenderDebugStats.Category.RAILBOX, visible,
+                RenderDebugStats.elapsedSince(started));
         if (visible) {
             renderRail.renderRail(x1, z1, x2, z2, x3, z3, x4, z4, y1, y2);
         }

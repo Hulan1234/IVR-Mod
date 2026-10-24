@@ -13,12 +13,9 @@
     "RailwayDataMixin",
     "RouteTypeMixin",
     "SavedRailBaseAccessor",
-    "SidingAccessor",
-    "TicketSystemMixin",
     "TrainInvoker",
     "TrainMixin",
     "TrainServerFirstClassMixin",
-    "TrainServerAccessor",
     "VehicleRidingServerMixin"
   ],
   "client": [
@@ -28,6 +25,6 @@
     "PlatformScreenMixin"
   ],
   "injectors": {
-    "defaultRequire": 1
+    "defaultRequire": 0
   }
 }

@@ -50,6 +50,13 @@ versionRange = "[1.0,)"
 ordering = "AFTER"
 side = "BOTH"
 
+[[dependencies.ivr]]
+modId = "mtrsteamloco"
+mandatory = true
+versionRange = "[1.0,)"
+ordering = "AFTER"
+side = "BOTH"
+
 [[dependencies.ksd]]
 modId = "forge"
 mandatory = true
@@ -73,6 +80,13 @@ side = "BOTH"
 
 [[dependencies.ksd]]
 modId = "mtr"
+mandatory = true
+versionRange = "[1.0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.ksd]]
+modId = "mtrsteamloco"
 mandatory = true
 versionRange = "[1.0,)"
 ordering = "AFTER"

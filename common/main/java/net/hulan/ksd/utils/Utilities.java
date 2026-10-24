@@ -92,7 +92,6 @@ public abstract class Utilities {
         }
 
         public void registerItemModelPredicator(Item item, ResourceLocation id, ModelPredictor modelPredictor) {
-
         }
 
         public BlockBehaviour.Properties createBlockProperties() {

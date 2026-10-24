@@ -40,10 +40,9 @@ public class KSDPacketClient extends PacketTrainDataBase implements KSDPacket {
 
     public static void openKSDDashboardScreenS2C(Minecraft minecraftClient, FriendlyByteBuf packet) {
         TransportMode transportMode = EnumHelper.valueOf(TransportMode.TRAIN, packet.readUtf());
-        boolean useTimeAndWindSync = packet.readBoolean();
         minecraftClient.execute(() -> {
             if (!(minecraftClient.screen instanceof KSDDashboardScreen)) {
-                UtilitiesClient.setScreen(minecraftClient, new KSDDashboardScreen(transportMode, useTimeAndWindSync));
+                UtilitiesClient.setScreen(minecraftClient, new KSDDashboardScreen(transportMode));
             }
         });
     }
