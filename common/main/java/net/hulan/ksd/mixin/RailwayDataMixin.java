@@ -93,28 +93,37 @@ public class RailwayDataMixin {
         }
     }
 
-    @Inject(method = "lambda$removeSavedRailS2C$39",
-            at = @At(value = "INVOKE",
-                    target = "Ljava/util/List;forEach(Ljava/util/function/Consumer;)V",
-                    shift =  At.Shift.AFTER),
+    @Inject(method = "removeSavedRailS2C",
+            at = @At("HEAD"),
+            cancellable = true,
             remap = false)
-    private static void removeSavedRailS2C(Map<BlockPos, Map<BlockPos, Rail>> rails,
-                                           Level world,
-                                           ResourceLocation packetId,
-                                           SavedRailBase savedRailBase,
-                                           CallbackInfoReturnable<Boolean> cir) {
-        if (savedRailBase instanceof Platform) {
-            KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
-            if (railwayData != null) {
-                KSDPlatform platform = DataUtilities.getPlatform(railwayData.platforms, savedRailBase.id);
-                if (platform != null) {
-                    railwayData.platforms.remove(platform);
-                    railwayData.dataCache.sync();
-                    FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
-                    packet.writeLong(platform.id);
-                    world.players().forEach((player) -> Registry.sendToPlayer((ServerPlayer)player, KSDPacket.KSD_PACKET_DELETE_PLATFORM, packet));
+    private static void removeSavedRailS2C(Level world,
+                                            Set<? extends SavedRailBase> savedRailBases,
+                                            Map<BlockPos, Map<BlockPos, Rail>> rails,
+                                            ResourceLocation packetId,
+                                            CallbackInfo ci) {
+        savedRailBases.removeIf((savedRailBase) -> {
+            boolean delete = savedRailBase.isInvalidSavedRail(rails);
+            if (delete) {
+                FriendlyByteBuf packet = new FriendlyByteBuf(Unpooled.buffer());
+                packet.writeLong(savedRailBase.id);
+                world.players().forEach((player) -> Registry.sendToPlayer((ServerPlayer)player, packetId, packet));
+                if (savedRailBase instanceof Platform) {
+                    KSDRailwayData railwayData = KSDRailwayData.getInstance(world);
+                    if (railwayData != null) {
+                        KSDPlatform platform = DataUtilities.getPlatform(railwayData.platforms, savedRailBase.id);
+                        if (platform != null) {
+                            railwayData.platforms.remove(platform);
+                            railwayData.dataCache.sync();
+                            FriendlyByteBuf ksdPacket = new FriendlyByteBuf(Unpooled.buffer());
+                            ksdPacket.writeLong(platform.id);
+                            world.players().forEach((player) -> Registry.sendToPlayer((ServerPlayer)player, KSDPacket.KSD_PACKET_DELETE_PLATFORM, ksdPacket));
+                        }
+                    }
                 }
             }
-        }
+            return delete;
+        });
+        ci.cancel();
     }
 }

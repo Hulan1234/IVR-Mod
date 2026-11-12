@@ -22,7 +22,8 @@ public class EditRouteScreenMixin extends EditNameColorScreenBase<Route> {
 
     @Inject(method = "saveData",
             at = @At(value = "TAIL"),
-            remap = false)
+            remap = false,
+            require = 0)
     private  void saveData(CallbackInfo ci) {
         DataUtilities.execute(KSDClientData.ROUTES, r -> r.id == data.id, ksdRoute -> {
             ksdRoute.name = data.name;

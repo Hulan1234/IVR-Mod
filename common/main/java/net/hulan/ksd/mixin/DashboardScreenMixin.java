@@ -58,7 +58,8 @@ public class DashboardScreenMixin {
             at = @At(value = "INVOKE",
                     target = "Lmtr/data/Route;setPlatformIds(Ljava/util/function/Consumer;)V",
                     shift =  At.Shift.AFTER),
-            remap = false)
+            remap = false,
+            require = 0)
     private void onSort(CallbackInfo ci) {
         editingKSDRoute.platformIds.clear();
         editingKSDRoute.platformIds.addAll(editingRoute.platformIds);
@@ -69,7 +70,8 @@ public class DashboardScreenMixin {
             at = @At(value = "INVOKE",
                     target = "Lmtr/mappings/UtilitiesClient;setScreen(Lnet/minecraft/client/Minecraft;Lmtr/mappings/ScreenMapper;)V",
                     ordinal = 0),
-            index = 1)
+            index = 1,
+            require = 0)
     private ScreenMapper onDelete1(ScreenMapper screen, @Local(name = "station") Station station) {
         return new DeleteConfirmationScreen(() -> {
             PacketTrainDataGuiClient.sendDeleteData(PACKET_DELETE_STATION, station.id);
@@ -83,7 +85,8 @@ public class DashboardScreenMixin {
             at = @At(value = "INVOKE",
                     target = "Lmtr/mappings/UtilitiesClient;setScreen(Lnet/minecraft/client/Minecraft;Lmtr/mappings/ScreenMapper;)V",
                     ordinal = 1),
-            index = 1)
+            index = 1,
+            require = 0)
     private ScreenMapper onDelete2(ScreenMapper screen, @Local(name = "route") Route route) {
         return new DeleteConfirmationScreen(() -> {
             PacketTrainDataGuiClient.sendDeleteData(PACKET_DELETE_ROUTE, route.id);
@@ -97,7 +100,8 @@ public class DashboardScreenMixin {
             at = @At(value = "INVOKE",
                     target = "Lmtr/data/Route;setPlatformIds(Ljava/util/function/Consumer;)V",
                     shift = At.Shift.AFTER),
-            remap = false)
+            remap = false,
+            require = 0)
     private void onDelete3(NameColorDataBase data, int index, CallbackInfo ci) {
         editingKSDRoute.platformIds.remove(index);
         editingKSDRoute.setPlatformIds((packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_ROUTE, packet));
@@ -105,7 +109,8 @@ public class DashboardScreenMixin {
 
     @Inject(method = "startEditingArea",
             at = @At(value = "INVOKE",
-                    target = "Lmtr/screen/DashboardScreen;toggleButtons()V"))
+                    target = "Lmtr/screen/DashboardScreen;toggleButtons()V"),
+            require = 0)
     private void startingEditingArea(AreaBase editingArea, boolean isNew, CallbackInfo ci) {
         if (editingArea instanceof Station) {
             if (isNew) {
@@ -119,7 +124,8 @@ public class DashboardScreenMixin {
 
     @Inject(method = "startEditingRoute",
             at = @At(value = "INVOKE",
-                    target = "Lmtr/screen/DashboardScreen;toggleButtons()V"))
+                    target = "Lmtr/screen/DashboardScreen;toggleButtons()V"),
+            require = 0)
     private void startEditingRoute(Route editingRoute, boolean isNew, CallbackInfo ci) {
         editingKSDStation = null;
         if (isNew) {
@@ -131,7 +137,8 @@ public class DashboardScreenMixin {
 
     @Inject(method = "onDrawCorners",
             at = @At(value = "INVOKE",
-                    target = "Lmtr/screen/DashboardScreen;toggleButtons()V"))
+                    target = "Lmtr/screen/DashboardScreen;toggleButtons()V"),
+            require = 0)
     private void onDrawCorners(Tuple<Integer, Integer> corner1, Tuple<Integer, Integer> corner2, CallbackInfo ci) {
         if (editingArea instanceof Station) {
             editingKSDStation.corner1 = new Tuples<>(corner1.getA(), editingKSDStation.corner1 == null ? -64 : editingKSDStation.corner1.getY(), corner1.getB());
@@ -143,7 +150,8 @@ public class DashboardScreenMixin {
             at = @At(value = "INVOKE",
                     target = "Lmtr/data/AreaBase;setCorners(Ljava/util/function/Consumer;)V",
                     shift =  At.Shift.AFTER),
-            remap = false)
+            remap = false,
+            require = 0)
     private void onDrawCornersMouseRelease(CallbackInfo ci) {
         if (editingArea instanceof Station) {
             editingKSDStation.setCornersToMTRStation((packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_STATION, packet));
@@ -154,7 +162,8 @@ public class DashboardScreenMixin {
             at = @At(value = "INVOKE",
                     target = "Lmtr/data/Route;setPlatformIds(Ljava/util/function/Consumer;)V",
                     shift =  At.Shift.AFTER),
-            remap = false)
+            remap = false,
+            require = 0)
     private  void onClickAddPlatformToRoute(long platformId, CallbackInfo ci) {
         editingKSDRoute.platformIds.add(new Route.RoutePlatform(platformId));
         editingKSDRoute.setPlatformIds((packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_ROUTE, packet));
@@ -164,7 +173,8 @@ public class DashboardScreenMixin {
             at = @At(value = "INVOKE",
                     target = "Lmtr/data/AreaBase;setNameColor(Ljava/util/function/Consumer;)V",
                     shift =  At.Shift.AFTER),
-            remap = false)
+            remap = false,
+            require = 0)
     private void onDoneEditingArea(CallbackInfo ci) {
         if (editingArea instanceof Station) {
             if (isNew) {
@@ -180,7 +190,8 @@ public class DashboardScreenMixin {
             at = @At(value = "INVOKE",
                     target = "Lmtr/data/Route;setNameColor(Ljava/util/function/Consumer;)V",
                     shift =  At.Shift.AFTER),
-            remap = false)
+            remap = false,
+            require = 0)
     private void onDoneEditingRoute(CallbackInfo ci) {
         if (isNew) {
             KSDClientData.ROUTES.add(editingKSDRoute);
@@ -194,7 +205,8 @@ public class DashboardScreenMixin {
             at = @At(value = "INVOKE",
                     target = "Lmtr/data/Route;setPlatformIds(Ljava/util/function/Consumer;)V",
                     shift = At.Shift.AFTER),
-            remap = false)
+            remap = false,
+            require = 0)
     private void onDoneEditingRouteDestination(CallbackInfo ci) {
         editingKSDRoute.platformIds.get(editingRoutePlatformIndex).customDestination = textFieldCustomDestination.getValue();
         editingKSDRoute.setPlatformIds((packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_ROUTE, packet));

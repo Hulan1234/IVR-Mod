@@ -36,7 +36,8 @@ public class EditStationScreenMixin extends EditNameColorScreenBase<Station> {
 
     @Inject(method = "saveData",
             at = @At(value = "TAIL"),
-            remap = false)
+            remap = false,
+            require = 0)
     private void onSaveData(CallbackInfo ci) {
         executeKSDStationUpdate(ksdStation -> {
             ksdStation.name = data.name;
@@ -50,7 +51,8 @@ public class EditStationScreenMixin extends EditNameColorScreenBase<Station> {
             at = @At(value = "INVOKE",
                     target = "Lmtr/data/Station;setExitParent(Ljava/lang/String;Ljava/lang/String;Ljava/util/function/Consumer;)V",
                     shift = At.Shift.AFTER),
-            remap = false)
+            remap = false,
+            require = 0)
     private void onDoneExitParent(CallbackInfo ci, @Local(name = "exitParent") String exitParent) {
         executeKSDStationUpdate(ksdStation -> ksdStation.setExitParent(editingExit, exitParent, (packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_STATION, packet)));
     }
@@ -59,7 +61,8 @@ public class EditStationScreenMixin extends EditNameColorScreenBase<Station> {
             at = @At(value = "INVOKE",
                     target = "Lmtr/data/Station;setExitDestinations(Ljava/lang/String;Ljava/util/function/Consumer;)V",
                     shift = At.Shift.AFTER),
-            remap = false)
+            remap = false,
+            require = 0)
     private void onDoneExitDestination(CallbackInfo ci, @Local(name = "destination") String destination) {
         executeKSDStationUpdate(ksdStation -> {
             List<String> destinations = ksdStation.exits.get(editingExit);
@@ -76,7 +79,8 @@ public class EditStationScreenMixin extends EditNameColorScreenBase<Station> {
             at = @At(value = "INVOKE",
                     target = "Lmtr/data/Station;deleteExitParent(Ljava/lang/String;Ljava/util/function/Consumer;)V",
                     shift = At.Shift.AFTER),
-            remap = false)
+            remap = false,
+            require = 0)
     private void onDeleteExitParent(NameColorDataBase listData, int index, CallbackInfo ci) {
         executeKSDStationUpdate(ksdStation -> ksdStation.deleteExitParent(formatExitName(listData.name), (packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_STATION, packet)));
     }
@@ -85,7 +89,8 @@ public class EditStationScreenMixin extends EditNameColorScreenBase<Station> {
             at = @At(value = "INVOKE",
                     target = "Lmtr/data/Station;setExitDestinations(Ljava/lang/String;Ljava/util/function/Consumer;)V",
                     shift = At.Shift.AFTER),
-            remap = false)
+            remap = false,
+            require = 0)
     private void onSortExitDestination(CallbackInfo ci) {
         executeKSDStationUpdate(ksdStation -> ksdStation.setExitDestinations(editingExit, (packet) -> KSDPacketClient.sendUpdate(KSDPacket.KSD_PACKET_UPDATE_STATION, packet)));
     }
@@ -94,7 +99,8 @@ public class EditStationScreenMixin extends EditNameColorScreenBase<Station> {
             at = @At(value = "INVOKE",
                     target = "Lmtr/data/Station;setExitDestinations(Ljava/lang/String;Ljava/util/function/Consumer;)V",
                     shift = At.Shift.AFTER),
-            remap = false)
+            remap = false,
+            require = 0)
     private void onDeleteExitDestination(NameColorDataBase listData, int index, CallbackInfo ci) {
         executeKSDStationUpdate(ksdStation -> {
             ksdStation.exits.get(editingExit).remove(listData.name);
