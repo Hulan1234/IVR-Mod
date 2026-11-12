@@ -22,7 +22,7 @@ public class BlockClassicalSignPole extends BlockPoleCheckBase {
     public static final IntegerProperty TYPE = IntegerProperty.create("type", 0, 4);
 
     public BlockClassicalSignPole() {
-        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1).noOcclusion());
+        super(net.hulan.ksd.utils.Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(1).noOcclusion());
     }
 
     @SuppressWarnings("deprecation")

@@ -4,8 +4,12 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mtr.render.MoreRenderLayers;
+import net.hulan.ivr.DependenciesChecker;
 import net.hulan.ivr.render_promotion.cache.VertexMesh;
 import net.hulan.ivr.render_promotion.cache.VertexMeshKey;
+import net.hulan.ivr.render_promotion.memory.IVRMemoryBudget;
+import net.hulan.ivr.client.IVRConfig;
+import net.hulan.ivr.render_promotion.debug.RenderDebugStats;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
@@ -17,129 +21,219 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** Render-thread queue for the optional instanced path. Unsupported contexts stay on CPU. */
+/** 可选实例化路径的渲染线程队列；不支持的环境继续使用 CPU 路径。 */
 public final class GpuInstanceBatch {
     private static final int MAX_INSTANCES = 16_384;
+    private static final int INSTANCE_STAGING_ESTIMATE = 76;
     private static final Logger LOGGER = LogManager.getLogger("ivr");
-    /** GPU is an explicit opt-in; an unsupported or unverified context stays on CPU. */
-    private static final boolean PLATFORM_BACKEND_ENABLED =
-            "true".equalsIgnoreCase(System.getProperty("ivr.gpuDoorInstances", "false"));
     private static final Map<Object, List<Submission>> PENDING = new IdentityHashMap<>();
+    private static long pendingInstanceBytes;
     private static volatile Backend backend;
-    /** Set only by the version-specific typed endBatch hook. */
+    /** 仅由版本专用的类型化 endBatch 钩子设置。 */
     private static volatile boolean typedFlushHookObserved;
     private static long typedFlushFrame = Long.MIN_VALUE;
     private static long frame;
     private static long lastPlatformInstallAttempt = Long.MIN_VALUE;
+    private static boolean unflushedReplay;
 
     private GpuInstanceBatch() { }
 
-    /** Layers outside this explicit contract must use CPU rendering. */
+    static void rethrowUnchecked(Throwable failure) {
+        if (failure instanceof Error error) {
+            throw error;
+        }
+        if (failure instanceof RuntimeException runtime) {
+            throw runtime;
+        }
+        throw new IllegalStateException(failure);
+    }
+
+    /** 不符合显式约定的图层必须使用 CPU 渲染。 */
     public enum LayerContract {
         OPAQUE_ENTITY_CUTOUT,
+        TEXTURED_QUADS,
         BEACON_BEAM,
         TRANSLUCENT,
         UNKNOWN
     }
 
-    /**
-     * The number of instances that the backend owns after returning.  A
-     * backend can fail after drawing a prefix of a group, so the caller must
-     * replay only the suffix.  This keeps fallback exactly-once and avoids
-     * double rendering when a later GL call fails.
-     */
-    public record DrawResult(int drawnInstances, boolean ownershipCertain) {
-        public DrawResult {
-            if (drawnInstances < 0) throw new IllegalArgumentException("Negative draw count");
-        }
-        public static DrawResult rejected() { return new DrawResult(0, true); }
-        public static DrawResult drawn(int count) { return new DrawResult(count, true); }
-        /** A GL call may have reached the driver before reporting an error. */
-        public static DrawResult uncertain() { return new DrawResult(0, false); }
+    /** Identifies which path consumed a submitted mesh. */
+    public enum ConsumptionStatus {
+        NOT_CONSUMED,
+        CONSUMED_GPU,
+        CONSUMED_CPU,
+        PARTIAL_OR_UNKNOWN
     }
 
-    /** Column-major transform plus the dynamic entity attributes. */
-    public record Instance(float[] matrix, Object poseMatrix, int packedLight, int packedOverlay, int color) {
+    /**
+     * 后端已确认完成绘制的实例前缀数量。即使当前实例的绘制结果不确定，
+     * 调用方也不应重放这个已确认完成的前缀。
+     */
+    public record DrawResult(int drawnInstances, boolean ownershipCertain) {
+
+        public DrawResult {
+            if (drawnInstances < 0) {
+                throw new IllegalArgumentException("Negative draw count");
+            }
+        }
+
+        public static DrawResult rejected() {
+            return new DrawResult(0, true);
+        }
+
+        public static DrawResult drawn(int count) {
+            return new DrawResult(count, true);
+        }
+
+        /** GL 调用可能已到达驱动后才报告错误，且没有已确认完成的实例。 */
+        public static DrawResult uncertain() {
+            return uncertain(0);
+        }
+
+        /**
+         * GL 调用可能已到达驱动后才报告错误；count 是当前不确定绘制之前
+         * 已确认完成的实例前缀。
+         */
+        public static DrawResult uncertain(int confirmedDrawnInstances) {
+            return new DrawResult(confirmedDrawnInstances, false);
+        }
+
+        /** Classifies this result against the number of instances in the draw group. */
+        public ConsumptionStatus consumptionStatus(int groupSize) {
+            if (groupSize <= 0 || !ownershipCertain || drawnInstances > groupSize) {
+                return ConsumptionStatus.PARTIAL_OR_UNKNOWN;
+            }
+            if (drawnInstances == 0) return ConsumptionStatus.NOT_CONSUMED;
+            return drawnInstances == groupSize
+                    ? ConsumptionStatus.CONSUMED_GPU
+                    : ConsumptionStatus.PARTIAL_OR_UNKNOWN;
+        }
+    }
+
+    /** 列主序变换矩阵及动态实体属性。 */
+    public record Instance(float[] matrix,
+                           Object poseMatrix,
+                           int packedLight,
+                           int packedOverlay,
+                           int color) {
+
         public Instance {
-            if (matrix == null || matrix.length != 16) throw new IllegalArgumentException("A 4x4 matrix is required");
+            if (matrix == null || matrix.length != 16) {
+                throw new IllegalArgumentException("A 4x4 matrix is required");
+            }
             Objects.requireNonNull(poseMatrix, "poseMatrix");
             matrix = matrix.clone();
             poseMatrix = copyMatrix(poseMatrix);
             for (float value : matrix) {
-                if (!Float.isFinite(value)) throw new IllegalArgumentException("Non-finite transform");
+                if (!Float.isFinite(value)) {
+                    throw new IllegalArgumentException("Non-finite transform");
+                }
             }
         }
-        @Override public float[] matrix() { return matrix.clone(); }
-        @Override public Object poseMatrix() { return copyMatrix(poseMatrix); }
+
+        @Override
+        public float[] matrix() {
+            return matrix.clone();
+        }
+
+        public Object poseMatrix() {
+            return copyMatrix(poseMatrix);
+        }
     }
 
-    /** A draw group has one exact RenderType, texture and resident mesh. */
-    public record Group(Object layer, Object texture, LayerContract contract, VertexMeshKey meshKey,
-                        VertexMesh mesh, List<Instance> instances) {
+    /** 一个绘制组使用同一 RenderType、纹理和驻留网格。 */
+    public record Group(Object layer,
+                        Object texture,
+                        LayerContract contract,
+                        VertexMeshKey meshKey,
+                        VertexMesh mesh,
+                        List<Instance> instances) {
+
         public Group {
             Objects.requireNonNull(layer, "layer");
             Objects.requireNonNull(contract, "contract");
             Objects.requireNonNull(meshKey, "meshKey");
             Objects.requireNonNull(mesh, "mesh");
-            if (instances == null || instances.isEmpty()) throw new IllegalArgumentException("Empty GPU group");
+            if (instances == null || instances.isEmpty()) {
+                throw new IllegalArgumentException("Empty GPU group");
+            }
             instances = List.copyOf(instances);
         }
     }
 
-    /** Backends must recognize both the real render layer and its texture binding. */
+    /** 后端必须同时识别实际渲染图层及其纹理绑定。 */
     public interface Backend {
+
         boolean supports(Object layer, Object texture, LayerContract contract);
+
+        /**
+         * 已开始 GPU 绘制后，必须通过不确定的 DrawResult 返回，不能再抛可恢复异常；
+         * 这样调用方只会对确认未绘制的分组执行 CPU 回退。
+         */
         DrawResult draw(Group group);
     }
 
-    /** Reset stale submissions at the start of a render frame. */
+    /** 在渲染帧开始时清理过期提交。 */
     public static void beginFrame() {
         requireRenderThread();
-        if (typedFlushHookObserved && typedFlushFrame < frame && !PENDING.isEmpty()) {
-            // A hook that stopped firing would otherwise leave submissions
-            // owned by a dead buffer source until the next frame.  They cannot
-            // be replayed after the source is closed, so drop the queue and
-            // force CPU mode until a fresh typed hook is observed.
+        unflushedReplay = false;
+        if (!PENDING.isEmpty()) {
+            Map<Object, List<Submission>> retained = new IdentityHashMap<>();
+            long retainedBytes = 0L;
+            boolean retainedUnsafe = false;
+            for (Map.Entry<Object, List<Submission>> entry : PENDING.entrySet()) {
+                List<Submission> keep = new ArrayList<>();
+                for (List<Submission> group : contiguousGroups(entry.getValue())) {
+                    if (!hasSafeCpuFallback(group)) {
+                        keep.addAll(group);
+                        retainedUnsafe = true;
+                        continue;
+                    }
+                    // A missing typed flush must not silently drop a queued draw.
+                    unflushedReplay = true;
+                    replaySubmissions(group, 0);
+                }
+                if (!keep.isEmpty()) {
+                    retained.put(entry.getKey(), keep);
+                    retainedBytes += (long) keep.size() * INSTANCE_STAGING_ESTIMATE;
+                }
+            }
             PENDING.clear();
+            PENDING.putAll(retained);
+            pendingInstanceBytes = retainedBytes;
             typedFlushHookObserved = false;
             backend = null;
-            LOGGER.warn("IVR GPU batch flush hook stopped firing; disabling GPU submissions for this client");
+            if (retainedUnsafe || unflushedReplay) {
+                LOGGER.warn("IVR GPU batch flush hook stopped firing; disabling GPU submissions for this client");
+            }
         }
         frame++;
-        PENDING.clear();
     }
 
-    /** Backend installation is explicit; null keeps all callers on CPU rendering. */
     public static void installBackend(Backend candidate) {
         requireRenderThread();
+        if (candidate != null && !isGpuBackendAdmissionAllowed()) {
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.BACKEND_CONTEXT);
+            backend = null;
+            return;
+        }
         backend = candidate;
     }
 
-    /**
-     * Stops accepting new submissions when a render context disappeared before
-     * a queued GL release callback could run. Pending CPU replays are discarded
-     * by the next render-thread frame boundary.
-     */
     public static void disableBackend() {
         backend = null;
     }
 
-    /**
-     * Bootstrap-safe shutdown used when an optional Mixin contract is not
-     * present.  No render-thread assertion is made because Mixin plugins run
-     * before the client render thread exists.
-     */
     public static void disableAndClear() {
         backend = null;
         typedFlushHookObserved = false;
         PENDING.clear();
+        pendingInstanceBytes = 0L;
     }
 
     /**
-     * The first typed flush is a runtime proof that this version's
-     * MultiBufferSource.BufferSource hook resolved. Until then submissions
-     * stay on the ordinary CPU path, so a missing optional mixin cannot leave
-     * a queued mesh with no consumer.
+     * 首次类型化 flush 证明当前版本的 MultiBufferSource.BufferSource 钩子已生效。
+     * 在此之前使用普通 CPU 路径，避免可选 Mixin 缺失时网格无人消费。
      */
     public static void markTypedFlushHookAvailable() {
         requireRenderThread();
@@ -148,92 +242,175 @@ public final class GpuInstanceBatch {
     }
 
     /**
-     * Returns true only when ownership of the geometry moves to this queue.
-     * Callers must keep their CPU path if this returns false and provide a CPU
-     * replay closure for the case where the backend rejects the group pre-draw.
+     * 仅当几何所有权转交给此队列时返回 true。返回 false 时调用方必须保留 CPU
+     * 路径，并提供后端在绘制前拒绝整个分组时使用的 CPU 重放闭包。
      */
     public static boolean submit(Object layer, Object texture, LayerContract contract,
                                  VertexMeshKey key, VertexMesh mesh, Instance instance,
                                  Runnable cpuFallback) {
         requireRenderThread();
-        Backend current = backend;
-        if (current == null || !typedFlushHookObserved || contract != LayerContract.OPAQUE_ENTITY_CUTOUT
-                || layer == null || key == null || mesh == null || instance == null || cpuFallback == null
-                || isCpuOnlyKey(key) || !GpuMeshCache.isPublished(key, mesh)) return false;
-        try {
-            if (!current.supports(layer, texture, contract)) return false;
-        } catch (RuntimeException ignored) {
+        if (!isGpuBackendAdmissionAllowed()) {
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.BACKEND_CONTEXT);
             return false;
         }
-        if (pendingCount() >= MAX_INSTANCES) return false;
+        Backend current = backend;
+        if (current == null || !typedFlushHookObserved) {
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.BACKEND_CONTEXT);
+            return false;
+        }
+        if (contract != LayerContract.OPAQUE_ENTITY_CUTOUT || layer == null) {
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.RENDER_TYPE_CONTRACT);
+            return false;
+        }
+        if (key == null) {
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.KEY_STABILITY);
+            return false;
+        }
+        if (isCpuOnlyKey(key)) {
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.RENDER_TYPE_CONTRACT);
+            return false;
+        }
+        if (mesh == null || !GpuMeshCache.isPublished(key, mesh)) {
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.MESH_NOT_READY);
+            return false;
+        }
+        if (instance == null) {
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.BUFFER_SOURCE);
+            return false;
+        }
+        if (!isSupportedGpuLayer(layer, texture)) {
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.TEXTURE_MATERIAL);
+            return false;
+        }
+        if (!isStableModel(key)) {
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.KEY_STABILITY);
+            return false;
+        }
+        try {
+            if (!current.supports(layer, texture, contract)) {
+                RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.RENDER_TYPE_CONTRACT);
+                return false;
+            }
+        } catch (RuntimeException | LinkageError ignored) {
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.BACKEND_CONTEXT);
+            return false;
+        }
+        if (pendingCount() >= MAX_INSTANCES) {
+            IVRMemoryBudget.recordReject("staging");
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.CAPACITY);
+            return false;
+        }
+        if (mesh.byteSize() > IVRMemoryBudget.gpuMeshBudgetBytes()) {
+            IVRMemoryBudget.recordReject("gpu");
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.CAPACITY);
+            return false;
+        }
+        long stagingLimit = IVRMemoryBudget.stagingBufferBudgetBytes();
+        if (pendingInstanceBytes + INSTANCE_STAGING_ESTIMATE > stagingLimit) {
+            IVRMemoryBudget.recordReject("staging");
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.CAPACITY);
+            return false;
+        }
         PENDING.computeIfAbsent(layer, ignored -> new ArrayList<>())
                 .add(new Submission(texture, contract, key, mesh, instance, cpuFallback));
+        pendingInstanceBytes += INSTANCE_STAGING_ESTIMATE;
+        RenderDebugStats.recordGpuAdmission();
         return true;
     }
 
     /**
-     * Door-renderer convenience entry point. It snapshots the current pose so
-     * a later endBatch rejection can replay the exact CPU geometry after the
-     * caller has popped its temporary transform.
+     * 供月台门渲染器调用的便捷入口。它会复制当前姿态，以便调用方弹出临时变换后，
+     * 若 endBatch 拒绝 GPU 提交，仍可按原姿态重放 CPU 几何。
      */
     public static boolean submitOrFallback(Object layer, Object texture, VertexMeshKey key,
                                             VertexMesh mesh, PoseStack matrices,
                                             int light, int overlay, VertexConsumer consumer) {
+        return submitOrFallbackStatus(layer, texture, key, mesh, matrices, light, overlay, consumer)
+                == ConsumptionStatus.CONSUMED_GPU;
+    }
+
+    /** Compatibility detail for callers that must distinguish CPU replay from rejection. */
+    public static ConsumptionStatus submitOrFallbackStatus(Object layer, Object texture, VertexMeshKey key,
+                                                            VertexMesh mesh, PoseStack matrices,
+                                                            int light, int overlay, VertexConsumer consumer) {
         requireRenderThread();
         installPlatformBackendIfSupported();
         PoseStack snapshot;
         try {
             snapshot = copyPose(matrices);
         } catch (RuntimeException unavailable) {
-            mesh.replay(matrices, consumer, light, overlay);
-            return false;
+            return replayCpu(() -> mesh.replay(matrices, consumer, light, overlay));
         }
         Runnable fallback = () -> mesh.replay(snapshot, consumer, light, overlay);
         float[] matrix;
         try {
             matrix = matrixValues(snapshot.last().pose());
         } catch (RuntimeException unavailable) {
-            fallback.run();
-            return false;
+            return replayCpu(fallback);
         }
-        if (!submit(layer, texture, LayerContract.OPAQUE_ENTITY_CUTOUT, key, mesh,
-                new Instance(matrix, snapshot.last().pose(), light, overlay, -1), fallback)) {
-            fallback.run();
-            return false;
+        Instance instance;
+        try {
+            instance = new Instance(matrix, snapshot.last().pose(), light, overlay, -1);
+        } catch (RuntimeException | LinkageError unavailable) {
+            return replayCpu(fallback);
         }
-        return true;
+        try {
+            if (!submit(layer, texture, contractFor(layer, texture), key, mesh, instance, fallback)) {
+                return replayCpu(fallback);
+            }
+        } catch (RuntimeException | LinkageError failure) {
+            // submit only stages work; queue insertion is the ownership transfer point.
+            disableBackend();
+            return replayCpu(fallback);
+        }
+        return ConsumptionStatus.CONSUMED_GPU;
     }
 
-    /** Load the version-specific backend before the first door instance is submitted. */
+    private static LayerContract contractFor(Object layer, Object texture) {
+        return isSupportedGpuLayer(layer, texture) ? LayerContract.OPAQUE_ENTITY_CUTOUT : LayerContract.UNKNOWN;
+    }
+
+    /** 提交首个月台门实例前加载版本专用后端。 */
     private static void installPlatformBackendIfSupported() {
-        if (!PLATFORM_BACKEND_ENABLED || backend != null || lastPlatformInstallAttempt == frame) return;
+        if (!IVRConfig.gpuOptimization || backend != null || lastPlatformInstallAttempt == frame) {
+            return;
+        }
         lastPlatformInstallAttempt = frame;
+        if (!isGpuBackendAdmissionAllowed()) {
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.BACKEND_CONTEXT);
+            return;
+        }
         try {
             Class<?> backendClass = Class.forName("net.hulan.ivr.render_promotion.mesh.GpuMeshBackend", true,
                     GpuInstanceBatch.class.getClassLoader());
             backendClass.getMethod("installIfSupported").invoke(null);
         } catch (ReflectiveOperationException | LinkageError | SecurityException ignored) {
-            // Missing/unsupported version adapter leaves the ordinary CPU path active.
+            // 缺少或不支持版本适配器时继续使用普通 CPU 路径。
         }
     }
 
     /**
-     * Flushes exactly one render type at the typed BufferSource HEAD hook,
-     * while its CPU builder is still valid for fallback replay.
+     * 在类型化 BufferSource 的 HEAD 钩子中刷新一个 RenderType，此时 CPU 构建器
+     * 仍有效，可用于回退重放。
      */
     public static boolean flush(Object layer) {
         requireRenderThread();
-        if (layer == null) return false;
+        if (layer == null) {
+            return false;
+        }
         List<Submission> submissions = PENDING.remove(layer);
-        if (submissions == null || submissions.isEmpty()) return false;
+        if (submissions == null || submissions.isEmpty()) {
+            return false;
+        }
+        pendingInstanceBytes = Math.max(0L,
+                pendingInstanceBytes - (long) submissions.size() * INSTANCE_STAGING_ESTIMATE);
         Backend current = backend;
         boolean replayedToCpu = false;
+        List<Submission> retained = new ArrayList<>();
         List<List<Submission>> groups = contiguousGroups(submissions);
         /*
-         * A CPU fallback is still inside the original BufferSource builder at
-         * this HEAD hook. If one group is known to be unsupported, replay the
-         * whole layer on CPU before the vanilla endBatch call. Otherwise a GPU
-         * group later in the list could overtake an earlier CPU group.
+         * 此 HEAD 钩子仍处于原始 BufferSource 构建器中。如果某个分组确定不受支持，
+         * 则在 vanilla endBatch 前将整个图层重放到 CPU，避免后面的 GPU 分组越过前面的 CPU 分组。
          */
         boolean gpuPlan = current != null;
         if (gpuPlan) {
@@ -244,145 +421,168 @@ public final class GpuInstanceBatch {
                         gpuPlan = false;
                         break;
                     }
-                } catch (RuntimeException ignored) {
+                } catch (RuntimeException | LinkageError ignored) {
                     gpuPlan = false;
                     break;
                 }
             }
         }
         if (!gpuPlan) {
+            RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.RENDER_TYPE_CONTRACT);
             for (List<Submission> group : groups) {
-                for (Submission submission : group) {
-                    try {
-                        submission.cpuFallback.run();
-                        replayedToCpu = true;
-                    } catch (RuntimeException ignored) {
-                        // One failed replay must not prevent other independent instances.
-                    }
+                if (hasSafeCpuFallback(group)) {
+                    replayedToCpu |= replaySubmissions(group, 0);
+                } else {
+                    retained.addAll(group);
+                    disableBackend();
                 }
             }
+            retainPending(layer, retained);
             return replayedToCpu;
         }
         for (List<Submission> group : groups) {
+            if (current == null || backend != current) {
+                RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.BACKEND_CONTEXT);
+                if (hasSafeCpuFallback(group)) replayedToCpu |= replaySubmissions(group, 0);
+                else retained.addAll(group);
+                continue;
+            }
             Submission first = group.get(0);
             Group drawGroup = new Group(layer, first.texture, first.contract, first.key, first.mesh,
                     group.stream().map(submission -> submission.instance).toList());
             try {
+                RenderDebugStats.recordGpuDrawAttempt(1L);
                 DrawResult result = current.draw(drawGroup);
                 if (result == null) {
+                    RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.DRAW_FAILURE);
                     disableBackend();
-                    for (Submission submission : group) {
-                        try {
-                            submission.cpuFallback.run();
-                            replayedToCpu = true;
-                        } catch (RuntimeException ignored) { }
-                    }
+                    if (hasSafeCpuFallback(group)) replayedToCpu |= replaySubmissions(group, 0);
+                    else retained.addAll(group);
                     continue;
                 }
-                if (!result.ownershipCertain()) {
-                    // The backend cannot prove which instances reached GL. Keep
-                    // the original consumer alive and replay the complete group
-                    // so a failed optional path cannot make a train or door
-                    // disappear. The backend is disabled before the replay.
+                ConsumptionStatus status = result.consumptionStatus(group.size());
+                if (status == ConsumptionStatus.NOT_CONSUMED) {
+                    RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.DRAW_FAILURE);
+                    if (hasSafeCpuFallback(group)) replayedToCpu |= replaySubmissions(group, 0);
+                    else {
+                        retained.addAll(group);
+                        disableBackend();
+                    }
+                } else if (status == ConsumptionStatus.CONSUMED_GPU) {
+                    RenderDebugStats.recordCooperativeSubmission();
+                    RenderDebugStats.recordGpuDraw(group.size());
+                } else if (status == ConsumptionStatus.PARTIAL_OR_UNKNOWN) {
+                    RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.DRAW_FAILURE);
+                    // Uncertain or partial ownership is handled exactly once, then
+                    // all later groups stay on CPU after the backend is disabled.
                     disableBackend();
-                    for (Submission submission : group) {
-                        try {
-                            submission.cpuFallback.run();
-                            replayedToCpu = true;
-                        } catch (RuntimeException ignored) { }
-                    }
-                    continue;
+                    int replayFrom = Math.min(result.drawnInstances(), group.size());
+                    if (hasSafeCpuFallback(group)) replayedToCpu |= replaySubmissions(group, replayFrom);
+                    else retained.addAll(group);
                 }
-                if (result.drawnInstances() > group.size()) {
-                    disableBackend();
-                    for (Submission submission : group) {
-                        try {
-                            submission.cpuFallback.run();
-                            replayedToCpu = true;
-                        } catch (RuntimeException ignored) { }
-                    }
-                    continue;
-                }
-                int drawn = result.drawnInstances();
-                for (int index = drawn; index < group.size(); index++) {
-                    try {
-                        group.get(index).cpuFallback.run();
-                        replayedToCpu = true;
-                    } catch (RuntimeException ignored) {
-                        // One failed replay must not prevent other independent instances.
-                    }
-                }
-            } catch (Throwable failure) {
-                /*
-                 * Version backends own their partial-draw accounting and
-                 * return a DrawResult from their internal failure paths. A
-                 * backend that violates that contract is disabled here; its
-                 * group is replayed while the original consumer is still
-                 * alive, preventing the old silent lost-render path.
-                 */
+            } catch (RuntimeException | LinkageError failure) {
+                RenderDebugStats.recordGpuReject(RenderDebugStats.GpuRejectReason.DRAW_FAILURE);
+                // A backend exception leaves ownership unknown; replay once and
+                // disable the backend before processing any later group.
                 disableBackend();
-                for (Submission submission : group) {
-                    try {
-                        submission.cpuFallback.run();
-                        replayedToCpu = true;
-                    } catch (RuntimeException ignored) {
-                        // One failed replay must not prevent other independent instances.
-                    }
-                }
+                if (hasSafeCpuFallback(group)) replayedToCpu |= replaySubmissions(group, 0);
+                else retained.addAll(group);
             }
         }
+        retainPending(layer, retained);
         return replayedToCpu;
     }
 
-    /** Covers layers that did not have a started CPU buffer in this pass. */
+    /** 处理本轮没有已启动 CPU 缓冲的图层。 */
     public static void flushAll() {
         requireRenderThread();
         for (Object layer : new ArrayList<>(PENDING.keySet())) flush(layer);
     }
 
-    /** Clear submissions when world/resource generations change. */
+    /** 世界或资源版本变化时清空待提交项。 */
     public static void invalidate() {
-        if (RenderSystem.isOnRenderThreadOrInit()) PENDING.clear();
-        else RenderSystem.recordRenderCall(PENDING::clear);
+        Runnable clear = () -> {
+            PENDING.clear();
+            pendingInstanceBytes = 0L;
+        };
+        if (RenderSystem.isOnRenderThreadOrInit()) {
+            clear.run();
+        } else {
+            RenderSystem.recordRenderCall(clear::run);
+        }
     }
 
     public static long frame() { return frame; }
     public static boolean enabled() { return backend != null; }
     public static boolean typedFlushHookObserved() { return typedFlushHookObserved; }
+    public static boolean unflushedReplay() { return unflushedReplay; }
 
-    /**
-     * Reports whether a namespace has a typed consumer that can own an
-     * asynchronously built mesh.  The ANTE and MSD callback caches currently
-     * have no RenderType/VBO consumer, so allowing them to record a second
-     * mesh beside ANTE's authoritative rebuild would only duplicate CPU work.
-     * Keep this check on the render thread so a future version adapter can
-     * enable the path by installing its backend and flush hook atomically.
-     */
     public static boolean hasTypedConsumer(String namespace) {
         requireRenderThread();
-        if (namespace == null || !typedFlushHookObserved || backend == null) return false;
-        return !namespace.equals("nte-rail") && !namespace.equals("msd-catenary");
+        if (namespace == null || !typedFlushHookObserved || backend == null) {
+            return false;
+        }
+        return !namespace.equals("nte-rail");
     }
 
-    /**
-     * Only layers whose texture and vanilla/MTR factory identity are known are
-     * eligible for the cached path. This admits entity cutout variants across
-     * mappings while keeping translucent, beacon and shader supplied layers on
-     * the original CPU batch.
-     */
-    public static boolean isSupportedOpaqueLayer(Object layer, Object texture) {
-        if (!(layer instanceof RenderType) || !(texture instanceof ResourceLocation)) return false;
+    private static boolean isGpuBackendAdmissionAllowed() {
+        try {
+            return DependenciesChecker.isGpuMeshBackendAllowed();
+        } catch (RuntimeException | LinkageError unavailable) {
+            return false;
+        }
+    }
+
+    private static boolean isStableOpaqueMesh(VertexMeshKey key, Object layer, Object texture) {
+        return isSupportedGpuLayer(layer, texture) && isStableModel(key);
+    }
+
+    private static boolean isStableModel(VertexMeshKey key) {
+        if (key == null) return false;
+        String model = key.model();
+        return model.equals("ivr:door") || model.startsWith("BlockEntity:")
+                || model.startsWith("EyeCandy:") || model.startsWith("msd-catenary:");
+    }
+
+    public static boolean isSupportedGpuLayer(Object layer, Object texture) {
+        if (!(layer instanceof RenderType) || !(texture instanceof ResourceLocation)) {
+            return false;
+        }
         ResourceLocation location = (ResourceLocation) texture;
         try {
-            if (MoreRenderLayers.getExterior(location) == layer) return true;
+            if (MoreRenderLayers.getExterior(location) == layer) {
+                return true;
+            }
+        } catch (RuntimeException | LinkageError ignored) { }
+        try {
+            if (MoreRenderLayers.getInterior(location) == layer) {
+                return true;
+            }
         } catch (RuntimeException | LinkageError ignored) { }
         for (String methodName : new String[]{"entityCutout", "entityCutoutNoCull", "entityCutoutNoCullZOffset"}) {
             try {
-                java.lang.reflect.Method method = RenderType.class.getMethod(methodName, ResourceLocation.class);
-                if (method.invoke(null, location) == layer) return true;
+                for (java.lang.reflect.Method method : RenderType.class.getMethods()) {
+                    if (!method.getName().equals(methodName) || !java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
+                        continue;
+                    }
+                    Class<?>[] parameters = method.getParameterTypes();
+                    if (parameters.length == 1 && parameters[0].isAssignableFrom(ResourceLocation.class)
+                            && method.invoke(null, location) == layer) {
+                        return true;
+                    }
+                    if (parameters.length == 2 && parameters[0].isAssignableFrom(ResourceLocation.class)
+                            && parameters[1] == boolean.class && method.invoke(null, location, false) == layer) {
+                        return true;
+                    }
+                }
             } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) { }
         }
         return false;
+    }
+
+    /** 兼容仍使用旧名称的版本适配器。 */
+    public static boolean isSupportedOpaqueLayer(Object layer, Object texture) {
+        return isSupportedGpuLayer(layer, texture);
     }
     public static int pendingCount() {
         int count = 0;
@@ -390,13 +590,13 @@ public final class GpuInstanceBatch {
         return count;
     }
 
-    /** Namespaces without a typed GPU consumer remain CPU-only by contract. */
+    /** ANTE rail callbacks have no typed GPU consumer and stay on CPU. */
     private static boolean isCpuOnlyKey(VertexMeshKey key) {
         String model = key.model();
-        return model.startsWith("msd-catenary:") || model.startsWith("nte-rail:");
+        return model.startsWith("nte-rail:");
     }
 
-    /** Keep non-matching draws in their original order; only adjacent equal geometry batches. */
+    /** 保持不匹配绘制的原有顺序；只合并相邻且几何相同的批次。 */
     private static List<List<Submission>> contiguousGroups(List<Submission> submissions) {
         List<List<Submission>> groups = new ArrayList<>();
         GroupKey currentKey = null;
@@ -413,8 +613,53 @@ public final class GpuInstanceBatch {
         return groups;
     }
 
+    private static boolean hasSafeCpuFallback(List<Submission> group) {
+        for (Submission submission : group) {
+            if (submission.cpuFallback == null) return false;
+        }
+        return true;
+    }
+
+    private static boolean replaySubmissions(List<Submission> submissions, int fromIndex) {
+        boolean replayed = false;
+        int start = Math.max(0, Math.min(fromIndex, submissions.size()));
+        for (int index = start; index < submissions.size(); index++) {
+            Runnable fallback = submissions.get(index).cpuFallback;
+            if (fallback == null) continue;
+            try {
+                RenderDebugStats.recordGpuFallback();
+                fallback.run();
+                replayed = true;
+            } catch (RuntimeException | LinkageError ignored) {
+                // One failed replay must not prevent other independent instances.
+            }
+        }
+        return replayed;
+    }
+
+    private static void retainPending(Object layer, List<Submission> submissions) {
+        if (submissions.isEmpty()) return;
+        PENDING.put(layer, submissions);
+        pendingInstanceBytes += (long) submissions.size() * INSTANCE_STAGING_ESTIMATE;
+        disableBackend();
+    }
+
+    private static ConsumptionStatus replayCpu(Runnable fallback) {
+        if (fallback == null) return ConsumptionStatus.PARTIAL_OR_UNKNOWN;
+        try {
+            RenderDebugStats.recordGpuFallback();
+            fallback.run();
+            return ConsumptionStatus.CONSUMED_CPU;
+        } catch (RuntimeException | LinkageError failure) {
+            disableBackend();
+            return ConsumptionStatus.PARTIAL_OR_UNKNOWN;
+        }
+    }
+
     private static void requireRenderThread() {
-        if (!RenderSystem.isOnRenderThreadOrInit()) throw new IllegalStateException("Render thread required");
+        if (!RenderSystem.isOnRenderThreadOrInit()) {
+            throw new IllegalStateException("Render thread required");
+        }
     }
 
     private static PoseStack copyPose(PoseStack source) {
@@ -424,7 +669,7 @@ public final class GpuInstanceBatch {
         return copy;
     }
 
-    /** PoseStack moved from Mojang's Matrix4f/Matrix3f to JOML in 1.19.4. */
+    /** 1.19.4 起 PoseStack 矩阵从 Mojang Matrix4f/Matrix3f 切换为 JOML。 */
     private static void multiplyMatrix(Object destination, Object source) {
         try {
             for (java.lang.reflect.Method method : destination.getClass().getMethods()) {
@@ -462,7 +707,7 @@ public final class GpuInstanceBatch {
         }
     }
 
-    /** Snapshot either Mojang's pre-1.19.4 matrix or 1.19.4's JOML matrix. */
+    /** 复制 1.19.4 前的 Mojang 矩阵或 1.19.4 的 JOML 矩阵。 */
     private static Object copyMatrix(Object matrix) {
         try {
             for (java.lang.reflect.Constructor<?> constructor : matrix.getClass().getConstructors()) {
@@ -476,7 +721,16 @@ public final class GpuInstanceBatch {
         throw new IllegalArgumentException("Unsupported pose matrix type " + matrix.getClass().getName());
     }
 
-    private record Submission(Object texture, LayerContract contract, VertexMeshKey key,
-                              VertexMesh mesh, Instance instance, Runnable cpuFallback) { }
-    private record GroupKey(Object texture, LayerContract contract, VertexMeshKey key, VertexMesh mesh) { }
+    private record Submission(Object texture,
+                              LayerContract contract,
+                              VertexMeshKey key,
+                              VertexMesh mesh,
+                              Instance instance,
+                              Runnable cpuFallback) {
+    }
+    private record GroupKey(Object texture,
+                            LayerContract contract,
+                            VertexMeshKey key,
+                            VertexMesh mesh) {
+    }
 }

@@ -50,7 +50,7 @@ public class OctopusSystem {
     }
 
     public static ItemStack findOctopusItem(UUID uuid, Inventory inventory) {
-        return Utilities.getInstance().findFilteredItem(inventory, item -> {
+        return Utilities.findFilteredItem(inventory, item -> {
             if (!(item.getItem() == KSDItems.OCTOPUS.get())) {
                 return false;
             }

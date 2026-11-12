@@ -8,6 +8,9 @@ import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.math.Matrix4f;
 import net.hulan.ivr.render_promotion.cache.VertexMesh;
 import net.hulan.ivr.render_promotion.cache.VertexMeshKey;
+import net.hulan.ivr.DependenciesChecker;
+import net.hulan.ivr.client.IVRConfig;
+import net.hulan.ivr.render_promotion.memory.IVRMemoryBudget;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL;
@@ -22,11 +25,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Optional cached VBO draw restricted to MTR's opaque entity cutout layer. */
+/** 仅在 MTR 不透明实体 cutout 图层上执行可选的 VBO 缓存绘制。 */
 public final class GpuMeshBackend implements GpuInstanceBatch.Backend {
-    /** Legacy VertexBuffer state restoration is not audited on this mapping. */
     private static final boolean ENABLED = "true".equalsIgnoreCase(System.getProperty("ivr.gpuDoorInstances", "false"))
             && "true".equalsIgnoreCase(System.getProperty("ivr.gpuLegacyStateContract", "false"));
+    /** 尚未审计此映射下旧版 VertexBuffer 的状态恢复。 */
     private static final long MAX_RESIDENT_BYTES = 8L * 1024 * 1024;
     private static final int MAX_RESIDENT_BUFFERS = 256;
     private static final LinkedHashMap<BufferKey, VertexBuffer> RESIDENT = new LinkedHashMap<>(16, .75F, true);
@@ -37,13 +40,9 @@ public final class GpuMeshBackend implements GpuInstanceBatch.Backend {
     private GpuMeshBackend() { }
 
     public static void installIfSupported() {
-        if (!ENABLED || installed != null || failed || !context()) return;
+        if (!IVRConfig.gpuOptimization || !ENABLED || installed != null || failed || !context()) return;
         try {
-            for (String name : new String[]{"net.irisshaders.iris.Iris", "net.coderbot.iris.Iris", "net.optifine.Config",
-                    "me.jellysquid.mods.sodium.client.SodiumClientMod", "net.caffeinemc.mods.sodium.client.SodiumClientMod", "org.embeddedt.embeddium.Embeddium"}) {
-                try { Class.forName(name, false, GpuMeshBackend.class.getClassLoader()); failed = true; return; }
-                catch (ClassNotFoundException ignored) { }
-            }
+            if (DependenciesChecker.isGpuMeshBackendBlocked()) { failed = true; return; }
             installed = new GpuMeshBackend();
             GpuInstanceBatch.installBackend(installed);
         } catch (RuntimeException | LinkageError unavailable) { failed = true; }
@@ -73,11 +72,10 @@ public final class GpuMeshBackend implements GpuInstanceBatch.Backend {
     }
 
     @Override public boolean supports(Object layer, Object texture, GpuInstanceBatch.LayerContract contract) {
-        if (!ENABLED || failed || !context() || contract != GpuInstanceBatch.LayerContract.OPAQUE_ENTITY_CUTOUT
-                || !(layer instanceof RenderType) || !(texture instanceof ResourceLocation)) return false;
-        RenderType type = (RenderType) layer;
+        if (!IVRConfig.gpuOptimization || !ENABLED || failed || !context() || (contract != GpuInstanceBatch.LayerContract.TEXTURED_QUADS && contract != GpuInstanceBatch.LayerContract.OPAQUE_ENTITY_CUTOUT)
+                || !(layer instanceof RenderType type) || !(texture instanceof ResourceLocation)) return false;
         return type.format() == DefaultVertexFormat.NEW_ENTITY && type.mode() == 7
-                && GpuInstanceBatch.isSupportedOpaqueLayer(layer, texture);
+                && GpuInstanceBatch.isSupportedGpuLayer(layer, texture);
     }
 
     @Override public GpuInstanceBatch.DrawResult draw(GpuInstanceBatch.Group group) {
@@ -87,6 +85,7 @@ public final class GpuMeshBackend implements GpuInstanceBatch.Backend {
                 || (long) group.mesh().vertices().size() * group.instances().size() > 131072L) {
             return GpuInstanceBatch.DrawResult.rejected();
         }
+        trimResidentToBudget();
 
         List<DrawItem> items = new ArrayList<>(group.instances().size());
         for (GpuInstanceBatch.Instance instance : group.instances()) {
@@ -112,7 +111,7 @@ public final class GpuMeshBackend implements GpuInstanceBatch.Backend {
                 item.buffer.bind();
                 DefaultVertexFormat.NEW_ENTITY.setupBufferState(0L);
 
-                // The second argument is the primitive mode (GL_QUADS), not a packed vertex attribute.
+                // 第二个参数是图元模式（GL_QUADS），不是打包的顶点属性。
                 drawAttempted = true;
                 item.buffer.draw((Matrix4f) item.instance.poseMatrix(), 7);
                 drawnCount++;
@@ -123,16 +122,27 @@ public final class GpuMeshBackend implements GpuInstanceBatch.Backend {
         } catch (RuntimeException | LinkageError failure) {
             failed = true;
             GpuInstanceBatch.disableBackend();
-            return drawAttempted ? GpuInstanceBatch.DrawResult.uncertain() : GpuInstanceBatch.DrawResult.rejected();
+            return drawAttempted ? GpuInstanceBatch.DrawResult.uncertain(drawnCount) : GpuInstanceBatch.DrawResult.rejected();
         } finally {
-            try { DefaultVertexFormat.NEW_ENTITY.clearBufferState(); } catch (RuntimeException ignored) { failed = true; }
-            VertexBuffer.unbind();
-            if (stateSetup) try { layer.clearRenderState(); } catch (RuntimeException ignored) { failed = true; }
-            RenderSystem.activeTexture(GL13.GL_TEXTURE0);
-            RenderSystem.bindTexture(oldTexture);
-            RenderSystem.activeTexture(activeTexture);
-            GlStateManager._glUseProgram(oldProgram);
-            RenderSystem.glBindBuffer(GL15.GL_ARRAY_BUFFER, () -> oldArray);
+            try { DefaultVertexFormat.NEW_ENTITY.clearBufferState(); }
+            catch (RuntimeException | LinkageError ignored) { failed = true; }
+            try { VertexBuffer.unbind(); }
+            catch (RuntimeException | LinkageError ignored) { failed = true; }
+            if (stateSetup) {
+                try { layer.clearRenderState(); }
+                catch (RuntimeException | LinkageError ignored) { failed = true; }
+            }
+            try { RenderSystem.activeTexture(GL13.GL_TEXTURE0); }
+            catch (RuntimeException | LinkageError ignored) { failed = true; }
+            try { RenderSystem.bindTexture(oldTexture); }
+            catch (RuntimeException | LinkageError ignored) { failed = true; }
+            try { RenderSystem.activeTexture(activeTexture); }
+            catch (RuntimeException | LinkageError ignored) { failed = true; }
+            try { GlStateManager._glUseProgram(oldProgram); }
+            catch (RuntimeException | LinkageError ignored) { failed = true; }
+            try { RenderSystem.glBindBuffer(GL15.GL_ARRAY_BUFFER, () -> oldArray); }
+            catch (RuntimeException | LinkageError ignored) { failed = true; }
+            if (failed) GpuInstanceBatch.disableBackend();
         }
     }
 
@@ -142,9 +152,11 @@ public final class GpuMeshBackend implements GpuInstanceBatch.Backend {
         if (cached != null) return cached;
 
         long bytes = (long) mesh.vertices().size() * 36L;
-        if (bytes <= 0 || bytes > MAX_RESIDENT_BYTES) return null;
+        long residentLimit = Math.min(MAX_RESIDENT_BYTES, IVRMemoryBudget.gpuMeshBudgetBytes());
+        if (bytes <= 0 || bytes > residentLimit) return null;
         removeObsolete(meshKey, key);
-        while (!RESIDENT.isEmpty() && (RESIDENT.size() >= MAX_RESIDENT_BUFFERS || residentBytes + bytes > MAX_RESIDENT_BYTES)) {
+        trimResidentToBudget();
+        while (!RESIDENT.isEmpty() && (RESIDENT.size() >= MAX_RESIDENT_BUFFERS || residentBytes + bytes > residentLimit)) {
             Iterator<Map.Entry<BufferKey, VertexBuffer>> iterator = RESIDENT.entrySet().iterator();
             Map.Entry<BufferKey, VertexBuffer> eldest = iterator.next();
             iterator.remove();
@@ -159,6 +171,7 @@ public final class GpuMeshBackend implements GpuInstanceBatch.Backend {
         VertexBuffer buffer = new VertexBuffer(DefaultVertexFormat.NEW_ENTITY);
         try {
             buffer.upload(builder);
+            net.hulan.ivr.render_promotion.debug.RenderDebugStats.recordGpuUpload();
             RESIDENT.put(key, buffer);
             residentBytes += bytes;
             return buffer;
@@ -166,8 +179,24 @@ public final class GpuMeshBackend implements GpuInstanceBatch.Backend {
             try { buffer.close(); } catch (RuntimeException ignored) { }
             return null;
         } finally {
-            VertexBuffer.unbind();
+            try { VertexBuffer.unbind(); }
+            catch (RuntimeException | LinkageError ignored) {
+                failed = true;
+                GpuInstanceBatch.disableBackend();
+            }
         }
+    }
+
+    private static void trimResidentToBudget() {
+        long residentLimit = Math.min(MAX_RESIDENT_BYTES, IVRMemoryBudget.gpuMeshBudgetBytes());
+        while (!RESIDENT.isEmpty() && (RESIDENT.size() > MAX_RESIDENT_BUFFERS || residentBytes > residentLimit)) {
+            Iterator<Map.Entry<BufferKey, VertexBuffer>> iterator = RESIDENT.entrySet().iterator();
+            Map.Entry<BufferKey, VertexBuffer> eldest = iterator.next();
+            iterator.remove();
+            residentBytes -= bufferBytes(eldest.getKey());
+            try { eldest.getValue().close(); } catch (RuntimeException ignored) { }
+        }
+        if (residentBytes < 0L) residentBytes = 0L;
     }
 
     private static void removeObsolete(VertexMeshKey meshKey, BufferKey keep) {

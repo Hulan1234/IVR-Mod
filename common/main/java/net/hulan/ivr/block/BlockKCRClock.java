@@ -24,7 +24,7 @@ public class BlockKCRClock extends BlockMapper implements EntityBlockMapper {
     public static final BooleanProperty FACING = BooleanProperty.create("facing");
 
     public BlockKCRClock() {
-        super(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 5));
+        super(Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 5));
     }
 
     @Override

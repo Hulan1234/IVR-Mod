@@ -25,7 +25,7 @@ public abstract class BlockKCRStationNameBase extends BlockDirectionalMapper imp
     public static final IntegerProperty COLOR = IntegerProperty.create("color", 0, 2);
 
     public BlockKCRStationNameBase() {
-        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).noOcclusion());
+        super(net.hulan.ksd.utils.Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).noOcclusion());
     }
 
     @Override

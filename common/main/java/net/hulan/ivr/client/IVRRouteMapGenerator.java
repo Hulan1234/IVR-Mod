@@ -19,6 +19,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.Tuple;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.function.BiConsumer;
 
@@ -1146,7 +1147,17 @@ public class IVRRouteMapGenerator implements IGui {
     }
 
     private static void drawResource(NativeImage nativeImage, String resource, int x, int y, int width, int height, boolean flipX, float x1, float x2, float y1, float y2, int color, boolean useActualColor) throws IOException {
-        NativeImage nativeImageResource = NativeImage.read(NativeImage.Format.RGBA, Utilities.getInputStream(Minecraft.getInstance().getResourceManager().getResource(new ResourceLocation("ivr", resource))));
+        try (InputStream resourceStream = Utilities.getInputStream(Minecraft.getInstance().getResourceManager().getResource(new ResourceLocation("ivr", resource)));
+             NativeImage nativeImageResource = NativeImage.read(NativeImage.Format.RGBA, resourceStream)) {
+            drawResourcePixels(nativeImage, nativeImageResource, x, y, width, height, flipX, x1, x2, y1, y2,
+                    color, useActualColor);
+        }
+    }
+
+    private static void drawResourcePixels(NativeImage nativeImage, NativeImage nativeImageResource,
+                                           int x, int y, int width, int height, boolean flipX,
+                                           float x1, float x2, float y1, float y2, int color,
+                                           boolean useActualColor) {
         int resourceWidth = nativeImageResource.getWidth();
         int resourceHeight = nativeImageResource.getHeight();
         for(int drawX = Math.round(x1 * (float)width); drawX < Math.round(x2 * (float)width); ++drawX) {

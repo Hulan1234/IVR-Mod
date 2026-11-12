@@ -20,7 +20,7 @@ public class BlockKCRPlatformCrossBar extends BlockDirectionalMapper {
     private final Style type;
 
     public BlockKCRPlatformCrossBar(Style type) {
-        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1));
+        super(net.hulan.ksd.utils.Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(1));
         this.type = type;
     }
 

@@ -83,7 +83,7 @@ public class PutItemScreen extends ScreenMapper implements IGui {
         Item previewItem = resolveItemKey();
         ItemStack targetPreview = placedStack.isEmpty() && previewItem != null ? new ItemStack(previewItem) : placedStack;
         if (!targetPreview.isEmpty()) {
-            net.hulan.ksd.utils.Utilities.getInstance().renderGuiItem(poseStack, Minecraft.getInstance().getItemRenderer(),
+            net.hulan.ksd.utils.Utilities.renderGuiItem(poseStack, Minecraft.getInstance().getItemRenderer(),
                     Minecraft.getInstance().font, targetPreview, targetX + 2, targetY + 2);
         }
 
@@ -97,7 +97,7 @@ public class PutItemScreen extends ScreenMapper implements IGui {
             renderTooltip(poseStack, hovered.getItemStack(), mouseX, mouseY);
         }
         if (!carriedStack.isEmpty()) {
-            net.hulan.ksd.utils.Utilities.getInstance().renderGuiItem(poseStack, Minecraft.getInstance().getItemRenderer(),
+            net.hulan.ksd.utils.Utilities.renderGuiItem(poseStack, Minecraft.getInstance().getItemRenderer(),
                     Minecraft.getInstance().font, carriedStack, mouseX - 8, mouseY - 8);
         }
     }

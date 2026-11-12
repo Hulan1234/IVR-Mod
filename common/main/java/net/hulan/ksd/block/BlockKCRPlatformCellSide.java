@@ -23,7 +23,7 @@ public class BlockKCRPlatformCellSide extends BlockDirectionalMapper implements 
     public static final EnumProperty<Style> STYLE = EnumProperty.create("style", Style.class);
 
     public BlockKCRPlatformCellSide() {
-        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1));
+        super(net.hulan.ksd.utils.Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(1));
     }
 
     public BlockKCRPlatformCellSide(Properties properties) {

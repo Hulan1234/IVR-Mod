@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Visibility and occlusion admission for ANTE EyeCandy block entities. */
 public final class EyeCandyVisibility extends Visibility {
 
     private static final EyeCandyVisibility INSTANCE = new EyeCandyVisibility();
@@ -33,15 +32,15 @@ public final class EyeCandyVisibility extends Visibility {
         return IVRConfig.nteRailBoxRD;
     }
 
-    /** Run distance, frustum and asynchronous occlusion checks for one EyeCandy BE. */
     @SuppressWarnings("deprecation")
     public boolean shouldRender(BlockEntity entity) {
         long started = RenderDebugStats.startTiming();
         Level world = Minecraft.getInstance().level;
-        if (entity == null || world == null || entity.getLevel() != world) return true;
+        if (entity == null || world == null || entity.getLevel() != world) return false;
         BlockPos pos = entity.getBlockPos();
-        if (pos == null || !world.hasChunkAt(pos)) return true;
+        if (pos == null || !world.hasChunkAt(pos)) return false;
         AABB bounds = renderBounds(entity, pos);
+        if (illegalBounds(bounds) || !hasChunksLoaded(world, bounds)) return false;
         FrustumCache.CameraSnapshot view = FrustumCache.capture(world);
         Object key = OcclusionScheduler.eyeCandyKey(pos);
         RenderDebugStats.Category previous = RenderDebugStats.pushCategory(
@@ -60,13 +59,15 @@ public final class EyeCandyVisibility extends Visibility {
     private Result occlusion(Level world, Object key, AABB bounds) {
         OcclusionScheduler.QueryResult result = OcclusionScheduler.queryEyeCandy(
                 world, key, bounds, null);
-        return result.type() == OcclusionScheduler.ResultType.OCCLUDED ? Result.OCCLUDED
-                : result.type() == OcclusionScheduler.ResultType.UNLOADED ? Result.UNLOADED
-                : result.type() == OcclusionScheduler.ResultType.PENDING ? Result.PENDING
-                : Result.VISIBLE;
+        return switch (result.type()) {
+            case OCCLUDED -> Result.OCCLUDED;
+            case UNLOADED -> Result.UNLOADED;
+            case PENDING -> Result.PENDING;
+            case DEFERRED -> Result.DEFERRED;
+            case VISIBLE -> Result.VISIBLE;
+        };
     }
 
-    /** Prefer ANTE's exact model bounds; use a conservative fallback for older releases. */
     private AABB renderBounds(BlockEntity entity, BlockPos pos) {
         try {
             Optional<Method> optional = BOUNDS_METHODS.computeIfAbsent(entity.getClass(), type -> {
@@ -84,7 +85,6 @@ public final class EyeCandyVisibility extends Visibility {
                 if (value instanceof AABB box && !illegalBounds(box)) return box;
             }
         } catch (ReflectiveOperationException | RuntimeException ignored) {
-            // Optional ANTE versions may hide or remove the bounds method.
         }
         double x = pos.getX(), y = pos.getY(), z = pos.getZ();
         return new AABB(x - 2.0D, y - 2.0D, z - 2.0D,

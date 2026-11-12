@@ -60,8 +60,18 @@
   "gui.ivr.render_config.train": "列車",
   "gui.ivr.render_config.catenary": "接觸網",
   "gui.ivr.render_config.ante_rail_box": "ANTE 軌道判定箱",
+  "gui.ivr.render_config.memory_budget": "記憶體預算（0=自動）",
+  "gui.ivr.render_config.occlusion_rays": "遮擋射線預算",
   "gui.ivr.render_config.save": "儲存",
   "gui.ivr.render_config.cancel": "取消",
   "gui.ivr.render_config.defaults": "還原預設",
+  "gui.ivr.render_config.gpu_instances.enabled": "GPU 網格批次處理：開啟",
+  "gui.ivr.render_config.gpu_instances.disabled": "GPU 網格批次處理：關閉",
+  "gui.ivr.render_config.culling.enabled": "IVR 剔除：開啟",
+  "gui.ivr.render_config.culling.disabled": "IVR 剔除：關閉",
+  "gui.ivr.render_config.cpu_optimization.enabled": "CPU 優化：開啟",
+  "gui.ivr.render_config.cpu_optimization.disabled": "CPU 優化：關閉",
+  "gui.ivr.render_config.gpu_optimization.enabled": "GPU 優化：開啟",
+  "gui.ivr.render_config.gpu_optimization.disabled": "GPU 優化：關閉",
   "gui.ivr.render_config.save_failed": "儲存失敗，請檢查設定檔"
 }

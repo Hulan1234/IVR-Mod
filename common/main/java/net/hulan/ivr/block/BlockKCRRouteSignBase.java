@@ -30,7 +30,7 @@ public abstract class BlockKCRRouteSignBase extends BlockDirectionalDoubleBlockB
     public static final IntegerProperty ARROW_DIRECTION = IntegerProperty.create("propagate_property", 0, 3);
 
     public BlockKCRRouteSignBase() {
-        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 15).noOcclusion());
+        super(net.hulan.ksd.utils.Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 15).noOcclusion());
     }
 
     @SuppressWarnings("deprecation")

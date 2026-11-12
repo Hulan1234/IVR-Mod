@@ -81,12 +81,11 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
     }
 
     private void drawRoutes(PoseStack matrices) {
-        RenderUtilities renderUtilities = RenderUtilities.getInstance();
         for (int i = 0; i < drawingLines.size(); i++) {
             List<Tuple<Float, Float>> points = drawingLines.get(i);
             int color = drawingLineColors.get(i);
             for (int j = 0; j < points.size() - 1; j++) {
-                renderUtilities.drawThickLine(matrices, x + points.get(j).getA(), y + points.get(j).getB(),
+                RenderUtilities.drawThickLine(matrices, x + points.get(j).getA(), y + points.get(j).getB(),
                         x + points.get(j + 1).getA(), y + points.get(j + 1).getB(), LINE_WIDTH, color);
             }
             // 为每条线路段补上线宽直径的圆形端盖。
@@ -94,22 +93,21 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
                 Tuple<Float, Float> start = points.get(0); // 读取折线起点
                 Tuple<Float, Float> end = points.get(points.size() - 1); // 读取折线终点
                 float endpointRadius = LINE_WIDTH / 2.0F; // 计算端点圆半径
-                renderUtilities.drawStationCircle(matrices, x + start.getA(), y + start.getB(),
+                RenderUtilities.drawStationCircle(matrices, x + start.getA(), y + start.getB(),
                         endpointRadius, SEGMENTS, endpointRadius, color); // 绘制起点圆端盖
-                renderUtilities.drawStationCircle(matrices, x + end.getA(), y + end.getB(),
+                RenderUtilities.drawStationCircle(matrices, x + end.getA(), y + end.getB(),
                         endpointRadius, SEGMENTS, endpointRadius, color); // 绘制终点圆端盖
             }
             // 用圆点覆盖折线接缝，避免相邻线段之间出现裂缝。
             for (int j = 1; j < points.size() - 1; j++) {
                 Tuple<Float, Float> point = points.get(j);
-                renderUtilities.drawStationCircle(matrices, x + point.getA(), y + point.getB(),
+                RenderUtilities.drawStationCircle(matrices, x + point.getA(), y + point.getB(),
                         LINE_WIDTH / 2, SEGMENTS, LINE_WIDTH / 2, color);
             }
         }
     }
 
     private void drawStationsAndNames(PoseStack matrices, int mouseX, int mouseY) {
-        RenderUtilities renderUtilities = RenderUtilities.getInstance();
         Tuple<Float, Float> mouse = new Tuple<>((float) mouseX - x, (float) mouseY - y);
         InterchangeCapsule hoveredCapsule = null;
         for (InterchangeCapsule capsule : interchangeCapsules) {
@@ -121,16 +119,16 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
 
         // 先确定最终颜色，再把每个胶囊完整绘制一次，避免同深度重复叠画产生闪烁和错位。
         for (InterchangeCapsule capsule : interchangeCapsules) {
-            int color = capsule == hoveredCapsule ? renderUtilities.lightenColor(capsule.color) : capsule.color;
+            int color = capsule == hoveredCapsule ? RenderUtilities.lightenColor(capsule.color) : capsule.color;
             drawInterchangeCapsule(matrices, capsule, color);
         }
         // 遍历所有车站圆
         for (StationCircle circle : stationCircles) {
             // 先画白色实心圆作为车站底色
-            renderUtilities.drawStationCircle(matrices, (float) x + (float) circle.centerX, (float) y + (float) circle.centerY,
+            RenderUtilities.drawStationCircle(matrices, (float) x + (float) circle.centerX, (float) y + (float) circle.centerY,
                     RADIUS, SEGMENTS, RADIUS, ARGB_WHITE);
             // 再画一圈线路颜色的圆环表示所属线路
-            renderUtilities.drawStationCircle(matrices, (float) x + (float) circle.centerX, (float) y + (float) circle.centerY,
+            RenderUtilities.drawStationCircle(matrices, (float) x + (float) circle.centerX, (float) y + (float) circle.centerY,
                     RADIUS, SEGMENTS, STATION_RING_THICKNESS, circle.color);
         }
         AtomicBoolean hovered = new AtomicBoolean(false);
@@ -143,8 +141,8 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
                 // 判断圆是否属于被命中的车站
                 if (circle.stationId == station.id) {
                     // 用提亮后的颜色重画该圆的圆环
-                    int color = renderUtilities.lightenColor(isLRT ? ARGB_BLACK : circle.color);
-                    renderUtilities.drawStationCircle(matrices, (float) x + (float) circle.centerX, (float) y + (float) circle.centerY,
+                    int color = RenderUtilities.lightenColor(isLRT ? ARGB_BLACK : circle.color);
+                    RenderUtilities.drawStationCircle(matrices, (float) x + (float) circle.centerX, (float) y + (float) circle.centerY,
                             RADIUS, SEGMENTS, STATION_RING_THICKNESS, color);
                 }
             }
@@ -155,21 +153,20 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
         // 根据悬停状态更新鼠标指针（悬停时显示小手）
         updateCursor(hovered.get());
         for (StationLabel label : stationLabels) {
-            RenderUtilities.getInstance().drawTextCjk(matrices, label.text,
+            RenderUtilities.drawTextCjk(matrices, label.text,
                     x + label.x, y + label.y, STATION_NAME_SCALE, STATION_EN_SCALE, ARGB_BLACK);
         }
     }
 
     private List<StationLabel> buildStationLabels() {
         List<StationLabel> labels = new ArrayList<>();
-        RenderUtilities renderUtilities = RenderUtilities.getInstance();
         List<LabelBox> placedLabels = new ArrayList<>();
         for (KSDStation station : getRenderableStations()) {
             if (KSDAreaBase.nonNullCorners(station)) {
                 // 站名原文（「中文||English」形式）
                 String name = station.name;
                 // 测量「中文在上、英文在下」两行站名的整体宽高（供避让计算）
-                float[] textSize = renderUtilities.getTextSizeCjk(name, STATION_NAME_SCALE, STATION_EN_SCALE);
+                float[] textSize = RenderUtilities.getTextSizeCjk(name, STATION_NAME_SCALE, STATION_EN_SCALE);
                 // 站名标签整体宽度
                 float textWidth = textSize[0];
                 // 站名标签整体高度
@@ -223,19 +220,18 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
     }
 
     private void drawInterchangeCapsule(PoseStack matrices, InterchangeCapsule capsule, int color) {
-        RenderUtilities renderUtilities = RenderUtilities.getInstance();
         float x1 = x + capsule.start.getA();
         float y1 = y + capsule.start.getB();
         float x2 = x + capsule.end.getA();
         float y2 = y + capsule.end.getB();
         float innerRadius = capsule.radius - STATION_RING_THICKNESS; // 根据胶囊宽度计算内部留白半径
 
-        renderUtilities.drawThickLine(matrices, x1, y1, x2, y2, capsule.radius * 2, color); // 绘制胶囊外层长轴
-        renderUtilities.drawStationCircle(matrices, x1, y1, capsule.radius, SEGMENTS, capsule.radius, color); // 绘制胶囊起点外圆
-        renderUtilities.drawStationCircle(matrices, x2, y2, capsule.radius, SEGMENTS, capsule.radius, color); // 绘制胶囊终点外圆
-        renderUtilities.drawThickLine(matrices, x1, y1, x2, y2, innerRadius * 2, ARGB_WHITE);
-        renderUtilities.drawStationCircle(matrices, x1, y1, innerRadius, SEGMENTS, innerRadius, ARGB_WHITE);
-        renderUtilities.drawStationCircle(matrices, x2, y2, innerRadius, SEGMENTS, innerRadius, ARGB_WHITE);
+        RenderUtilities.drawThickLine(matrices, x1, y1, x2, y2, capsule.radius * 2, color); // 绘制胶囊外层长轴
+        RenderUtilities.drawStationCircle(matrices, x1, y1, capsule.radius, SEGMENTS, capsule.radius, color); // 绘制胶囊起点外圆
+        RenderUtilities.drawStationCircle(matrices, x2, y2, capsule.radius, SEGMENTS, capsule.radius, color); // 绘制胶囊终点外圆
+        RenderUtilities.drawThickLine(matrices, x1, y1, x2, y2, innerRadius * 2, ARGB_WHITE);
+        RenderUtilities.drawStationCircle(matrices, x1, y1, innerRadius, SEGMENTS, innerRadius, ARGB_WHITE);
+        RenderUtilities.drawStationCircle(matrices, x2, y2, innerRadius, SEGMENTS, innerRadius, ARGB_WHITE);
     }
 
     private static boolean isPointInCapsule(Tuple<Float, Float> point, InterchangeCapsule capsule) {
@@ -445,9 +441,11 @@ public class KCRSTMachineRailMap implements WidgetMapper, SelectableMapper, GuiE
                 && mouseY < (double) (this.y + this.height); // 使用组件高度判断鼠标是否位于线路图内
     }
 
+    @SuppressWarnings("unused")
     public void setFocused(boolean focused) {
     }
 
+    @SuppressWarnings("unused")
     public boolean isFocused() {
         return false;
     }

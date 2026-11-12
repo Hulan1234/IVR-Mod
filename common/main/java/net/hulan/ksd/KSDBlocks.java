@@ -15,7 +15,7 @@ public interface KSDBlocks {
     RegistryObject<Block> KP_HB_WITH_LB = new RegistryObject<>(() -> new BlockKCRPlatformCrossBar(BlockKCRPlatformCrossBar.Style.HB_WITH_LB));
     RegistryObject<Block> KP_HB_WITH_HB = new RegistryObject<>(() -> new BlockKCRPlatformCrossBar(BlockKCRPlatformCrossBar.Style.HB_WITH_HB));
     RegistryObject<Block> KP_CELL_SIDE = new RegistryObject<>(BlockKCRPlatformCellSide::new);
-    RegistryObject<Block> KP_CELL_SIDE_WITH_LIGHT = new RegistryObject<>(() -> new BlockKCRPlatformCellSide(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1).lightLevel(value -> 13).noOcclusion()));
+    RegistryObject<Block> KP_CELL_SIDE_WITH_LIGHT = new RegistryObject<>(() -> new BlockKCRPlatformCellSide(net.hulan.ksd.utils.Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(1).lightLevel(value -> 13).noOcclusion()));
     RegistryObject<Block> KP_CELL_TOP = new RegistryObject<>(BlockKCRPlatformCellTop::new);
     RegistryObject<Block> KP_LIGHT = new RegistryObject<>(BlockKCRPlatformCellLight::new);
     RegistryObject<Block> FIRST_CLASS_PROCESSOR = new RegistryObject<>(BlockKCRFirstClassProcessor::new);

@@ -43,7 +43,7 @@ public class BlockKCRSingleTicketMachine extends BlockDirectionalMapper implemen
     public final boolean isWall;
 
     public BlockKCRSingleTicketMachine(SingleTicketSystem.TicketType ticketType, boolean isWall) {
-        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties()
+        super(net.hulan.ksd.utils.Utilities.createBlockProperties()
                 .requiresCorrectToolForDrops()
                 .strength(2)
                 .lightLevel(state -> 14));

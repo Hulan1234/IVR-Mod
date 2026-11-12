@@ -33,7 +33,7 @@ public class BlockKCRFirstClassProcessor extends BlockDirectionalMapper {
     public static final IntegerProperty TYPE = IntegerProperty.create("type", 0, 3);
 
     public BlockKCRFirstClassProcessor() {
-        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1).lightLevel((state) -> 6));
+        super(net.hulan.ksd.utils.Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(1).lightLevel((state) -> 6));
         registerDefaultState(defaultBlockState().setValue(TYPE, 0));
     }
 

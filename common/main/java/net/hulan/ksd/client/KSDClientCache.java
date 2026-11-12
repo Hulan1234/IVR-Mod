@@ -10,7 +10,6 @@ import mtr.data.*;
 import mtr.mappings.Utilities;
 import net.hulan.ivr.client.IVRRouteMapGenerator;
 import net.hulan.ivr.render_promotion.cache.RenderDataRevision;
-import net.hulan.ivr.render_promotion.cache.TrainGeometryCache;
 import net.hulan.ksd.data.*;
 import net.hulan.ksd.utils.DataUtilities;
 import net.minecraft.client.Minecraft;
@@ -94,7 +93,6 @@ public class KSDClientCache extends KSDDataCache {
             }
         });
         RenderDataRevision.bump();
-        TrainGeometryCache.markSidingChanged();
     }
 
     public void resetFonts() {

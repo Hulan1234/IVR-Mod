@@ -1,13 +1,13 @@
 package net.hulan.ivr.mixin;
 
-import net.hulan.ivr.render_promotion.cache.NTERailChunkCache;
+import net.hulan.ivr.render_promotion.cache.RenderDataRevision;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Keeps ANTE's CPU mesh rebuilds tied to the rail structure revision. */
+/** 将 ANTE 的 CPU 网格重建状态与轨道结构版本关联。 */
 @Pseudo
 @Mixin(targets = {
         "fabric.cn.zbx1425.mtrsteamloco.render.rail.RailChunkBase",
@@ -18,31 +18,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
         "forge.cn.zbx1425.mtrsteamloco.render.rail.InstancedRailChunk"},
         remap = false)
 public abstract class RailChunkBaseLifecycleManagerMixin {
-    @Inject(method = "rebuildBuffer", at = @At("HEAD"),
-            remap = false, require = 0)
-    private void ivr$scheduleAsyncSnapshot(CallbackInfo ci) {
-        // The native method always continues.  ANTE owns its render-thread
-        // Sowcer/VBO state, so an optional CPU snapshot must never cancel or
-        // duplicate the authoritative rebuild.  Once a clean native buffer
-        // is known, skip the redundant snapshot attempt for this call.
-        if (!NTERailChunkCache.shouldSkipRebuild(this)) {
-            NTERailChunkCache.scheduleAsyncSnapshot(this);
-        }
-    }
-
-    @Inject(method = "rebuildBuffer", at = @At("RETURN"), remap = false, require = 0)
-    private void ivr$markRebuilt(CallbackInfo ci) {
-        NTERailChunkCache.markBuilt(this);
-    }
-
     @Inject(method = {"addRail", "removeRail", "setBoundingBox"}, at = @At("TAIL"),
             remap = false, require = 0)
     private void ivr$invalidateStructure(CallbackInfo ci) {
-        NTERailChunkCache.invalidate(this);
+        RenderDataRevision.bump();
     }
 
     @Inject(method = "close", at = @At("HEAD"), remap = false, require = 0)
     private void ivr$releaseChunk(CallbackInfo ci) {
-        NTERailChunkCache.invalidate(this);
+        RenderDataRevision.bump();
     }
 }

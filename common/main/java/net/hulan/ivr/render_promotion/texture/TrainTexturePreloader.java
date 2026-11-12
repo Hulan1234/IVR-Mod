@@ -2,6 +2,7 @@ package net.hulan.ivr.render_promotion.texture;
 
 import mtr.data.TrainClient;
 import mtr.render.TrainRendererBase;
+import net.hulan.ksd.utils.ClientUtilities;
 import net.hulan.ivr.client.IVRConfig;
 import net.hulan.ivr.render_promotion.cache.FrustumCache;
 import net.hulan.ivr.render_promotion.itf.TrainTextureSource;
@@ -12,12 +13,16 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.Iterator;
+import java.util.Optional;
+import net.minecraft.server.packs.resources.Resource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /** Bounded texture-only warmup for trains approaching the configured render range. */
 public final class TrainTexturePreloader {
@@ -25,14 +30,19 @@ public final class TrainTexturePreloader {
     private static final double PREPARE_BAND = 48.0D;
     private static final long FRAME_BUDGET_NANOS = 1_000_000L;
     private static final int MAX_PER_FRAME = 2;
-    private static final Set<ResourceLocation> REQUESTED = new HashSet<>();
+    private static final int MAX_TRACKED_TEXTURES = 4096;
+    private static final int MAX_PENDING_TEXTURES = 1024;
+    private static final Set<ResourceLocation> REQUESTED = new LinkedHashSet<>();
     private static final Map<TrainRendererBase, Boolean> RESOLVED = new WeakHashMap<>();
     private static final Map<TrainRendererBase, Integer> ATTEMPTS = new WeakHashMap<>();
     private static final Map<ResourceLocation, TrainRendererBase> PENDING = new LinkedHashMap<>();
-    private static final Map<ResourceLocation, Integer> TEXTURE_ATTEMPTS = new java.util.HashMap<>();
-    private static final Map<ResourceLocation, Long> RETRY_AT = new java.util.HashMap<>();
+    private static final Map<ResourceLocation, Integer> TEXTURE_ATTEMPTS = new LinkedHashMap<>();
+    private static final Map<ResourceLocation, Long> RETRY_AT = new LinkedHashMap<>();
     private static final long RETRY_DELAY_NANOS = 1_000_000_000L;
+    private static final Logger LOGGER = LogManager.getLogger("ivr");
     private static boolean reloading;
+    /** Warmup is disabled until a local player has entered a client world. */
+    private static boolean started;
     private static long generation;
     private static Level world;
     private static long lastFrame = Long.MIN_VALUE;
@@ -40,15 +50,11 @@ public final class TrainTexturePreloader {
     private static long frameNanos;
 
     public static synchronized void consider(Level currentWorld, TrainClient train, Vec3[] positions) {
-        if (currentWorld == null || train == null || positions == null
+        if (!started || currentWorld == null || train == null || positions == null
                 || Minecraft.getInstance().level != currentWorld
+                || world != currentWorld
                 || Minecraft.getInstance().player != null
                 && train.isPlayerRiding(Minecraft.getInstance().player)) return;
-        if (world != currentWorld) {
-            RESOLVED.clear();
-            ATTEMPTS.clear();
-            world = currentWorld;
-        }
         long frame = FrustumCache.frameId();
         if (frame != lastFrame) {
             lastFrame = frame;
@@ -77,15 +83,17 @@ public final class TrainTexturePreloader {
     }
 
     /** Called by the optional ANTE resolver hook with ANTE's already-resolved texture. */
-    public static synchronized void requestAnteTexture(ResourceLocation texture) {
-        if (texture != null) {
+    public static synchronized void requestTexture(ResourceLocation texture) {
+        if (started && Minecraft.getInstance().level != null && Minecraft.getInstance().player != null
+                && texture != null) {
             long requestedGeneration = generation;
-            Minecraft.getInstance().execute(() -> acceptAnteTexture(requestedGeneration, texture));
+            Minecraft.getInstance().execute(() -> acceptTexture(requestedGeneration, texture));
         }
     }
 
-    private static synchronized void acceptAnteTexture(long requestedGeneration, ResourceLocation texture) {
-        if (generation != requestedGeneration) return;
+    private static synchronized void acceptTexture(long requestedGeneration, ResourceLocation texture) {
+        if (!started || Minecraft.getInstance().level == null || Minecraft.getInstance().player == null
+                || generation != requestedGeneration) return;
         enqueue(texture, null);
         drain(requestedGeneration);
     }
@@ -97,16 +105,24 @@ public final class TrainTexturePreloader {
 
     private static void enqueue(ResourceLocation texture, TrainRendererBase renderer) {
         if (TEXTURE_ATTEMPTS.getOrDefault(texture, 0) < 3
-                && !REQUESTED.contains(texture) && !PENDING.containsKey(texture)) PENDING.put(texture, renderer);
+                && !REQUESTED.contains(texture)
+                && !PENDING.containsKey(texture)) {
+            if (PENDING.size() >= MAX_PENDING_TEXTURES) {
+                PENDING.remove(PENDING.keySet().iterator().next());
+            }
+            PENDING.put(texture, renderer);
+        }
     }
 
-    /** Invoked on the client render thread even while no world is loaded. */
+    /** Invoked on the client render thread after the local player has entered a world. */
     public static synchronized void drain() {
+        if (!started || Minecraft.getInstance().level == null || Minecraft.getInstance().player == null) return;
         drain(generation);
     }
 
     private static synchronized void drain(long requestedGeneration) {
-        if (generation != requestedGeneration || reloading || !Minecraft.getInstance().isSameThread()) return;
+        if (!started || Minecraft.getInstance().level == null || Minecraft.getInstance().player == null
+                || generation != requestedGeneration || reloading || !Minecraft.getInstance().isSameThread()) return;
         long frame = FrustumCache.frameId();
         if (frame != lastFrame) {
             lastFrame = frame;
@@ -130,8 +146,17 @@ public final class TrainTexturePreloader {
     }
 
     private static void submit(ResourceLocation texture, TrainRendererBase renderer) {
+        if (!isValidTextureId(texture) || !resourceExists(texture)) {
+            // TextureManager.preload can install MissingTexture when the
+            // resource is absent.  Leave the ID untouched and let ANTE's
+            // native resolver perform its normal fallback/load path.
+            LOGGER.debug("Skipping train texture warmup for unavailable resource {}", texture);
+            return;
+        }
         if (!REQUESTED.add(texture)) return;
+        trimTracked(REQUESTED);
         TEXTURE_ATTEMPTS.put(texture, TEXTURE_ATTEMPTS.getOrDefault(texture, 0) + 1);
+        trimTracked(TEXTURE_ATTEMPTS);
         long requestedGeneration = generation;
         try {
             TextureManager manager = Minecraft.getInstance().getTextureManager();
@@ -146,6 +171,22 @@ public final class TrainTexturePreloader {
         }
     }
 
+    private static boolean isValidTextureId(ResourceLocation texture) {
+        return texture != null && !texture.getNamespace().isEmpty()
+                && !texture.getPath().isEmpty()
+                && !texture.getPath().contains("\\")
+                && !texture.getPath().startsWith("/");
+    }
+
+    private static boolean resourceExists(ResourceLocation texture) {
+        try {
+            Optional<Resource> resource = ClientUtilities.getResource(texture);
+            return resource.isPresent();
+        } catch (RuntimeException | java.io.IOException failure) {
+            return false;
+        }
+    }
+
     public static synchronized void invalidate() {
         REQUESTED.clear();
         PENDING.clear();
@@ -157,6 +198,25 @@ public final class TrainTexturePreloader {
         lastFrame = Long.MIN_VALUE;
         submitted = 0;
         frameNanos = 0L;
+    }
+
+    /** Enables warmup once the client has both a world and a local player. */
+    public static synchronized void onClientTick() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || minecraft.player == null) return;
+        if (world != minecraft.level) {
+            invalidate();
+            world = minecraft.level;
+        }
+        started = true;
+    }
+
+    /** Stops warmup and drops all work when the client leaves its world. */
+    public static synchronized void onWorldExit() {
+        started = false;
+        reloading = false;
+        world = null;
+        invalidate();
     }
 
     public static synchronized long beginReload() {
@@ -178,8 +238,17 @@ public final class TrainTexturePreloader {
         if (renderer != null) RESOLVED.remove(renderer);
         if (TEXTURE_ATTEMPTS.getOrDefault(texture, 0) < 3) {
             RETRY_AT.put(texture, System.nanoTime() + RETRY_DELAY_NANOS);
+            trimTracked(RETRY_AT);
             enqueue(texture, renderer);
         }
+    }
+
+    private static <T> void trimTracked(Set<T> values) {
+        while (values.size() > MAX_TRACKED_TEXTURES) values.remove(values.iterator().next());
+    }
+
+    private static <T> void trimTracked(Map<T, ?> values) {
+        while (values.size() > MAX_TRACKED_TEXTURES) values.remove(values.keySet().iterator().next());
     }
 
     private static double distanceToTrain(Vec3[] positions, Vec3 camera, double margin) {

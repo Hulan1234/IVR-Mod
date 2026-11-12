@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 public class BlockKCRPlatformCellTop extends BlockDirectionalMapper {
 
     public BlockKCRPlatformCellTop() {
-        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1));
+        super(net.hulan.ksd.utils.Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(1));
     }
 
     @SuppressWarnings("deprecation")

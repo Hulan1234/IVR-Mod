@@ -43,6 +43,8 @@ public abstract class RenderTrainsCallbackCacheMixin {
         }
         if (CatenaryGeometryCache.isMsdCallback(callback)) {
             CatenaryGeometryCache.render(callback, pose, vertex);
+        } else if (RenderCallbackGeometryCache.isYamanoteDisplayCallback(callback)) {
+            callback.accept(pose, vertex);
         } else {
             RenderCallbackGeometryCache.render(callback, pose, vertex);
         }

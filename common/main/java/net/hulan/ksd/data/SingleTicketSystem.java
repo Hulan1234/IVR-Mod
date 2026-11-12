@@ -53,7 +53,7 @@ public class SingleTicketSystem {
     }
 
     public static ItemStack findSingleTicketItem(long id, Inventory inventory) {
-        return Utilities.getInstance().findFilteredItem(inventory, item -> {
+        return Utilities.findFilteredItem(inventory, item -> {
             if (!(item.getItem() instanceof ItemSingleTicket)) {
                 return false;
             }

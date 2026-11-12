@@ -50,7 +50,7 @@ public class BlockKCRPSDTop extends BlockDirectionalMapper implements EntityBloc
     public static final EnumProperty<EnumPersistent> PERSISTENT = EnumProperty.create("persistent", EnumPersistent.class);
 
     public BlockKCRPSDTop() {
-        super(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).noOcclusion());
+        super(Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).noOcclusion());
     }
 
     @SuppressWarnings("deprecation")

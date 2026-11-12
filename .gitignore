@@ -129,3 +129,6 @@ modrinth.properties
 /Description.md
 /.run/
 /fabric/mods/
+/.gradle-*
+.tmp_*
+/TASK_STATE.md

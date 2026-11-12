@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 public class BlockKCRPlatformCellLight extends BlockDirectionalMapper {
 
     public BlockKCRPlatformCellLight() {
-        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1).lightLevel((state) -> 15));
+        super(net.hulan.ksd.utils.Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(1).lightLevel((state) -> 15));
     }
 
     @SuppressWarnings("deprecation")

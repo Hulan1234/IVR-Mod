@@ -2,9 +2,10 @@ package net.hulan.ivr.mixin;
 
 import mtr.data.TrainClient;
 import mtr.render.JonModelTrainRenderer;
-import net.hulan.ivr.render_promotion.utils.TrainRenderPolicy;
+import net.hulan.ivr.client.IVRConfig;
 import net.hulan.ivr.render_promotion.cache.FrustumCache;
 import net.hulan.ivr.render_promotion.visibility.TrainVisibility;
+import net.hulan.ivr.render_promotion.bounds.TrainBoundsProvider;
 import net.hulan.ivr.render_promotion.debug.RenderDebugStats;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.AABB;
@@ -29,6 +30,12 @@ public abstract class TrainRenderOptimizeMixin {
     @Final
     private TrainClient train;
 
+    @Shadow(remap = false) @Final
+    public mtr.model.ModelTrainBase model;
+
+    @Shadow(remap = false) @Final
+    public String textureId;
+
     /** 在车厢渲染入口选择模型阶段并检查可见性。
      * 取消绘制时同步清理阶段模式，防止影响后续车厢。 */
     @Inject(method = "renderCar", at = @At("HEAD"), cancellable = true, remap = false)
@@ -42,6 +49,7 @@ public abstract class TrainRenderOptimizeMixin {
                                        boolean doorRightOpen,
                                        CallbackInfo ci) {
         long started = RenderDebugStats.startTiming();
+        TrainBoundsProvider.getInstance().observe(this.train, this.model, this, this.textureId);
         boolean relative = this.train.getViewOffset() != null;
         TrainVisibility.getInstance().prepareRenderMode(net.minecraft.client.Minecraft.getInstance().level, this.train,
                 new Vec3(x, y, z), relative);
@@ -160,7 +168,9 @@ public abstract class TrainRenderOptimizeMixin {
             maxY = Math.max(maxY, corner.y);
             maxZ = Math.max(maxZ, corner.z);
         }
-        if (train.getViewOffset() != null || net.minecraft.client.Minecraft.getInstance().level == null) {
+        net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+        if (minecraft.level == null || minecraft.player != null && train.isPlayerRiding(minecraft.player)
+                || train.getViewOffset() != null) {
             RenderDebugStats.recordOutcome(RenderDebugStats.Category.TRAIN, true,
                     RenderDebugStats.elapsedSince(started));
             return;
@@ -177,7 +187,7 @@ public abstract class TrainRenderOptimizeMixin {
         double dx = Math.max(0.0D, Math.abs(rel.x) - halfX);
         double dy = Math.max(0.0D, Math.abs(rel.y) - halfY);
         double dz = Math.max(0.0D, Math.abs(rel.z) - halfZ);
-        double renderReach = TrainRenderPolicy.getTrainRenderDistance() + 12.0D;
+        double renderReach = IVRConfig.trainRD + 12.0D;
         if (dx * dx + dy * dy + dz * dz > renderReach * renderReach) {
             RenderDebugStats.recordOutcome(RenderDebugStats.Category.TRAIN, false,
                     RenderDebugStats.elapsedSince(started));

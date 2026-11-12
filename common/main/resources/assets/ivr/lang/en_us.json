@@ -60,8 +60,18 @@
   "gui.ivr.render_config.train": "Trains",
   "gui.ivr.render_config.catenary": "Catenary",
   "gui.ivr.render_config.ante_rail_box": "ANTE rail boxes",
+  "gui.ivr.render_config.memory_budget": "Memory budget (0=auto)",
+  "gui.ivr.render_config.occlusion_rays": "Occlusion ray budget",
   "gui.ivr.render_config.save": "Save",
   "gui.ivr.render_config.cancel": "Cancel",
   "gui.ivr.render_config.defaults": "Defaults",
+  "gui.ivr.render_config.gpu_instances.enabled": "GPU mesh batching: on",
+  "gui.ivr.render_config.gpu_instances.disabled": "GPU mesh batching: off",
+  "gui.ivr.render_config.culling.enabled": "IVR culling: on",
+  "gui.ivr.render_config.culling.disabled": "IVR culling: off",
+  "gui.ivr.render_config.cpu_optimization.enabled": "CPU optimization: on",
+  "gui.ivr.render_config.cpu_optimization.disabled": "CPU optimization: off",
+  "gui.ivr.render_config.gpu_optimization.enabled": "GPU optimization: on",
+  "gui.ivr.render_config.gpu_optimization.disabled": "GPU optimization: off",
   "gui.ivr.render_config.save_failed": "Could not save configuration"
 }
