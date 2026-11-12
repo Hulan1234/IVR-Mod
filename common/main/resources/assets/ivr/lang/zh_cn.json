@@ -60,8 +60,18 @@
   "gui.ivr.render_config.train": "列车",
   "gui.ivr.render_config.catenary": "接触网",
   "gui.ivr.render_config.ante_rail_box": "ANTE 轨道判定箱",
+  "gui.ivr.render_config.memory_budget": "内存预算（0=自动）",
+  "gui.ivr.render_config.occlusion_rays": "遮挡射线预算",
   "gui.ivr.render_config.save": "保存",
   "gui.ivr.render_config.cancel": "取消",
   "gui.ivr.render_config.defaults": "恢复默认",
+  "gui.ivr.render_config.gpu_instances.enabled": "GPU 网格批处理：开启",
+  "gui.ivr.render_config.gpu_instances.disabled": "GPU 网格批处理：关闭",
+  "gui.ivr.render_config.culling.enabled": "IVR 剔除：开启",
+  "gui.ivr.render_config.culling.disabled": "IVR 剔除：关闭",
+  "gui.ivr.render_config.cpu_optimization.enabled": "CPU 优化：开启",
+  "gui.ivr.render_config.cpu_optimization.disabled": "CPU 优化：关闭",
+  "gui.ivr.render_config.gpu_optimization.enabled": "GPU 优化：开启",
+  "gui.ivr.render_config.gpu_optimization.disabled": "GPU 优化：关闭",
   "gui.ivr.render_config.save_failed": "保存失败，请检查配置文件"
 }

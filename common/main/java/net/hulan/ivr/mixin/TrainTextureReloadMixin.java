@@ -3,7 +3,6 @@ package net.hulan.ivr.mixin;
 import net.hulan.ivr.render_promotion.texture.TrainTexturePreloader;
 import net.hulan.ivr.render_promotion.texture.EyeCandyPreloader;
 import net.hulan.ivr.render_promotion.mesh.RenderCacheLifecycle;
-import net.hulan.ivr.render_promotion.cache.TrainGeometryCache;
 import net.hulan.ivr.render_promotion.cache.RenderDataRevision;
 import net.minecraft.client.renderer.texture.TextureManager;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,7 +18,6 @@ public abstract class TrainTextureReloadMixin {
             ThreadLocal.withInitial(java.util.ArrayDeque::new);
     @Inject(method = "reload", at = @At("HEAD"))
     private void ivr$invalidateTrainTextures(CallbackInfoReturnable<java.util.concurrent.CompletableFuture<Void>> cir) {
-        TrainGeometryCache.markResourceReloaded();
         RenderDataRevision.bump();
         RenderCacheLifecycle.queueReloadStart();
         EyeCandyPreloader.invalidate();

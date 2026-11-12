@@ -14,6 +14,7 @@ import net.hulan.ksd.data.KSDStation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
+import org.jetbrains.annotations.NotNull;
 
 public class TicketsScreen extends ScreenMapper implements KSDGui {
 
@@ -72,7 +73,7 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
         addDrawableChild(buttonOpenAddValueScreen);
     }
 
-    public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
+    public void render(@NotNull PoseStack matrices, int mouseX, int mouseY, float delta) {
         renderBackground(matrices);
         KSDGui.renderBg(matrices, width, height, panelWidth, panelHeight);
         drawCenteredString(matrices, Minecraft.getInstance().font, title, width / 2, height / 2 - panelHeight / 2 + 7, IGui.ARGB_WHITE);
@@ -94,6 +95,7 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
         }
     }
 
+    @SuppressWarnings("unused")
     public static void openITTTMScreen(int mtrBalance) {
         //TODO 直通车售票界面
     }

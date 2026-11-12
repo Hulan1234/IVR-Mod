@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 public class BlockKCRPlatform extends BlockDirectionalMapper {
 
     public BlockKCRPlatform() {
-        super(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F));
+        super(Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(2.0F));
     }
 
     @Nullable

@@ -12,6 +12,7 @@ import org.msgpack.value.Value;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -170,10 +171,11 @@ public class KSDRailwayDataFileSaveModule extends KSDRailwayDataModuleBase {
             final Path dataPath = parentPath.resolve(String.valueOf(id));
             final int hash = getHash(data, useReducedHash);
             if (!existingFiles.containsKey(dataPath) || hash != existingFiles.get(dataPath)) {
-                final MessagePacker messagePacker = MessagePack.newDefaultPacker(Files.newOutputStream(dataPath, StandardOpenOption.CREATE));
-                messagePacker.packMapHeader(data.messagePackLength());
-                data.toMessagePack(messagePacker);
-                messagePacker.close();
+                try (OutputStream output = Files.newOutputStream(dataPath, StandardOpenOption.CREATE);
+                     MessagePacker messagePacker = MessagePack.newDefaultPacker(output)) {
+                    messagePacker.packMapHeader(data.messagePackLength());
+                    data.toMessagePack(messagePacker);
+                }
                 existingFiles.put(dataPath, hash);
                 filesWritten++;
             }
@@ -204,17 +206,16 @@ public class KSDRailwayDataFileSaveModule extends KSDRailwayDataModuleBase {
 
     private static int getHash(SerializedDataBase data, boolean useReducedHash) {
         try {
-            final MessageBufferPacker messageBufferPacker = MessagePack.newDefaultBufferPacker();
-            if (useReducedHash && data instanceof IReducedSaveData) {
-                messageBufferPacker.packMapHeader(((IReducedSaveData) data).reducedMessagePackLength());
-                ((IReducedSaveData) data).toReducedMessagePack(messageBufferPacker);
-            } else {
-                messageBufferPacker.packMapHeader(data.messagePackLength());
-                data.toMessagePack(messageBufferPacker);
+            try (MessageBufferPacker messageBufferPacker = MessagePack.newDefaultBufferPacker()) {
+                if (useReducedHash && data instanceof IReducedSaveData) {
+                    messageBufferPacker.packMapHeader(((IReducedSaveData) data).reducedMessagePackLength());
+                    ((IReducedSaveData) data).toReducedMessagePack(messageBufferPacker);
+                } else {
+                    messageBufferPacker.packMapHeader(data.messagePackLength());
+                    data.toMessagePack(messageBufferPacker);
+                }
+                return Arrays.hashCode(messageBufferPacker.toByteArray());
             }
-            final int hash = Arrays.hashCode(messageBufferPacker.toByteArray());
-            messageBufferPacker.close();
-            return hash;
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -14,14 +14,13 @@ import net.minecraft.client.renderer.culling.Frustum;
  * 相机参数未变化时复用视锥平面，减少重复计算。
  */
 public final class FrustumCache {
-    /** Small conservative margin for floating-point errors at frustum edges. */
+
     public static final double FRUSTUM_BOUNDARY_MARGIN = 0.25D;
-    /** Dynamic camera bob/FOV varies by renderer version; callers must opt into
-     * frustum culling only when the full projection is known. */
     private static Frustum nativeFrustum;
     private static CameraSnapshot nativeView;
     private static long nativeFrame = -1;
 
+    //清除所有视锥缓存
     public static void clearNativeFrustum() {
         nativeFrustum = null;
         nativeView = null;
@@ -73,28 +72,13 @@ public final class FrustumCache {
     // 分段缓存据此识别新帧并清理临时结果。
     private static long frameId;
 
-    /**
-     * 在画面渲染入口推进帧编号。
-     * 由客户端渲染钩子调用，供本帧缓存比较。
-     */
     public static void beginFrame() {
         frameId++;
         clearNativeFrustum();
     }
 
-    /**
-     * 返回当前渲染帧编号。
-     * 读取时不修改快照或任何可见性缓存。
-     */
     public static long frameId() {
         return frameId;
-    }
-
-    /**
-     * 禁止实例化共享的相机上下文工具类。
-     * 所有状态和判断入口都通过静态成员访问。
-     */
-    private FrustumCache() {
     }
 
     /**
@@ -133,27 +117,10 @@ public final class FrustumCache {
             return cachedFovTanHalf;
         }
         Options clientOptions = Minecraft.getInstance().options;
-        double fov = ClientUtilities.getInstance().getFov(clientOptions);
+        double fov = ClientUtilities.getFov(clientOptions);
         cachedFovTanHalf = Math.tan(Math.toRadians(fov * 0.5D));
         fovCacheExpiresAt = now + 500_000_000L;
         return cachedFovTanHalf;
-    }
-
-    /**
-     * 按给定视角即时构造平面，测试相机相对球体。
-     * 空位置直接视为视锥外，调用者需自行处理该边界。
-     */
-    public static boolean outsideFrustum(Vec3 relative,
-                                         double radius,
-                                         float yaw,
-                                         float pitch,
-                                         double tanVertical,
-                                         double aspect) {
-        if (relative == null) {
-            return true;
-        }
-        Vec3[] planes = frustumPlanes(yaw, pitch, tanVertical, aspect);
-        return outsideFrustum(relative, radius, planes);
     }
 
     /**
@@ -238,14 +205,6 @@ public final class FrustumCache {
         }
 
         /**
-         * 用快照平面判断分量形式的相机相对球体。
-         * 半径允许包住跨越视锥边缘的几何体。
-         */
-        public boolean outsideFrustum(double x, double y, double z, double radius) {
-            return FrustumCache.outsideFrustum(x, y, z, radius, planes);
-        }
-
-        /**
          * 用盒体在各平面上的投影测试世界空间边界。
          * 比包围球更贴近细长轨道或方块实体的实际形状。
          */
@@ -271,22 +230,6 @@ public final class FrustumCache {
                 }
             }
             return false;
-        }
-
-        /**
-         * 返回世界点到快照相机的平方距离。
-         * 可供调用者避免开平方根的距离比较。
-         */
-        public double distanceSquared(Vec3 worldPosition) {
-            return worldPosition.distanceToSqr(cameraPosition);
-        }
-
-        /**
-         * 判断世界点是否位于指定距离以内。
-         * 边界距离算作可见范围之内。
-         */
-        public boolean withinDistance(Vec3 worldPosition, double maxDistance) {
-            return distanceSquared(worldPosition) <= maxDistance * maxDistance;
         }
     }
 }

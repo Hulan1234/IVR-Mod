@@ -45,7 +45,7 @@ public class BlockModernSign extends BlockDirectionalMapper implements EntityBlo
     public static final float SMALL_SIGN_PERCENTAGE = 0.75F;
 
     public BlockModernSign(int length, boolean isOdd) {
-        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel(value -> value.getValue(LIT) ? 15 : 0));
+        super(net.hulan.ksd.utils.Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel(value -> value.getValue(LIT) ? 15 : 0));
         this.length = length;
         this.isOdd = isOdd;
         registerDefaultState(defaultBlockState().setValue(LIT, false));

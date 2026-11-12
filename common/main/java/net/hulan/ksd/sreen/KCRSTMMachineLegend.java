@@ -10,6 +10,7 @@ import net.hulan.ksd.utils.RenderUtilities;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -31,9 +32,8 @@ public class KCRSTMMachineLegend implements WidgetMapper, SelectableMapper, GuiE
         this.ticketMachineScreen = ticketMachineScreen;
     }
 
-    public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
+    public void render(@NotNull PoseStack matrices, int mouseX, int mouseY, float delta) {
         Gui.fill(matrices, x, y, x + width, y + height, ARGB_WHITE);
-        RenderUtilities renderUtilities = RenderUtilities.getInstance();
         // 逐行绘制（跳过已滚出的行，超出面板底部的行不画）
         int startRow = (int) (scrollOffset / ROW_HEIGHT);
         for (int i = startRow; i < rows.size(); i++) {
@@ -43,13 +43,13 @@ public class KCRSTMMachineLegend implements WidgetMapper, SelectableMapper, GuiE
             if (rowY > y + height) {
                 break;
             }
-            drawLegendRow(matrices, renderUtilities, rows.get(i), x + LEGEND_PADDING, rowY);
+            drawLegendRow(matrices, rows.get(i), x + LEGEND_PADDING, rowY);
         }
         // 黑边（最后画，盖住越界的行）
-        drawBorder(matrices, renderUtilities);
+        drawBorder(matrices);
         // 内容超界时绘制滑动条
         if (maxScrollOffset() > 0) {
-            drawScrollbar(matrices, renderUtilities);
+            drawScrollbar(matrices);
         }
     }
 
@@ -89,41 +89,36 @@ public class KCRSTMMachineLegend implements WidgetMapper, SelectableMapper, GuiE
     }
 
     // 绘制一行图例：站点圆图像（左右短线+圆环）在左，线路名（中文+英文两行）在右
-    private void drawLegendRow(PoseStack matrices, RenderUtilities renderUtilities, LegendRow row, float rowX, float rowY) {
+    private void drawLegendRow(PoseStack matrices, LegendRow row, float rowX, float rowY) {
         // 图像圆心（行内垂直居中）
         float circleX = rowX + IMAGE_SIZE / 2.0F;
         float circleY = rowY + ROW_HEIGHT / 2.0F;
         // 先画穿过圆心的水平粗线（颜色与线路一致）
-        renderUtilities.drawThickLine(matrices, circleX - RADIUS - STUB_LENGTH, circleY, circleX + RADIUS + STUB_LENGTH, circleY, 2.0F, row.color);
+        RenderUtilities.drawThickLine(matrices, circleX - RADIUS - STUB_LENGTH, circleY, circleX + RADIUS + STUB_LENGTH, circleY, 2.0F, row.color);
         if (row.drawCircle) {
             // 白色实心圆盖住中间，两侧各露出 3 像素短线
-            renderUtilities.drawStationCircle(matrices, circleX, circleY, RADIUS, 16, RADIUS, ARGB_WHITE);
+            RenderUtilities.drawStationCircle(matrices, circleX, circleY, RADIUS, 16, RADIUS, ARGB_WHITE);
             // 线路色圆环
-            renderUtilities.drawStationCircle(matrices, circleX, circleY, RADIUS, 16, RING_THICKNESS, row.color);
+            RenderUtilities.drawStationCircle(matrices, circleX, circleY, RADIUS, 16, RING_THICKNESS, row.color);
         }
         // 线路名：中文在上、英文在下，垂直居中于行内
-        renderUtilities.drawTextCjk(matrices, row.name, rowX + IMAGE_SIZE + IMAGE_TEXT_GAP, circleY, CN_SCALE, EN_SCALE, ARGB_BLACK);
+        RenderUtilities.drawTextCjk(matrices, row.name, rowX + IMAGE_SIZE + IMAGE_TEXT_GAP, circleY, CN_SCALE, EN_SCALE, ARGB_BLACK);
     }
 
-    // 绘制 1 像素黑色边框
-    private void drawBorder(PoseStack matrices, RenderUtilities renderUtilities) {
-        // 顶边
-        renderUtilities.drawFilledRectangle(matrices, x, y, x + width, y + 1, ARGB_BLACK);
-        // 底边
-        renderUtilities.drawFilledRectangle(matrices, x, y + height - 1, x + width, y + height, ARGB_BLACK);
-        // 左边
-        renderUtilities.drawFilledRectangle(matrices, x, y, x + 1, y + height, ARGB_BLACK);
-        // 右边
-        renderUtilities.drawFilledRectangle(matrices, x + width - 1, y, x + width, y + height, ARGB_BLACK);
+    private void drawBorder(PoseStack matrices) {
+        RenderUtilities.drawFilledRectangle(matrices, x, y, x + width, y + 1, ARGB_BLACK);
+        RenderUtilities.drawFilledRectangle(matrices, x, y + height - 1, x + width, y + height, ARGB_BLACK);
+        RenderUtilities.drawFilledRectangle(matrices, x, y, x + 1, y + height, ARGB_BLACK);
+        RenderUtilities.drawFilledRectangle(matrices, x + width - 1, y, x + width, y + height, ARGB_BLACK);
     }
 
     // 绘制滑动条：右侧轨道 + 滑块
-    private void drawScrollbar(PoseStack matrices, RenderUtilities renderUtilities) {
+    private void drawScrollbar(PoseStack matrices) {
         // 轨道
-        renderUtilities.drawFilledRectangle(matrices, trackX(), y + LEGEND_PADDING, trackX() + TRACK_WIDTH, y + height - LEGEND_PADDING, 0xFFCCCCCC);
+        RenderUtilities.drawFilledRectangle(matrices, trackX(), y + LEGEND_PADDING, trackX() + TRACK_WIDTH, y + height - LEGEND_PADDING, 0xFFCCCCCC);
         // 滑块（拖动时加深）
         int thumbColor = dragging ? 0xFF404040 : 0xFF808080;
-        renderUtilities.drawFilledRectangle(matrices, trackX(), thumbY(), trackX() + TRACK_WIDTH, thumbY() + thumbHeight(), thumbColor);
+        RenderUtilities.drawFilledRectangle(matrices, trackX(), thumbY(), trackX() + TRACK_WIDTH, thumbY() + thumbHeight(), thumbColor);
     }
 
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
@@ -181,9 +176,11 @@ public class KCRSTMMachineLegend implements WidgetMapper, SelectableMapper, GuiE
         return mouseX >= (double) x && mouseY >= (double) y && mouseX < (double) (x + width) && mouseY < (double) (y + height);
     }
 
+    @SuppressWarnings("unused")
     public void setFocused(boolean focused) {
     }
 
+    @SuppressWarnings("unused")
     public boolean isFocused() {
         return false;
     }

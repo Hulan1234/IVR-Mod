@@ -4,7 +4,6 @@ import mtr.data.TrainClient;
 import net.hulan.ivr.render_promotion.texture.TrainTexturePreloader;
 import net.hulan.ivr.render_promotion.visibility.TrainVisibility;
 import net.hulan.ivr.render_promotion.itf.TrainRenderSkipState;
-import net.hulan.ivr.render_promotion.cache.TrainGeometryCache;
 import net.hulan.ivr.render_promotion.cache.TrainLengthCache;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.Level;
@@ -82,7 +81,6 @@ public abstract class TrainSimulateOptimizeMixin implements TrainRenderSkipState
         TrainClient train = (TrainClient) (Object) this;
         ivr$skipDistantCars = (minecraft.player == null || !train.isPlayerRiding(minecraft.player))
                 && TrainVisibility.getInstance().isWholeTrainBeyondDistance(world, positions, train.spacing);
-        TrainGeometryCache.observeTrain(train, positions);
         TrainLengthCache.observe(train, positions);
         TrainTexturePreloader.consider(world, train, positions);
     }

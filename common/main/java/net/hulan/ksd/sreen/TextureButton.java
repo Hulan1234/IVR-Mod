@@ -53,7 +53,7 @@ public class TextureButton extends ButtonMapper {
         final int widgetWidth = getWidth();
         final int widgetHeight = getHeight();
         if (hasTexture()) {
-            RenderUtilities.getInstance().drawTexture(matrices, texture, widgetX, widgetY, widgetWidth, widgetHeight);
+            RenderUtilities.drawTexture(matrices, texture, widgetX, widgetY, widgetWidth, widgetHeight);
         } else {
             drawMissingTexture(matrices);
         }

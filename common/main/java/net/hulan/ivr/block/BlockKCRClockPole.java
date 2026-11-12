@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 public class BlockKCRClockPole extends BlockMapper {
 
     public BlockKCRClockPole() {
-        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1.0F));
+        super(net.hulan.ksd.utils.Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(1.0F));
     }
 
     @SuppressWarnings("deprecation")

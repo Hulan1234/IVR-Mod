@@ -18,6 +18,6 @@ public abstract class DynamicTrainModelLoaderMixin {
     private static void ivr$warmResolvedTexture(String textureId,
                                                  java.util.function.Function<String, String> resolver,
                                                  CallbackInfoReturnable<ResourceLocation> cir) {
-        TrainTexturePreloader.requestAnteTexture(cir.getReturnValue());
+        TrainTexturePreloader.requestTexture(cir.getReturnValue());
     }
 }

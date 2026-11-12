@@ -7,6 +7,7 @@ import net.hulan.ivr.packet.IVRPacket;
 import net.hulan.ivr.packet.IVRPacketTrainDataGuiClient;
 import net.hulan.ivr.render.*;
 import net.hulan.ivr.render_promotion.bounds.BlockEntityBoundsRegistry;
+import net.hulan.ivr.render_promotion.bounds.TrainBoundsProvider;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 
@@ -15,6 +16,7 @@ public class IVRClient implements IVRPacket, IVRBlockEntityTypes, IVRBlocks, IPa
     public static void init() {
         IVRConfig.load();
         BlockEntityBoundsRegistry.registerBEBounds();
+        TrainBoundsProvider.register();
         RegistryClient.registerBlockRenderType(RenderType.cutout(), KCR_CLOCK.get());
         RegistryClient.registerBlockRenderType(RenderType.cutout(), IVR_LOGO.get());
         RegistryClient.registerBlockRenderType(RenderType.cutout(), KCR_PLATFORM_INDENTED.get());

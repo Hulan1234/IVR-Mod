@@ -16,7 +16,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.entity.EntityType;
-import net.hulan.ksd.utils.NPCUtilities;
 import net.hulan.ivr.entity.InteractiveNPC;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -53,9 +52,6 @@ public class IVRForgeMain {
         BLOCK_ENTITY_TYPES.register();
         ENTITY_TYPES.register();
         eventBus.register(IVRForgeEventBus.class);
-        if (FMLEnvironment.dist == Dist.CLIENT) {
-            eventBus.register(NPCUtilities.getInstance().getClass());
-        }
     }
 
     private static void registerItem(String path, RegistryObject<Item> item) {

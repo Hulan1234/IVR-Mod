@@ -55,9 +55,9 @@ public interface IVRBlocks {
     RegistryObject<Block> KCR_CLOCK = new RegistryObject<>(BlockKCRClock::new);
     RegistryObject<Block> KCR_CLOCK_POLE = new RegistryObject<>(BlockKCRClockPole::new);
     RegistryObject<Block> KCR_CEILING_AUTO = new RegistryObject<>(BlockKCRCeilingAuto::new);
-    RegistryObject<Block> KCR_CEILING_LIGHT = new RegistryObject<>(() -> new BlockKCRCeiling(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 15)));
-    RegistryObject<Block> KCR_CEILING_NO_LIGHT = new RegistryObject<>(() -> new BlockKCRCeiling(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F)));
-    RegistryObject<Block> IVR_LOGO = new RegistryObject<>(() -> new Block(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 10)));
+    RegistryObject<Block> KCR_CEILING_LIGHT = new RegistryObject<>(() -> new BlockKCRCeiling(Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 15)));
+    RegistryObject<Block> KCR_CEILING_NO_LIGHT = new RegistryObject<>(() -> new BlockKCRCeiling(Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(2.0F)));
+    RegistryObject<Block> IVR_LOGO = new RegistryObject<>(() -> new Block(Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).lightLevel((state) -> 10)));
     RegistryObject<Block> KCR_APG_DOOR = new RegistryObject<>(BlockKCRAPGDoor::new);
     RegistryObject<Block> KCR_APG_GLASS = new RegistryObject<>(BlockKCRAPGGlass::new);
     RegistryObject<Block> KCR_APG_GLASS_END = new RegistryObject<>(BlockKCRAPGGlassEnd::new);

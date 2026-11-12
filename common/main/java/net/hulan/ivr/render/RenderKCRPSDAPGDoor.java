@@ -4,7 +4,9 @@ import net.hulan.ivr.render_promotion.cache.VertexMesh;
 import net.hulan.ivr.render_promotion.cache.VertexMeshKey;
 import net.hulan.ivr.render_promotion.cache.VertexRecorder;
 import net.hulan.ivr.render_promotion.mesh.RenderCacheLifecycle;
+import net.hulan.ivr.client.IVRConfig;
 import net.hulan.ivr.render_promotion.mesh.GpuInstanceBatch;
+import net.hulan.ivr.render_promotion.cache.RenderDataRevision;
 import mtr.render.MoreRenderLayers;
 import java.util.List;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -192,8 +194,9 @@ public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGD
     /** Only explicitly known static EXTERIOR door bodies enter the optional collector. */
     private static void renderCachedExterior(EntityModel<Entity> model, ResourceLocation texture,
                                               PoseStack matrices, VertexConsumer consumer, int light, int overlay) {
-        VertexMeshKey key = new VertexMeshKey("ivr:door", LOCAL_MODELS.indexOf(model), 0);
-        VertexMesh mesh = RenderCacheLifecycle.get(key);
+        VertexMeshKey key = new VertexMeshKey("ivr:door", LOCAL_MODELS.indexOf(model),
+                RenderDataRevision.current());
+        VertexMesh mesh = RenderCacheLifecycle.getPrepared(key);
         if (mesh != null && !RenderCacheLifecycle.isReloading()) {
             GpuInstanceBatch.submitOrFallback(MoreRenderLayers.getExterior(texture), texture,
                     key, mesh, matrices, light, overlay, consumer);
@@ -207,10 +210,15 @@ public class RenderKCRPSDAPGDoor<T extends BlockPSDAPGDoorBase.TileEntityPSDAPGD
     /** Only static local model geometry is recorded; animation and lighting stay live. */
     private static void renderCached(EntityModel<Entity> model, PoseStack matrices,
                                      VertexConsumer consumer, int light, int overlay) {
-        VertexMeshKey key = new VertexMeshKey("ivr:door", LOCAL_MODELS.indexOf(model), 0);
-        VertexMesh mesh = RenderCacheLifecycle.get(key);
+        VertexMeshKey key = new VertexMeshKey("ivr:door", LOCAL_MODELS.indexOf(model),
+                RenderDataRevision.current());
+        VertexMesh mesh = RenderCacheLifecycle.getPrepared(key);
         if (mesh != null) {
-            mesh.replay(matrices, consumer, light, overlay);
+            if (IVRConfig.cpuOptimization) {
+                mesh.replay(matrices, consumer, light, overlay);
+            } else {
+                model.renderToBuffer(matrices, consumer, light, overlay, 1, 1, 1, 1);
+            }
         } else if (RenderCacheLifecycle.isReloading() || RenderCacheLifecycle.isPending(key)) {
             model.renderToBuffer(matrices, consumer, light, overlay, 1, 1, 1, 1);
         } else if (!RenderCacheLifecycle.shouldAttemptBuild(key)) {

@@ -125,10 +125,9 @@ public class KCRSTMachineScreen extends ScreenMapper implements KSDGui {
 
     private void renderHeader(PoseStack matrices) {
         Gui.fill(matrices, 0, 0, width, RMH_HEADER_HEIGHT, RGB_HEADER_BLUE | ARGB_BLACK);
-        RenderUtilities renderUtilities = RenderUtilities.getInstance();
-        renderUtilities.drawTexture(matrices, new ResourceLocation("ivr", "textures/block/sign/rmh.png"), 0, 0, RMH_HEADER_HEIGHT, RMH_HEADER_HEIGHT);
-        renderUtilities.drawText(matrices, RMH_CHI, RMH_HEADER_HEIGHT + RMH_PADDING, 10, RMH_CHI_WIDTH, RMH_CHI_HEIGHT, ARGB_WHITE);
-        renderUtilities.drawText(matrices, RMH_ENG, 170, 25, RMH_ENG_WIDTH, RMH_ENG_HEIGHT, ARGB_WHITE);
+        RenderUtilities.drawTexture(matrices, new ResourceLocation("ivr", "textures/block/sign/rmh.png"), 0, 0, RMH_HEADER_HEIGHT, RMH_HEADER_HEIGHT);
+        RenderUtilities.drawText(matrices, RMH_CHI, RMH_HEADER_HEIGHT + RMH_PADDING, 10, RMH_CHI_WIDTH, RMH_CHI_HEIGHT, ARGB_WHITE);
+        RenderUtilities.drawText(matrices, RMH_ENG, 170, 25, RMH_ENG_WIDTH, RMH_ENG_HEIGHT, ARGB_WHITE);
     }
 
     private void renderMapComponent(PoseStack matrices, int mouseX, int mouseY, float delta) {
@@ -138,7 +137,7 @@ public class KCRSTMachineScreen extends ScreenMapper implements KSDGui {
     }
 
     static {
-        RMH_CHI_WIDTH = RenderUtilities.getInstance().getTextWidth(RMH_CHI, RMH_CHI_HEIGHT / Minecraft.getInstance().font.lineHeight);
-        RMH_ENG_WIDTH = RenderUtilities.getInstance().getTextWidth(RMH_ENG, RMH_ENG_HEIGHT / Minecraft.getInstance().font.lineHeight);
+        RMH_CHI_WIDTH = RenderUtilities.getTextWidth(RMH_CHI, RMH_CHI_HEIGHT / Minecraft.getInstance().font.lineHeight);
+        RMH_ENG_WIDTH = RenderUtilities.getTextWidth(RMH_ENG, RMH_ENG_HEIGHT / Minecraft.getInstance().font.lineHeight);
     }
 }

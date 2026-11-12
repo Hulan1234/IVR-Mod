@@ -79,7 +79,7 @@ public class KSDClientMain implements KSDPacket {
                 KSDClientData.DATA_CACHE.routeIdMap,
                 KSDRoute::new,
                 true));
-        Utilities.getInstance().registerItemModelPredicator(
+        Utilities.registerItemModelPredicator(
                 KSDItems.SINGLE_TICKET.get(),
                 new ResourceLocation(KSDMain.MOD_ID, "ticket_variant"),
                 (ticketItem, world, entity) -> {

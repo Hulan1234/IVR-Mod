@@ -12,69 +12,70 @@ import net.minecraft.world.phys.AABB;
 public class BlockEntityBoundsRegistry {
 
     public static void registerBEBounds() {
-        MSDBoundsRegistry.register();
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockKCRClock.TileEntityKCRClock.class,
+        MsdBlockEntityBoundsRegistry.register();
+        BlockEntityVisibility instance = BlockEntityVisibility.getInstance();
+        instance.registerStaticBoundsProvider(BlockKCRClock.TileEntityKCRClock.class,
                 entity -> new AABB(entity.getBlockPos()));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockClassicalSign.TileEntityClassicalSign.class,
+        instance.registerStaticBoundsProvider(BlockClassicalSign.TileEntityClassicalSign.class,
                 entity -> signBounds(entity, ((BlockClassicalSign) entity.getBlockState().getBlock()).length,
                         ((BlockClassicalSign) entity.getBlockState().getBlock()).getXStart()));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockModernSign.TileEntityModernSign.class,
+        instance.registerStaticBoundsProvider(BlockModernSign.TileEntityModernSign.class,
                 entity -> signBounds(entity, ((BlockModernSign) entity.getBlockState().getBlock()).length,
                         ((BlockModernSign) entity.getBlockState().getBlock()).getXStart()));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockClassicalSign.TileEntityClassicalSign1Odd.class,
+        instance.registerStaticBoundsProvider(BlockClassicalSign.TileEntityClassicalSign1Odd.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(0.25D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockModernSign.TileEntityModernSign1Odd.class,
+        instance.registerStaticBoundsProvider(BlockModernSign.TileEntityModernSign1Odd.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(0.25D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockKCRStationNameBase.TileEntityKCRStationNameBase.class,
+        instance.registerStaticBoundsProvider(BlockKCRStationNameBase.TileEntityKCRStationNameBase.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(1.0D, 1.5D, 1.0D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockKCRPSDTop.TileEntityKCRRouteBase.class,
+        instance.registerStaticBoundsProvider(BlockKCRPSDTop.TileEntityKCRRouteBase.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(1.0D, 1.0D, 1.0D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockKCRRouteSignBase.TileEntityKCRRouteSignBase.class,
+        instance.registerStaticBoundsProvider(BlockKCRRouteSignBase.TileEntityKCRRouteSignBase.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(0.25D, 1.0D, 0.25D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockRailwaySign.TileEntityRailwaySign.class,
+        instance.registerStaticBoundsProvider(BlockRailwaySign.TileEntityRailwaySign.class,
                 entity -> signBounds(entity, ((BlockRailwaySign) entity.getBlockState().getBlock()).length,
                         ((BlockRailwaySign) entity.getBlockState().getBlock()).getXStart()));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockStationNameBase.TileEntityStationNameBase.class,
+        instance.registerStaticBoundsProvider(BlockStationNameBase.TileEntityStationNameBase.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(1.0D, 1.5D, 1.0D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockRouteSignBase.TileEntityRouteSignBase.class,
+        instance.registerStaticBoundsProvider(BlockRouteSignBase.TileEntityRouteSignBase.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(0.25D, 1.0D, 0.25D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockPSDAPGDoorBase.TileEntityPSDAPGDoorBase.class,
+        instance.registerStaticBoundsProvider(BlockPSDAPGDoorBase.TileEntityPSDAPGDoorBase.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(1.0D, 1.0D, 1.0D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockPSDTop.TileEntityPSDTop.class,
+        instance.registerStaticBoundsProvider(BlockPSDTop.TileEntityPSDTop.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(1.0D, 0.25D, 1.0D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockAPGGlass.TileEntityAPGGlass.class,
+        instance.registerStaticBoundsProvider(BlockAPGGlass.TileEntityAPGGlass.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(1.0D, 1.0D, 1.0D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockLiftDoor.TileEntityLiftDoor.class,
+        instance.registerStaticBoundsProvider(BlockLiftDoor.TileEntityLiftDoor.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(1.0D, 1.0D, 1.0D));
-        BlockEntityVisibility.getInstance().registerBoundsProvider(BlockLiftPanelBase.TileEntityLiftPanel1Base.class,
+        instance.registerBoundsProvider(BlockLiftPanelBase.TileEntityLiftPanel1Base.class,
                 BlockEntityBoundsRegistry::liftPanelBounds);
-        BlockEntityVisibility.getInstance().registerBoundsProvider(BlockLiftButtons.TileEntityLiftButtons.class,
+        instance.registerBoundsProvider(BlockLiftButtons.TileEntityLiftButtons.class,
                 BlockEntityBoundsRegistry::liftButtonsBounds);
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockClock.TileEntityClock.class,
+        instance.registerStaticBoundsProvider(BlockClock.TileEntityClock.class,
                 entity -> new AABB(entity.getBlockPos()));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockPIDSBaseHorizontal.TileEntityBlockPIDSBaseHorizontal.class,
+        instance.registerStaticBoundsProvider(BlockPIDSBaseHorizontal.TileEntityBlockPIDSBaseHorizontal.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(2.0D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockPIDSBaseVertical.TileEntityBlockPIDSBaseVertical.class,
+        instance.registerStaticBoundsProvider(BlockPIDSBaseVertical.TileEntityBlockPIDSBaseVertical.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(2.0D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockArrivalProjectorBase.TileEntityArrivalProjectorBase.class,
+        instance.registerStaticBoundsProvider(BlockArrivalProjectorBase.TileEntityArrivalProjectorBase.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(3.0D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockNode.TileEntityBoatNode.class,
+        instance.registerStaticBoundsProvider(BlockNode.TileEntityBoatNode.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(0.01D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockSignalLight2Aspect1.TileEntitySignalLight2Aspect1.class,
+        instance.registerStaticBoundsProvider(BlockSignalLight2Aspect1.TileEntitySignalLight2Aspect1.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(0.25D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockSignalLight2Aspect2.TileEntitySignalLight2Aspect2.class,
+        instance.registerStaticBoundsProvider(BlockSignalLight2Aspect2.TileEntitySignalLight2Aspect2.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(0.25D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockSignalLight2Aspect3.TileEntitySignalLight2Aspect3.class,
+        instance.registerStaticBoundsProvider(BlockSignalLight2Aspect3.TileEntitySignalLight2Aspect3.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(0.25D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockSignalLight2Aspect4.TileEntitySignalLight2Aspect4.class,
+        instance.registerStaticBoundsProvider(BlockSignalLight2Aspect4.TileEntitySignalLight2Aspect4.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(0.25D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockSignalLight3Aspect1.TileEntitySignalLight3Aspect1.class,
+        instance.registerStaticBoundsProvider(BlockSignalLight3Aspect1.TileEntitySignalLight3Aspect1.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(0.25D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockSignalLight3Aspect2.TileEntitySignalLight3Aspect2.class,
+        instance.registerStaticBoundsProvider(BlockSignalLight3Aspect2.TileEntitySignalLight3Aspect2.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(0.25D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockSignalLight4Aspect1.TileEntitySignalLight4Aspect1.class,
+        instance.registerStaticBoundsProvider(BlockSignalLight4Aspect1.TileEntitySignalLight4Aspect1.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(0.25D));
-        BlockEntityVisibility.getInstance().registerStaticBoundsProvider(BlockSignalLight4Aspect2.TileEntitySignalLight4Aspect2.class,
+        instance.registerStaticBoundsProvider(BlockSignalLight4Aspect2.TileEntitySignalLight4Aspect2.class,
                 entity -> new AABB(entity.getBlockPos()).inflate(0.25D));
     }
 

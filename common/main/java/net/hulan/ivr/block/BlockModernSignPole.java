@@ -22,7 +22,7 @@ public class BlockModernSignPole extends BlockPoleCheckBase {
     public static final IntegerProperty TYPE = IntegerProperty.create("type", 0, 4);
 
     public BlockModernSignPole() {
-        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1).noOcclusion());
+        super(net.hulan.ksd.utils.Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(1).noOcclusion());
     }
 
     @SuppressWarnings("deprecation")

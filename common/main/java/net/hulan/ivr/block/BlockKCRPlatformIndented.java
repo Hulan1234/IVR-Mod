@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 public class BlockKCRPlatformIndented extends BlockPlatform {
 
     public BlockKCRPlatformIndented() {
-        super(Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).noOcclusion(), true);
+        super(Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(2.0F).noOcclusion(), true);
     }
 
     @Nullable

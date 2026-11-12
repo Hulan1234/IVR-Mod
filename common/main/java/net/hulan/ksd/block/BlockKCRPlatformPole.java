@@ -26,7 +26,7 @@ public class BlockKCRPlatformPole extends BlockDirectionalMapper {
     }
 
     public BlockKCRPlatformPole(Style style) {
-        super(net.hulan.ksd.utils.Utilities.getInstance().createBlockProperties().requiresCorrectToolForDrops().strength(1));
+        super(net.hulan.ksd.utils.Utilities.createBlockProperties().requiresCorrectToolForDrops().strength(1));
         this.style = style;
     }
     

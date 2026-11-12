@@ -10,11 +10,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 
-import java.lang.reflect.InvocationTargetException;
-
-public abstract class RenderUtilities {
-
-    private static RenderUtilities instance;
+public class RenderUtilities {
     private static final float LIGHT_FACTOR = 0.5f;
     private static final float ANTIALIAS_PIXELS = 1.0F; // 设置抗锯齿渐变宽度为一个物理像素
     private static final Style FONT = Style.EMPTY.withFont(new ResourceLocation("ivr", "mtr"));
@@ -23,24 +19,7 @@ public abstract class RenderUtilities {
     // 一行文字的高度（自定义字体字号约 10 像素）
     private static final float TEXT_LINE_HEIGHT = 10.0F;
 
-    public static RenderUtilities getInstance() {
-        if (instance == null || instance instanceof NullRenderUtilities) {
-            String version = Utilities.getIVRMinecraftVersion();
-            String className = "RenderUtilities_" + version;
-            RenderUtilities tempInstance = new NullRenderUtilities();
-            try {
-                Class<?> clazz = Class.forName("net.hulan.ksd.utils." + className);
-                tempInstance = (RenderUtilities) clazz.getDeclaredConstructor().newInstance();
-            } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException |
-                     NoSuchMethodException e) {
-                e.printStackTrace();
-            }
-            instance = tempInstance;
-        }
-        return instance;
-    }
-
-    public void drawStationCircle(PoseStack matrices,
+    public static void drawStationCircle(PoseStack matrices,
                                   float centerX, float centerY,
                                   float radius, int segments,
                                   float borderThickness, int color) {
@@ -79,7 +58,7 @@ public abstract class RenderUtilities {
         RenderSystem.disableBlend();
     }
 
-    public int lightenColor(int color) {
+    public static int lightenColor(int color) {
         int r = (color >> 16) & 0xFF;
         int g = (color >> 8) & 0xFF;
         int b = color & 0xFF;
@@ -89,7 +68,7 @@ public abstract class RenderUtilities {
         return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
-    public void drawFilledRectangle(PoseStack matrices, float x1, float y1, float x2, float y2, int color) {
+    public static void drawFilledRectangle(PoseStack matrices, float x1, float y1, float x2, float y2, int color) {
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -116,7 +95,7 @@ public abstract class RenderUtilities {
         RenderSystem.disableBlend();
     }
 
-    public void drawThickLine(PoseStack matrices, float x1, float y1, float x2, float y2, float thickness, int color) {
+    public static void drawThickLine(PoseStack matrices, float x1, float y1, float x2, float y2, float thickness, int color) {
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -153,7 +132,7 @@ public abstract class RenderUtilities {
     }
 
     /** 在无纹理圆形边缘绘制一个物理像素宽的透明度渐变。 */
-    private void drawCircleEdge(PoseStack matrices, float centerX, float centerY, float innerRadius, float outerRadius,
+    private static void drawCircleEdge(PoseStack matrices, float centerX, float centerY, float innerRadius, float outerRadius,
                                 int segments, float r, float g, float b, float a, boolean transparentInnerEdge) {
         if (innerRadius < 0.0F || outerRadius <= innerRadius) { // 检查圆环半径是否合法
             return; // 忽略无效的渐变区域
@@ -178,7 +157,7 @@ public abstract class RenderUtilities {
     }
 
     /** 在粗线矩形主体和端部周围绘制透明到不透明的渐变环。 */
-    private void drawLineEdge(PoseStack matrices, float x1, float y1, float x2, float y2, float nx, float ny,
+    private static void drawLineEdge(PoseStack matrices, float x1, float y1, float x2, float y2, float nx, float ny,
                               float antialiasWidth, float r, float g, float b, float a) {
         float dx = x2 - x1; // 计算线段的水平位移
         float dy = y2 - y1; // 计算线段的垂直位移
@@ -231,7 +210,7 @@ public abstract class RenderUtilities {
         return ANTIALIAS_PIXELS / (float) Math.max(1.0D, Minecraft.getInstance().getWindow().getGuiScale()); // 将物理像素宽度换算为 GUI 坐标
     }
 
-    public void drawTexture(PoseStack matrices, ResourceLocation resourceLocation, float x, float y, float width, float height) {
+    public static void drawTexture(PoseStack matrices, ResourceLocation resourceLocation, float x, float y, float width, float height) {
         if (width <= 0 || height <= 0) {
             return;
         }
@@ -249,7 +228,7 @@ public abstract class RenderUtilities {
         RenderSystem.disableBlend();
     }
 
-    public void drawText(PoseStack matrices, String text, float x, float y, float maxWidth, float maxHeight, int color) {
+    public static void drawText(PoseStack matrices, String text, float x, float y, float maxWidth, float maxHeight, int color) {
         if (text == null || text.isEmpty() || maxWidth <= 0 || maxHeight <= 0) {
             return;
         }
@@ -263,7 +242,7 @@ public abstract class RenderUtilities {
         drawText(matrices, text, x, y + offsetY, scale, color);
     }
 
-    public void drawText(PoseStack matrices, String text, float x, float y, float scale, int color) {
+    public static void drawText(PoseStack matrices, String text, float x, float y, float scale, int color) {
         if (text == null || text.isEmpty()) {
             return;
         }
@@ -274,11 +253,11 @@ public abstract class RenderUtilities {
         matrices.popPose();
     }
 
-    public float getTextWidth(MutableComponent component) {
+    public static float getTextWidth(MutableComponent component) {
         return Minecraft.getInstance().font.width(component.withStyle(FONT));
     }
 
-    public float getTextWidth(String text, float scale) {
+    public static float getTextWidth(String text, float scale) {
         return getTextWidth(Text.literal(text)) * scale;
     }
 
@@ -291,7 +270,7 @@ public abstract class RenderUtilities {
     }
 
     // 测量「中文在上、英文在下」两行文字的整体尺寸，返回 {宽, 高}（缺少某行时按单行计算）
-    public float[] getTextSizeCjk(String text, float cnScale, float enScale) {
+    public static float[] getTextSizeCjk(String text, float cnScale, float enScale) {
         // 拆分中文与英文行（去除首尾空格）
         String[] parts = splitCjk(text);
         String cn = parts.length > 0 ? parts[0].trim() : "";
@@ -319,7 +298,7 @@ public abstract class RenderUtilities {
 
     // 把「中文||English」形式的名称分成两行绘制：中文（大号）在上、英文（小号）在下，
     // (x, y) 为两行文字整体的左边界与垂直中心，color 为 ARGB 颜色
-    public void drawTextCjk(PoseStack matrices, String text, float x, float y, float cnScale, float enScale, int color) {
+    public static void drawTextCjk(PoseStack matrices, String text, float x, float y, float cnScale, float enScale, int color) {
         // 文本为空时直接跳过
         if (text == null || text.isEmpty()) {
             return;
@@ -346,29 +325,19 @@ public abstract class RenderUtilities {
         }
     }
 
-    public abstract void beginDrawingCircle(BufferBuilder buffer);
+    public static void beginDrawingCircle(BufferBuilder buffer) {
+        RenderUtilitiesImpl.beginDrawingCircle(buffer);
+    }
 
-    public abstract void beginDrawingTexture(BufferBuilder buffer, ResourceLocation texture);
+    public static void beginDrawingTexture(BufferBuilder buffer, ResourceLocation texture) {
+        RenderUtilitiesImpl.beginDrawingTexture(buffer, texture);
+    }
 
-    public abstract void finishDrawingCircle();
+    public static void finishDrawingCircle() {
+        RenderUtilitiesImpl.finishDrawingCircle();
+    }
 
-    public abstract void finishDrawingTexture();
-
-    static class NullRenderUtilities extends RenderUtilities {
-
-        public NullRenderUtilities() {
-        }
-
-        public void beginDrawingCircle(BufferBuilder buffer) {
-        }
-
-        public void beginDrawingTexture(BufferBuilder buffer, ResourceLocation texture) {
-        }
-
-        public void finishDrawingCircle() {
-        }
-
-        public void finishDrawingTexture() {
-        }
+    public static void finishDrawingTexture() {
+        RenderUtilitiesImpl.finishDrawingTexture();
     }
 }

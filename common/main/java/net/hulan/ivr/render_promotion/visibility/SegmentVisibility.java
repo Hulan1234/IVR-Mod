@@ -11,10 +11,6 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Map;
 
-/**
- * 对已生成的轨道与接触网片段执行保守可见性判断。
- * 结合区块视锥缓存、距离限制及按帧复用的遮挡结果。
- */
 public final class SegmentVisibility extends Visibility {
 
     private static final SegmentVisibility INSTANCE = new SegmentVisibility();
@@ -34,30 +30,14 @@ public final class SegmentVisibility extends Visibility {
     }
 
 
-    /**
-     * 当前帧两格单元的遮挡查询结果。
-     * 帧或视角改变时清空此映射。
-     */
     private final Map<CellKey, OcclusionScheduler.ResultType> CELL_RESULTS = new java.util.HashMap<>();
 
-    // 单元遮挡缓存所属的渲染帧编号。
-    // 编号变化时清空本帧单元结果。
     private long cellFrame = -1;
 
-    // 单元遮挡缓存所属的相机快照。
-    // 视角变化时即使同帧也清空结果。
     private FrustumCache.CameraSnapshot cellView;
 
-    /**
-     * 本帧已准入的细粒度新查询次数。
-     * 达到 16 次后只读取现有缓存。
-     */
     private int fineAdmissions;
 
-    /**
-     * 将 MTR 轨道四边形角点转换成可见性边界。
-     * 使用完整角点生成保守边界。
-     */
     public boolean shouldRenderRailQuad(double x1,
                                         double z1,
                                         double x2,
@@ -78,10 +58,6 @@ public final class SegmentVisibility extends Visibility {
                 IVRConfig.nteRailBoxRD);
     }
 
-    /**
-     * 综合 MSD 接触网两组角点生成完整边界。
-     * 上下高度略微外扩，降低细线段误剔除风险。
-     */
     public boolean shouldRenderCatenarySegment(double x1,
                                                double z1,
                                                double x2,
@@ -118,7 +94,6 @@ public final class SegmentVisibility extends Visibility {
                 getRenderDistance());
     }
 
-    /** 过滤 MSD 普通及过渡接触网的单段导线。 */
     public boolean shouldRenderCatenaryLine(double x1,
                                             double y1,
                                             double z1,
@@ -135,10 +110,6 @@ public final class SegmentVisibility extends Visibility {
                 getRenderDistance());
     }
 
-    /**
-     * 依次检查有限边界、区块视锥、距离和实际片段遮挡。
-     * 不确定的遮挡结果保持可见，只有明确遮挡时剔除。
-     */
     @SuppressWarnings("deprecation")
     private boolean shouldRenderBounds(double minX,
                                        double maxX,
@@ -147,17 +118,15 @@ public final class SegmentVisibility extends Visibility {
                                        double minZ,
                                        double maxZ,
                                        double distance) {
-        if (Minecraft.getInstance().level == null) {
-            return true;
-        }
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null || minecraft.level == null) return false;
         if (!Double.isFinite(minX) || !Double.isFinite(maxX)
                 || !Double.isFinite(minZ) || !Double.isFinite(maxZ)
                 || !Double.isFinite(minY) || !Double.isFinite(maxY)) {
-            return true;
+            return false;
         }
-        FrustumCache.CameraSnapshot view = FrustumCache.capture(Minecraft.getInstance().level);
         AABB actualBox = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
-        Level world = Minecraft.getInstance().level;
+        Level world = minecraft.level;
         BlockPos targetPos = new BlockPos(
                 (int) Math.floor((minX + maxX) * 0.5D),
                 (int) Math.floor((minY + maxY) * 0.5D),
@@ -166,14 +135,15 @@ public final class SegmentVisibility extends Visibility {
             CELL_RESULTS.clear();
             return false;
         }
-        // Each callback supplies its own render distance (ANTE rail vs. MSD catenary).
-        // Do not silently replace it with the singleton's default distance.
+        if (illegalBounds(actualBox) || !hasChunksLoaded(world, actualBox)) {
+            CELL_RESULTS.clear();
+            return false;
+        }
+        FrustumCache.CameraSnapshot view = FrustumCache.capture(world);
         return isRenderable(getRenderResult(world, actualBox, distance, view, box -> checkSegmentBlocked(box, view)));
     }
 
     private Result checkSegmentBlocked(AABB actualBox, FrustumCache.CameraSnapshot view) {
-            // A cell result can only prove that this segment is hidden.
-            // Otherwise the actual segment box must still be queried.
             beginCellFrame(view);
             CellKey cellKey = segmentCell(actualBox);
             OcclusionScheduler.ResultType cellResult = cellKey == null ? OcclusionScheduler.ResultType.VISIBLE : cellState(cellKey);
@@ -185,13 +155,10 @@ public final class SegmentVisibility extends Visibility {
             }
             return result == OcclusionScheduler.ResultType.UNLOADED ? Result.UNLOADED
                     : result == OcclusionScheduler.ResultType.OCCLUDED ? Result.OCCLUDED
+                    : result == OcclusionScheduler.ResultType.DEFERRED ? Result.DEFERRED
                     : result == OcclusionScheduler.ResultType.PENDING ? Result.PENDING : Result.VISIBLE;
     }
 
-    /**
-     * 仅在片段完全位于同一个两格单元内时返回单元键。
-     * 跨单元片段直接进入实际盒体查询，避免错误共享结果。
-     */
     private CellKey segmentCell(AABB box) {
         Vec3 center = box.getCenter();
         int x = (int) Math.floor(center.x / 2.0D);
@@ -203,10 +170,6 @@ public final class SegmentVisibility extends Visibility {
         return new CellKey(x, y, z);
     }
 
-    /**
-     * 在帧编号或相机快照变化时清空单元结果。
-     * 同时重置本帧细粒度查询准入数。
-     */
     private void beginCellFrame(FrustumCache.CameraSnapshot view) {
         long frame = FrustumCache.frameId();
         if (cellFrame != frame || cellView != view) {
@@ -217,10 +180,6 @@ public final class SegmentVisibility extends Visibility {
         }
     }
 
-    /**
-     * 查询两格单元的遮挡状态并在本帧缓存。
-     * 仅单元确认隐藏可直接证明其内部片段隐藏。
-     */
     private OcclusionScheduler.ResultType cellState(CellKey key) {
         OcclusionScheduler.ResultType cached = CELL_RESULTS.get(key);
         if (cached != null) {
@@ -233,10 +192,6 @@ public final class SegmentVisibility extends Visibility {
         return result;
     }
 
-    /**
-     * 优先读取实际片段盒体的遮挡缓存。
-     * 待处理状态受每帧 16 次新查询限额约束。
-     */
     private OcclusionScheduler.ResultType fineState(AABB box) {
         OcclusionScheduler.ResultType cached = OcclusionScheduler.cachedBox(Minecraft.getInstance().level, box).type();
         if (cached != OcclusionScheduler.ResultType.PENDING || fineAdmissions >= 16) {
@@ -246,10 +201,6 @@ public final class SegmentVisibility extends Visibility {
         return RailVisibility.getInstance().occlusionState(box);
     }
 
-    /**
-     * 三维两格单元键，用于本帧遮挡共享。
-     * 片段必须完全落在单元内部才使用此键。
-     */
     private record CellKey(int x, int y, int z) {
     }
 }

@@ -1,5 +1,6 @@
 package net.hulan.ivr.render_promotion.cache;
 
+import net.hulan.ivr.render_promotion.memory.IVRMemoryBudget;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -17,15 +18,21 @@ public final class VertexMeshCache {
     }
 
     public VertexMesh get(VertexMeshKey key) {
+        trimToBudget();
         return meshes.get(key);
     }
 
     public void put(VertexMeshKey key, VertexMesh mesh) {
-        if (mesh.byteSize() > maxBytes) return;
+        trimToBudget();
+        long effectiveMaxBytes = Math.min(maxBytes, IVRMemoryBudget.cpuMeshBudgetBytes());
+        if (mesh.byteSize() > effectiveMaxBytes) {
+            IVRMemoryBudget.recordReject("cpu");
+            return;
+        }
         VertexMesh old = meshes.put(key, mesh);
         if (old != null) bytes -= old.byteSize();
         bytes += mesh.byteSize();
-        while (meshes.size() > maxEntries || bytes > maxBytes) {
+        while (meshes.size() > maxEntries || bytes > effectiveMaxBytes) {
             VertexMeshKey eldest = meshes.keySet().iterator().next();
             bytes -= meshes.remove(eldest).byteSize();
         }
@@ -36,5 +43,23 @@ public final class VertexMeshCache {
         if (old != null) bytes -= old.byteSize();
     }
 
+    public void removeIfSame(VertexMeshKey key, VertexMesh mesh) {
+        if (meshes.get(key) != mesh) {
+            return;
+        }
+        remove(key);
+    }
+
     public void clear() { meshes.clear(); bytes = 0; }
+
+    public int size() { trimToBudget(); return meshes.size(); }
+    public long bytes() { trimToBudget(); return bytes; }
+
+    private void trimToBudget() {
+        long effectiveMaxBytes = Math.min(maxBytes, IVRMemoryBudget.cpuMeshBudgetBytes());
+        while (!meshes.isEmpty() && bytes > effectiveMaxBytes) {
+            VertexMeshKey eldest = meshes.keySet().iterator().next();
+            bytes -= meshes.remove(eldest).byteSize();
+        }
+    }
 }

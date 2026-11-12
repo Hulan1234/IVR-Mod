@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 
 /** Selects version-specific optional mixins from the classes available at runtime. */
 public final class IVRMixinPlugin implements IMixinConfigPlugin {
+
     private static final Logger LOGGER = LogManager.getLogger("ivr");
     private static final String FABRIC_ANTE = "fabric/cn/zbx1425/mtrsteamloco/render/rail/";
     private static final String FORGE_ANTE = "forge/cn/zbx1425/mtrsteamloco/render/rail/";
@@ -30,12 +31,14 @@ public final class IVRMixinPlugin implements IMixinConfigPlugin {
         // before all containers are visible, so IVR.refreshPresence() is also
         // called from the normal mod initializer and never caches a failure.
         DependenciesChecker.refreshPresence();
-        LOGGER.info("IVR optional Mixin compatibility (static check only): MTR Fabric loop={}, MTR Forge loop={}, train stage={}, MSD={}, ANTE={}",
+        LOGGER.info("IVR optional Mixin compatibility (static check only): MTR Fabric loop={}, MTR Forge loop={}, MSD={}, ANTE={}",
                 renderTrainsStatus("(Lmtr/entity/EntitySeat;FLnet/minecraft/class_4587;Lnet/minecraft/class_4597;)V"),
                 renderTrainsStatus("(Lmtr/entity/EntitySeat;FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;)V"),
-                trainStageStatus(),
                 msdStatus(),
                 nteStatus());
+        LOGGER.info("IVR MSD display bounds compatibility: RenderPIDS={}, RenderCustomTextSign={}",
+                msdDisplayStatus("top.mcmtr.render.RenderPIDS"),
+                msdDisplayStatus("top.mcmtr.render.RenderCustomTextSign"));
     }
 
     @Override
@@ -101,11 +104,15 @@ public final class IVRMixinPlugin implements IMixinConfigPlugin {
                     || hasClass("top/mcmtr/data/TransCatenaryData.class")
                     || hasClass("top/mcmtr/data/RigidCatenaryData.class");
         }
-        if (mixinClassName.endsWith(".ModelTrainBaseRenderStageMixin")) {
-            // The redirect includes both the enclosing render signature and
-            // the private stage call.  If either mapping changes, skip the
-            // whole optimization so MTR keeps its native renderer active.
-            return hasSupportedTrainStageTarget(targetClassName);
+        if (mixinClassName.endsWith(".TrainModelRenderCacheMixin")) {
+            return hasSupportedTrainModelStageTarget(targetClassName);
+        }
+        if (mixinClassName.endsWith(".TrainSimulateOptimizeMixin")) {
+            // mtrsteamloco rewrites simulateCar at the same priority and its
+            // transformed method no longer contains IVR's renderCar call.
+            // Keep MTR's native simulation when that optional mod is present.
+            return DependenciesChecker.isExistenceKnown() && !DependenciesChecker.isNteExist()
+                    && hasClass("mtr/data/TrainClient.class");
         }
         if (mixinClassName.endsWith(".RenderTrainsCallbackCacheMixin")) {
             boolean eligible = !isLegacy1165()
@@ -170,6 +177,38 @@ public final class IVRMixinPlugin implements IMixinConfigPlugin {
         return hasSupportedRigidCatenary() ? "eligible" : "incompatible signature";
     }
 
+    private static String msdDisplayStatus(String targetClassName) {
+        if (!DependenciesChecker.isMsdExist() && DependenciesChecker.isExistenceKnown()) return "mod absent";
+        return hasSupportedMsdDisplayTarget(targetClassName) ? "eligible" : "incompatible signature";
+    }
+
+    private static boolean hasSupportedTrainModelStageTarget(String targetClassName) {
+        if (!targetClassName.equals("mtr.model.ModelTrainBase")) return false;
+        try (InputStream bytes = IVRMixinPlugin.class.getClassLoader()
+                .getResourceAsStream("mtr/model/ModelTrainBase.class")) {
+            if (bytes == null) return false;
+            ClassNode target = new ClassNode();
+            new ClassReader(bytes).accept(target, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            String renderDescriptor = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lmtr/data/NameColorDataBase;Lnet/minecraft/resources/ResourceLocation;IFFZIIZZZZZ)V";
+            String stageDescriptor = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lmtr/model/ModelTrainBase$RenderStage;IFFFFIIZZ)V";
+            boolean renderMethod = target.methods.stream().anyMatch(method -> method.name.equals("render")
+                    && method.desc.equals(renderDescriptor));
+            if (!renderMethod) return false;
+            for (org.objectweb.asm.tree.MethodNode method : target.methods) {
+                if (!method.name.equals("render") || !method.desc.equals(renderDescriptor)) continue;
+                for (org.objectweb.asm.tree.AbstractInsnNode instruction : method.instructions) {
+                    if (instruction instanceof MethodInsnNode call
+                            && call.owner.equals("mtr/model/ModelTrainBase")
+                            && call.name.equals("render")
+                            && call.desc.equals(stageDescriptor)) return true;
+                }
+            }
+            return false;
+        } catch (IOException | RuntimeException exception) {
+            return false;
+        }
+    }
+
     private static boolean nteMixinAllowed() {
         // An unavailable registry is an unknown state during very early
         // bootstrap; class-shape checks remain the fallback in that case.
@@ -178,10 +217,6 @@ public final class IVRMixinPlugin implements IMixinConfigPlugin {
 
     private static boolean msdMixinAllowed() {
         return !DependenciesChecker.isExistenceKnown() || DependenciesChecker.isMsdExist();
-    }
-
-    private static String trainStageStatus() {
-        return hasSupportedTrainStageTarget("mtr.model.ModelTrainBase") ? "eligible" : "incompatible signature";
     }
 
     private static boolean isAnteCompatible(String prefix) {
@@ -319,33 +354,6 @@ public final class IVRMixinPlugin implements IMixinConfigPlugin {
                 if (!present) return false;
             }
             return true;
-        } catch (IOException | RuntimeException exception) {
-            return false;
-        }
-    }
-
-    private static boolean hasSupportedTrainStageTarget(String targetClassName) {
-        if (!targetClassName.equals("mtr.model.ModelTrainBase")) return false;
-        try (InputStream bytes = IVRMixinPlugin.class.getClassLoader()
-                .getResourceAsStream("mtr/model/ModelTrainBase.class")) {
-            if (bytes == null) return false;
-            ClassNode target = new ClassNode();
-            new ClassReader(bytes).accept(target, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-            String renderDescriptor = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lmtr/data/NameColorDataBase;Lnet/minecraft/resources/ResourceLocation;IFFZIIZZZZZ)V";
-            String stageDescriptor = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lmtr/model/ModelTrainBase$RenderStage;IFFFFIIZZ)V";
-            boolean renderMethod = target.methods.stream().anyMatch(method -> method.name.equals("render")
-                    && method.desc.equals(renderDescriptor));
-            if (!renderMethod) return false;
-            for (org.objectweb.asm.tree.MethodNode method : target.methods) {
-                if (!method.name.equals("render") || !method.desc.equals(renderDescriptor)) continue;
-                for (org.objectweb.asm.tree.AbstractInsnNode instruction : method.instructions) {
-                    if (instruction instanceof MethodInsnNode call
-                            && call.owner.equals("mtr/model/ModelTrainBase")
-                            && call.name.equals("render")
-                            && call.desc.equals(stageDescriptor)) return true;
-                }
-            }
-            return false;
         } catch (IOException | RuntimeException exception) {
             return false;
         }

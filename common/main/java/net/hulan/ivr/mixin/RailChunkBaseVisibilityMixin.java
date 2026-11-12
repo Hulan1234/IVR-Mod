@@ -3,6 +3,7 @@ package net.hulan.ivr.mixin;
 import net.hulan.ivr.render_promotion.visibility.RailVisibility;
 import net.hulan.ivr.render_promotion.itf.ANTERailChunkBounds;
 import net.hulan.ivr.render_promotion.debug.RenderDebugStats;
+import net.minecraft.world.phys.AABB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,10 +29,11 @@ public abstract class RailChunkBaseVisibilityMixin {
      */
     @Inject(method = "enqueue", at = @At("HEAD"), cancellable = true, remap = false)
     private void ivr$enqueueRailChunkIfVisible(CallbackInfo ci) {
-        // Optional ANTE releases can expose the enqueue method without the
-        // base-class bounds field.  Keep native rendering active in that case
-        // instead of turning an optional optimization into a ClassCastException.
-        if (!(this instanceof ANTERailChunkBounds)) return;
+        // Optional ANTE releases may not expose a stable bounds interface. Keep
+        // native rendering active when the boundary is unavailable or dynamic.
+        if (!(this instanceof ANTERailChunkBounds boundsProvider)) return;
+        AABB bounds = boundsProvider.ivr$getRailChunkBounds();
+        if (bounds == null) return;
         String name = getClass().getName().toLowerCase(java.util.Locale.ROOT);
         RenderDebugStats.Category category = name.contains("eyecandy") || name.contains("eye_candy")
                 ? RenderDebugStats.Category.EYE_CANDY : RenderDebugStats.Category.RAILBOX;
@@ -39,8 +41,7 @@ public abstract class RailChunkBaseVisibilityMixin {
         boolean render;
         long started = RenderDebugStats.startTiming();
         try {
-            render = RailVisibility.getInstance().shouldRenderBox(
-                    ((ANTERailChunkBounds) this).ivr$getRailChunkBounds());
+            render = RailVisibility.getInstance().shouldRenderBox(bounds);
         } finally {
             RenderDebugStats.popCategory(previous);
         }

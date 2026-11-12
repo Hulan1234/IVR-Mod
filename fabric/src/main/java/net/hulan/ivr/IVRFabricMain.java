@@ -34,7 +34,7 @@ public class IVRFabricMain implements ModInitializer {
                 IVRFabricMain::registerBlockEntityType,
                 IVRFabricMain::registerEnchantedBlockItem,
                 IVRFabricMain::registerEntity);
-        NPCUtilities.getInstance().registerAttributes();
+        NPCUtilities.registerAttributes();
     }
 
     private static void registerItem(String path, RegistryObject<Item> item) {

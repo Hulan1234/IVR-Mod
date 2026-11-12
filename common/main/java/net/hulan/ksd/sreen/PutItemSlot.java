@@ -34,7 +34,7 @@ public class PutItemSlot implements WidgetMapper, IGui {
         Gui.fill(poseStack, x + 1, y + 1, x + SIZE - 1, y + SIZE - 1, 0xFF373737);
         ItemStack itemStack = getItemStack();
         if (!itemStack.isEmpty()) {
-            Utilities.getInstance().renderGuiItem(poseStack, minecraft.getItemRenderer(), minecraft.font, itemStack, x + 1, y + 1);
+            Utilities.renderGuiItem(poseStack, minecraft.getItemRenderer(), minecraft.font, itemStack, x + 1, y + 1);
         }
         if (isMouseOver(mouseX, mouseY)) {
             Gui.fill(poseStack, x + 1, y + 1, x + SIZE - 1, y + SIZE - 1, 0x60FFFFFF);
