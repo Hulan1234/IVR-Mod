@@ -16,6 +16,8 @@ import net.hulan.ksd.utils.DataUtilities;
 import net.hulan.ksd.data.KSDStation;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketClient;
+import net.hulan.ksd.widget.BetterButton;
+import net.hulan.ksd.widget.BetterTextField;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 
@@ -32,10 +34,10 @@ public class EditKSDStationScreen extends EditNameColorScreenBase<KSDStation> {
     private final Component stationZoneText = Text.translatable("gui.mtr.zone");
     private final Component exitParentsText = Text.translatable("gui.mtr.exit_parents");
     private final Component exitDestinationsText = Text.translatable("gui.mtr.exit_destinations");
-    private final WidgetBetterTextField textFieldZone;
-    private final WidgetBetterTextField textFieldExitParentLetter;
-    private final WidgetBetterTextField textFieldExitParentNumber;
-    private final WidgetBetterTextField textFieldExitDestination;
+    private final BetterTextField textFieldZone;
+    private final BetterTextField textFieldExitParentLetter;
+    private final BetterTextField textFieldExitParentNumber;
+    private final BetterTextField textFieldExitDestination;
     private final Button buttonAddExitParent;
     private final Button buttonDoneExitParent;
     private final Button buttonAddExitDestination;
@@ -48,14 +50,14 @@ public class EditKSDStationScreen extends EditNameColorScreenBase<KSDStation> {
     public EditKSDStationScreen(KSDStation station, KSDDashboardScreen dashboardScreen) {
         super(station, null, "gui.mtr.station_name", "gui.mtr.station_color");
         this.dashboardScreen = dashboardScreen;
-        textFieldZone = new WidgetBetterTextField(WidgetBetterTextField.TextFieldFilter.INTEGER, "", 6);
-        textFieldExitParentLetter = new WidgetBetterTextField(WidgetBetterTextField.TextFieldFilter.LETTER, "A", 1);
-        textFieldExitParentNumber = new WidgetBetterTextField(WidgetBetterTextField.TextFieldFilter.POSITIVE_INTEGER, "1", 2);
-        textFieldExitDestination = new WidgetBetterTextField("");
-        buttonAddExitParent = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_exit"), (button) -> checkClickDelay(() -> changeEditingExit("", -1)));
-        buttonDoneExitParent = UtilitiesClient.newButton(Text.translatable("gui.done"), (button) -> checkClickDelay(this::onDoneExitParent));
-        buttonAddExitDestination = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_exit_destination"), (button) -> checkClickDelay(() -> changeEditingExit(editingExit, station.exits.containsKey(editingExit) ? station.exits.get(editingExit).size() : -1)));
-        buttonDoneExitDestination = UtilitiesClient.newButton(Text.translatable("gui.done"), (button) -> checkClickDelay(this::onDoneExitDestination));
+        textFieldZone = new BetterTextField(WidgetBetterTextField.TextFieldFilter.INTEGER, "", 6);
+        textFieldExitParentLetter = new BetterTextField(WidgetBetterTextField.TextFieldFilter.LETTER, "A", 1);
+        textFieldExitParentNumber = new BetterTextField(WidgetBetterTextField.TextFieldFilter.POSITIVE_INTEGER, "1", 2);
+        textFieldExitDestination = new BetterTextField("");
+        buttonAddExitParent = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.mtr.add_exit"), (button) -> checkClickDelay(() -> changeEditingExit("", -1)));
+        buttonDoneExitParent = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.done"), (button) -> checkClickDelay(this::onDoneExitParent));
+        buttonAddExitDestination = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.mtr.add_exit_destination"), (button) -> checkClickDelay(() -> changeEditingExit(editingExit, station.exits.containsKey(editingExit) ? station.exits.get(editingExit).size() : -1)));
+        buttonDoneExitDestination = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.done"), (button) -> checkClickDelay(this::onDoneExitDestination));
         exitParentList = new DashboardList(null, null, this::onEditExitParent, null, null, this::onDeleteExitParent, null, () -> ClientData.EXIT_PARENTS_SEARCH, (text) -> ClientData.EXIT_PARENTS_SEARCH = text);
         exitDestinationList = new DashboardList(null, null, this::onEditExitDestination, this::onSortExitDestination, null, this::onDeleteExitDestination, this::getExitDestinationList, () -> ClientData.EXIT_DESTINATIONS_SEARCH, (text) -> ClientData.EXIT_DESTINATIONS_SEARCH = text);
     }

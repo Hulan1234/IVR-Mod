@@ -9,6 +9,8 @@
     "PacketTrainDataGuiClientMixin"
   ],
   "client": [
+    "BufferSourceBoundsMixin",
+    "DynamicTrainModelFormatMixin",
     "DynamicTrainModelLoaderMixin",
     "BlockEntityEyeCandyRendererMixin",
     "RailChunkBaseVisibilityMixin",
@@ -25,6 +27,7 @@
     "LiftRenderOptimizeMixin",
     "RenderTrainsCallbackCacheMixin",
     "MSDDisplayBoundsMixin",
+    "ModelManagerReloadMixin",
     "LineDataMixin",
     "NativeVisibilityFrustumMixin",
     "OcclusionLifecycleMixin",

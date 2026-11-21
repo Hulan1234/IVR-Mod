@@ -17,8 +17,10 @@ import net.hulan.ksd.data.*;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketClient;
 import net.hulan.ksd.utils.DataUtilities;
+import net.hulan.ksd.widget.BetterButton;
+import net.hulan.ksd.widget.BetterTextField;
+import net.hulan.ksd.widget.KSDWidgetMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.util.Tuple;
 import org.jetbrains.annotations.NotNull;
@@ -43,42 +45,41 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
     private final Button buttonDoneEditingStation;
     private final Button buttonDoneEditingRoute;
     private final Button buttonDoneEditingRouteDestination;
-    private final Button buttonZoomIn;
-    private final Button buttonZoomOut;
-    private final Button buttonRailActions;
     private final Button buttonOptions;
     private final Button buttonSelectMapType;
-    private final WidgetBetterTextField textFieldName;
-    private final WidgetBetterTextField textFieldCustomDestination;
+    private final Button buttonShowRailMap;
+    private final BetterTextField textFieldName;
+    private final BetterTextField textFieldCustomDestination;
     private final WidgetColorSelector colorSelector;
     private final DashboardList dashboardList;
 
     public KSDDashboardScreen(TransportMode transportMode) {
         super(Text.literal(""));
-        textFieldName = new WidgetBetterTextField(Text.translatable("gui.mtr.name").getString());
-        textFieldCustomDestination = new WidgetBetterTextField(Text.translatable("gui.mtr.custom_destination_suggestion").getString());
+        textFieldName = new BetterTextField(Text.translatable("gui.mtr.name").getString());
+        textFieldCustomDestination = new BetterTextField(Text.translatable("gui.mtr.custom_destination_suggestion").getString());
         colorSelector = new WidgetColorSelector(this, true, this::toggleButtons);
         widgetMap = new KSDWidgetMap(KSDWidgetMap.MapType.X_Z, transportMode, this::onDrawCorners, this::onDrawCornersMouseRelease, this::onClickAddPlatformToRoute, this::onClickEditSavedRail, colorSelector::isMouseOver);
-        buttonTabStations = UtilitiesClient.newButton(Text.translatable("gui.mtr.stations"), (button) -> onSelectTab(SelectedTab.STATIONS));
-        buttonTabRoutes = UtilitiesClient.newButton(Text.translatable("gui.mtr.routes"), button -> onSelectTab(SelectedTab.ROUTES));
-        buttonAddStation = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_station"), (button) -> startEditingArea(new KSDStation(), true));
-        buttonAddRoute = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_route"), button -> startEditingRoute(new KSDRoute(transportMode), true));
-        buttonDoneEditingStation = UtilitiesClient.newButton(Text.translatable("gui.done"), (button) -> onDoneEditingArea());
-        buttonDoneEditingRoute = UtilitiesClient.newButton(Text.translatable("gui.done"), button -> onDoneEditingRoute());
-        buttonDoneEditingRouteDestination = UtilitiesClient.newButton(Text.translatable("gui.done"), button -> onDoneEditingRouteDestination());
-        buttonZoomIn = UtilitiesClient.newButton(Text.literal("+"), (button) -> widgetMap.scale(1.0F));
-        buttonZoomOut = UtilitiesClient.newButton(Text.literal("-"), (button) -> widgetMap.scale(-1.0F));
-        buttonRailActions = UtilitiesClient.newButton(Text.translatable("gui.mtr.rail_actions_button"), (button) -> {
+        buttonTabStations = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.mtr.stations"), (button) -> onSelectTab(SelectedTab.STATIONS));
+        buttonTabRoutes = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.mtr.routes"), button -> onSelectTab(SelectedTab.ROUTES));
+        buttonAddStation = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.mtr.add_station"), (button) -> startEditingArea(new KSDStation(), true));
+        buttonAddRoute = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.mtr.add_route"), button -> startEditingRoute(new KSDRoute(transportMode), true));
+        buttonDoneEditingStation = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.done"), (button) -> onDoneEditingArea());
+        buttonDoneEditingRoute = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.done"), button -> onDoneEditingRoute());
+        buttonDoneEditingRouteDestination = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.done"), button -> onDoneEditingRouteDestination());
+        buttonOptions = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("menu.options"), (button) -> {
             if (minecraft != null) {
-                UtilitiesClient.setScreen(minecraft, new RailActionsScreen());
+                UtilitiesClient.setScreen(minecraft, new IVRConfigScreen(() -> {
+                    if (minecraft != null) {
+                        minecraft.setScreen(this);
+                    }
+                }));
             }
         });
-        buttonOptions = UtilitiesClient.newButton(Text.translatable("menu.options"), (button) -> {
-            if (minecraft != null) {
-                UtilitiesClient.setScreen(minecraft, new IVRConfigScreen(() -> minecraft.setScreen(null)));
-            }
+        buttonSelectMapType = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.mtr.add_value"), (button) -> selectMapType(widgetMap.mapType.next()));
+        buttonShowRailMap = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.ksd.show_rail_map"), (button) -> {
+            widgetMap.toggleShowRailMap();
+            updateShowRailMapButtonText();
         });
-        buttonSelectMapType = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_value"), (button) -> selectMapType(widgetMap.mapType.next()));
         dashboardList = new DashboardList(this::onFind, this::onDrawArea, this::onEdit, this::onSort, null, this::onDelete, this::getList, () -> ClientData.DASHBOARD_SEARCH, (text) -> ClientData.DASHBOARD_SEARCH = text);
         onSelectTab(SelectedTab.STATIONS);
     }
@@ -87,7 +88,7 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         super.init();
         final int tabCount = 2;
         int bottomRowY = height - 20;
-        widgetMap.setPositionAndSize(144, 0, width - 144, height);
+        widgetMap.setPositionAndSize(0, 0, width, height);
         IDrawing.setPositionAndWidth(buttonTabStations, 0, 0, PANEL_WIDTH / tabCount);
         IDrawing.setPositionAndWidth(buttonTabRoutes, PANEL_WIDTH / tabCount, 0, PANEL_WIDTH / tabCount);
         IDrawing.setPositionAndWidth(buttonAddStation, 0, bottomRowY, PANEL_WIDTH);
@@ -95,11 +96,9 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         IDrawing.setPositionAndWidth(buttonDoneEditingStation, 0, bottomRowY, PANEL_WIDTH);
         IDrawing.setPositionAndWidth(buttonDoneEditingRoute, 0, bottomRowY, PANEL_WIDTH);
         IDrawing.setPositionAndWidth(buttonDoneEditingRouteDestination, 0, bottomRowY, PANEL_WIDTH);
-        IDrawing.setPositionAndWidth(buttonZoomIn, width - 40, bottomRowY, 20);
-        IDrawing.setPositionAndWidth(buttonZoomOut, width - 20, bottomRowY, 20);
-        IDrawing.setPositionAndWidth(buttonRailActions, width - 200, bottomRowY, 100);
-        IDrawing.setPositionAndWidth(buttonOptions, width - 100, bottomRowY, 60);
-        IDrawing.setPositionAndWidth(buttonSelectMapType, width - 300, bottomRowY, 100);
+        IDrawing.setPositionAndWidth(buttonOptions, width - 60, bottomRowY, 60);
+        IDrawing.setPositionAndWidth(buttonSelectMapType, width - 200, bottomRowY, 140);
+        IDrawing.setPositionAndWidth(buttonShowRailMap, width - 300, bottomRowY, 100);
         IDrawing.setPositionAndWidth(textFieldName, 2, bottomRowY - 20 - 2, 92);
         IDrawing.setPositionAndWidth(textFieldCustomDestination, 2, bottomRowY - 20 - 2, 140);
         IDrawing.setPositionAndWidth(colorSelector, 98, bottomRowY - 20 - 2, 44);
@@ -108,7 +107,6 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         dashboardList.width = 144;
         toggleButtons();
         dashboardList.init(this::addDrawableChild);
-        addWidget(widgetMap);
         addDrawableChild(buttonTabStations);
         addDrawableChild(buttonTabRoutes);
         addDrawableChild(buttonAddStation);
@@ -116,15 +114,19 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
         addDrawableChild(buttonDoneEditingStation);
         addDrawableChild(buttonDoneEditingRoute);
         addDrawableChild(buttonDoneEditingRouteDestination);
-        addDrawableChild(buttonZoomIn);
-        addDrawableChild(buttonZoomOut);
-        addDrawableChild(buttonRailActions);
         addDrawableChild(buttonOptions);
         addDrawableChild(buttonSelectMapType);
+        addDrawableChild(buttonShowRailMap);
         addDrawableChild(textFieldName);
         addDrawableChild(textFieldCustomDestination);
         addDrawableChild(colorSelector);
+        addWidget(widgetMap);
         selectMapType(KSDWidgetMap.MapType.X_Z);
+        updateShowRailMapButtonText();
+    }
+
+    private void updateShowRailMapButtonText() {
+        buttonShowRailMap.setMessage(Text.translatable(widgetMap.isShowRailMap() ? "gui.ksd.hide_rail_map" : "gui.ksd.show_rail_map"));
     }
 
     public void render(@NotNull PoseStack matrices, int mouseX, int mouseY, float delta) {
@@ -133,7 +135,6 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
             widgetMap.render(matrices, mouseX, mouseY, delta);
             matrices.pushPose();
             matrices.translate(0.0F, 0.0F, 500.0F);
-            Gui.fill(matrices, 0, 0, 144, height, ARGB_BACKGROUND);
             dashboardList.render(matrices, font);
             super.render(matrices, mouseX, mouseY, delta);
             matrices.popPose();
@@ -148,6 +149,9 @@ public class KSDDashboardScreen extends ScreenMapper implements IGui, IPacket {
 
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         dashboardList.mouseScrolled(mouseX, mouseY, amount);
+        if (mouseX < PANEL_WIDTH) {
+            return true;
+        }
         return super.mouseScrolled(mouseX, mouseY, amount);
     }
 

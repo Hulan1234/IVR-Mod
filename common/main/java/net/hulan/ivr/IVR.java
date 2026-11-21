@@ -110,6 +110,8 @@ public class IVR implements IVRPacket, IVRBlocks, IVRBlockEntityTypes, IVRCreati
         registerBlockItem.accept("kcr_single_ticket_machine_kcr_wall", KCR_SINGLE_TICKET_MACHINE_KCR_WALL, IVR_);
         registerBlockItem.accept("kcr_single_ticket_machine_light_rail_wall", KCR_SINGLE_TICKET_MACHINE_LIGHT_RAIL_WALL, IVR_);
         registerBlockItem.accept("octopus_add_value_machine", OCTOPUS_ADD_VALUE_MACHINE_WALL, IVR_);
+        registerBlockItem.accept("kcr_ticket_barrier_entry", KCR_TICKET_BARRIER_ENTRY, IVR_);
+        registerBlockItem.accept("kcr_ticket_barrier_exit", KCR_TICKET_BARRIER_EXIT, IVR_);
         registerBlockEntityType.accept("classical_sign_1_even", CLASSICAL_SIGN_1_EVEN_TILE_ENTITY);
         registerBlockEntityType.accept("classical_sign_1_odd", CLASSICAL_SIGN_1_ODD_TILE_ENTITY);
         registerBlockEntityType.accept("classical_sign_2_even", CLASSICAL_SIGN_2_EVEN_TILE_ENTITY);
@@ -139,6 +141,8 @@ public class IVR implements IVRPacket, IVRBlocks, IVRBlockEntityTypes, IVRCreati
         registerBlockEntityType.accept("modern_sign_7_even", MODERN_SIGN_7_EVEN_TILE_ENTITY);
         registerBlockEntityType.accept("modern_sign_7_odd", MODERN_SIGN_7_ODD_TILE_ENTITY);
         registerBlockEntityType.accept("kcr_clock", KCR_CLOCK_TILE_ENTITY);
+        registerBlockEntityType.accept("kcr_ticket_barrier_entry", KCR_TICKET_BARRIER_ENTRY_TILE_ENTITY);
+        registerBlockEntityType.accept("kcr_ticket_barrier_exit", KCR_TICKET_BARRIER_EXIT_TILE_ENTITY);
         registerBlockEntityType.accept("kcr_apg_glass", KCR_APG_GLASS_TILE_ENTITY);
         registerBlockEntityType.accept("kcr_apg_door", KCR_APG_DOOR_TILE_ENTITY);
         registerBlockEntityType.accept("kcr_psd_door_1", KCR_PSD_DOOR_1_TILE_ENTITY);

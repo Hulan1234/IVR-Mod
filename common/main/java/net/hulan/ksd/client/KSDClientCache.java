@@ -11,6 +11,8 @@ import mtr.mappings.Utilities;
 import net.hulan.ivr.client.IVRRouteMapGenerator;
 import net.hulan.ivr.render_promotion.cache.RenderDataRevision;
 import net.hulan.ksd.data.*;
+import net.hulan.ksd.path.KSDRailMapGenerator;
+import net.hulan.ksd.path.KSDRoutePathGenerator;
 import net.hulan.ksd.utils.DataUtilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -93,6 +95,8 @@ public class KSDClientCache extends KSDDataCache {
             }
         });
         RenderDataRevision.bump();
+        KSDRailMapGenerator.INSTANCE.invalidate();
+        KSDRoutePathGenerator.INSTANCE.invalidate();
     }
 
     public void resetFonts() {

@@ -1,10 +1,12 @@
-package net.hulan.ksd.sreen;
+package net.hulan.ksd.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.mappings.SelectableMapper;
 import mtr.mappings.WidgetMapper;
 import net.hulan.ksd.data.SingleTicketSystem;
 import net.hulan.ksd.data.KSDRoute;
+import net.hulan.ksd.sreen.KCRSTMachineScreen;
+import net.hulan.ksd.sreen.KSDGui;
 import net.hulan.ksd.utils.RailDataUtilities;
 import net.hulan.ksd.utils.RenderUtilities;
 import net.minecraft.client.gui.Gui;

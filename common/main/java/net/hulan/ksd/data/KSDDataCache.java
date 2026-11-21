@@ -3,6 +3,7 @@ package net.hulan.ksd.data;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import mtr.data.NameColorDataBase;
 import mtr.data.SavedRailBase;
+import net.hulan.ksd.path.KSDRouteFinder;
 
 import java.util.*;
 
@@ -18,8 +19,8 @@ public class KSDDataCache {
     public final Map<Long, Set<KSDRoute>> stationIdToRoutes = new HashMap<>();
     public final Map<KSDStation, Set<KSDStation>> stationIdToConnectingStations = new HashMap<>();
     public final Long2LongOpenHashMap blockPosToPlatformId = new Long2LongOpenHashMap();
-    public final WayFinder wayFinder;
-    protected final Set<KSDStation> stations;
+    public final KSDRouteFinder pathFinder;
+    public final Set<KSDStation> stations;
     protected final Set<KSDPlatform> platforms;
     protected final Set<KSDRoute> routes;
 
@@ -27,7 +28,7 @@ public class KSDDataCache {
         this.stations = stations;
         this.platforms = platforms;
         this.routes = routes;
-        wayFinder = new WayFinder(this);
+        pathFinder = new KSDRouteFinder(this);
     }
 
     public final void sync() {
@@ -77,7 +78,7 @@ public class KSDDataCache {
             });
             blockPosToPlatformId.clear();
             syncAdditional();
-            wayFinder.sync();
+            pathFinder.sync();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

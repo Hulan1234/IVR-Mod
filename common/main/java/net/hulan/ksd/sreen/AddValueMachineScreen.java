@@ -4,10 +4,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.client.IDrawing;
 import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
-import mtr.screen.WidgetBetterTextField;
 import net.hulan.ksd.data.Octopus;
 import net.hulan.ksd.data.PaymentMethod;
 import net.hulan.ksd.packet.KSDPacketClient;
+import net.hulan.ksd.widget.BetterTextField;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -24,12 +24,12 @@ public class AddValueMachineScreen extends PaymentScreen {
     private int balance;
     private int totalBalance;
     private final ItemStack octopusItem;
-    private final WidgetBetterTextField textFieldAddValue;
+    private final BetterTextField textFieldAddValue;
 
     public AddValueMachineScreen(int mtrBalance, ScreenMapper parent, ItemStack octopusItem, BlockPos storeBlockPos) {
         super(mtrBalance, parent, storeBlockPos);
         this.octopusItem = octopusItem;
-        textFieldAddValue = new WidgetBetterTextField("Value");
+        textFieldAddValue = new BetterTextField("Value");
     }
 
     protected void init() {

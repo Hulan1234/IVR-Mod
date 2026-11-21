@@ -11,6 +11,7 @@ import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.SingleTicketSystem;
 import net.hulan.ksd.data.KSDRailwayData;
 import net.hulan.ksd.data.KSDStation;
+import net.hulan.ksd.widget.BetterButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
@@ -18,12 +19,12 @@ import org.jetbrains.annotations.NotNull;
 
 public class TicketsScreen extends ScreenMapper implements KSDGui {
 
-    private final TextureButton buttonOpenMTRSTMScreen;
-    private final TextureButton buttonOpenKCRSTMScreen;
-    private final TextureButton buttonOpenLRTSTMScreen;
-    private final TextureButton buttonOpenITTTMScreen;
-    private final TextureButton buttonOpenPurchaseOctopusScreen;
-    private final TextureButton buttonOpenAddValueScreen;
+    private final BetterButton buttonOpenMTRSTMScreen;
+    private final BetterButton buttonOpenKCRSTMScreen;
+    private final BetterButton buttonOpenLRTSTMScreen;
+    private final BetterButton buttonOpenITTTMScreen;
+    private final BetterButton buttonOpenPurchaseOctopusScreen;
+    private final BetterButton buttonOpenAddValueScreen;
     private final int panelWidth;
     private final int panelHeight;
     private static final int MIN_PANEL_WIDTH = BUTTON_WIDTH * 2 + BUTTON_GAP + 8;
@@ -33,17 +34,17 @@ public class TicketsScreen extends ScreenMapper implements KSDGui {
         super(Text.literal("Tickets"));
         this.panelWidth = Math.max(MIN_PANEL_WIDTH, 440);
         this.panelHeight = Math.max(MIN_PANEL_HEIGHT, 290);
-        buttonOpenMTRSTMScreen = new TextureButton(Text.translatable("gui.ksd.open_stm_screen_mtr"), button ->
+        buttonOpenMTRSTMScreen = new BetterButton(Text.translatable("gui.ksd.open_stm_screen_mtr"), button ->
                 openSTMScreen(SingleTicketSystem.TicketType.MTR, storeBlockPos, mtrBalance));
-        buttonOpenKCRSTMScreen = new TextureButton(Text.translatable("gui.ksd.open_stm_screen_kcr"), button ->
+        buttonOpenKCRSTMScreen = new BetterButton(Text.translatable("gui.ksd.open_stm_screen_kcr"), button ->
                 openSTMScreen(SingleTicketSystem.TicketType.KCR, storeBlockPos, mtrBalance));
-        buttonOpenLRTSTMScreen = new TextureButton(Text.translatable("gui.ksd.open_stm_screen_lrt"), button ->
+        buttonOpenLRTSTMScreen = new BetterButton(Text.translatable("gui.ksd.open_stm_screen_lrt"), button ->
                 openSTMScreen(SingleTicketSystem.TicketType.LRT, storeBlockPos, mtrBalance));
-        buttonOpenITTTMScreen = new TextureButton(Text.translatable("gui.ksd.open_stm_screen_itt"), button -> {
+        buttonOpenITTTMScreen = new BetterButton(Text.translatable("gui.ksd.open_stm_screen_itt"), button -> {
         });
-        buttonOpenPurchaseOctopusScreen = new TextureButton(Text.translatable("gui.ksd.open_purchase_octopus_screen"), button ->
+        buttonOpenPurchaseOctopusScreen = new BetterButton(Text.translatable("gui.ksd.open_purchase_octopus_screen"), button ->
                 openPurchaseOctopusScreen(mtrBalance, this));
-        buttonOpenAddValueScreen = new TextureButton(Text.translatable("gui.ksd.open_add_value_screen"), button ->
+        buttonOpenAddValueScreen = new BetterButton(Text.translatable("gui.ksd.open_add_value_screen"), button ->
                 openAddValueScreen(mtrBalance, this, storeBlockPos));
     }
 

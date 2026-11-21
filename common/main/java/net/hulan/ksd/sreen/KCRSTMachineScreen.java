@@ -10,6 +10,8 @@ import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
 import net.hulan.ksd.utils.RailDataUtilities;
 import net.hulan.ksd.utils.RenderUtilities;
+import net.hulan.ksd.widget.KCRSTMMachineLegend;
+import net.hulan.ksd.widget.KCRSTMachineRailMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.core.BlockPos;
@@ -21,16 +23,16 @@ import java.util.Set;
 
 public class KCRSTMachineScreen extends ScreenMapper implements KSDGui {
 
+    public final Set<KSDRoute> mainRoutes = new HashSet<>();
+    public final Set<KSDRoute> otherRoutes = new HashSet<>();
+    public final Set<KSDRoute> lightRailRoutes = new HashSet<>();
+    public final Set<KSDStation> mainStations = new HashSet<>();
+    public final Set<KSDStation> otherStations = new HashSet<>();
+    public final Set<KSDStation> lightRailStations = new HashSet<>();
     public final SingleTicketSystem.TicketType ticketType;
     private final KSDStation current;
     public final BlockPos machinePos;
     private final int balance;
-    final Set<KSDRoute> mainRoutes = new HashSet<>();
-    final Set<KSDRoute> otherRoutes = new HashSet<>();
-    final Set<KSDRoute> lightRailRoutes = new HashSet<>();
-    final Set<KSDStation> mainStations = new HashSet<>();
-    final Set<KSDStation> otherStations = new HashSet<>();
-    final Set<KSDStation> lightRailStations = new HashSet<>();
     private final KCRSTMachineRailMap railMap;
     private final KCRSTMMachineLegend legend;
     private static final String RMH_CHI = "路線圖";
@@ -85,7 +87,7 @@ public class KCRSTMachineScreen extends ScreenMapper implements KSDGui {
         mainRoutes.clear();
         otherRoutes.clear();
         lightRailRoutes.clear();
-        Set<KSDRoute> routesInNetwork = KSDClientData.DATA_CACHE.wayFinder.getNetwork(current.id);
+        Set<KSDRoute> routesInNetwork = KSDClientData.DATA_CACHE.pathFinder.getNetwork(current.id);
         Set<KSDRoute> mtr = RailDataUtilities.getMTRRoutes(routesInNetwork);
         Set<KSDRoute> kcr = RailDataUtilities.getKCRRoutes(routesInNetwork);
         Set<KSDRoute> lightRails = RailDataUtilities.getLightRailRoutes(routesInNetwork);

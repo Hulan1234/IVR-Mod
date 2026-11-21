@@ -11,6 +11,7 @@ import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.KCRTicketSystem;
 import net.hulan.ksd.data.KSDRailwayData;
 import net.hulan.ksd.data.KSDStation;
+import net.hulan.ksd.widget.BetterButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -21,17 +22,17 @@ public class FareAdjustmentsScreen extends ScreenMapper implements KSDGui {
 
     private static final int PANEL_WIDTH = 440;
     private static final int PANEL_HEIGHT = BUTTON_HEIGHT * 2 + BUTTON_GAP + 40;
-    private final TextureButton buttonOpenSTFareAdjustmentScreen;
-    private final TextureButton buttonOpenOctopusFareAdjustmentScreen;
-    private final TextureButton buttonOpenFCFareAdjustmentScreen;
+    private final BetterButton buttonOpenSTFareAdjustmentScreen;
+    private final BetterButton buttonOpenOctopusFareAdjustmentScreen;
+    private final BetterButton buttonOpenFCFareAdjustmentScreen;
 
     public FareAdjustmentsScreen(int mtrBalance, BlockPos storeBlockPos) {
         super(Text.literal(""));
-        buttonOpenSTFareAdjustmentScreen = new TextureButton(Text.translatable("gui.ksd.st_fare_adjustment"), button ->
+        buttonOpenSTFareAdjustmentScreen = new BetterButton(Text.translatable("gui.ksd.st_fare_adjustment"), button ->
                 openSTFAScreen(mtrBalance, this, storeBlockPos));
-        buttonOpenOctopusFareAdjustmentScreen = new TextureButton(Text.translatable("gui.ksd.octopus_fare_adjustment"), button ->
+        buttonOpenOctopusFareAdjustmentScreen = new BetterButton(Text.translatable("gui.ksd.octopus_fare_adjustment"), button ->
                 openOctopusFareAdjustmentScreen(mtrBalance, this, storeBlockPos));
-        buttonOpenFCFareAdjustmentScreen = new TextureButton(Text.translatable("gui.ksd.fc_fare_adjustment"), button ->
+        buttonOpenFCFareAdjustmentScreen = new BetterButton(Text.translatable("gui.ksd.fc_fare_adjustment"), button ->
                 openFCFareAdjustmentScreen(mtrBalance, this, storeBlockPos));
     }
 

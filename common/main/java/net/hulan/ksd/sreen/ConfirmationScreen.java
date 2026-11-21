@@ -6,6 +6,7 @@ import mtr.data.IGui;
 import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
 import mtr.mappings.UtilitiesClient;
+import net.hulan.ksd.widget.BetterButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.MutableComponent;
 
@@ -22,8 +23,8 @@ public class ConfirmationScreen extends ScreenMapper implements IGui {
         this.deleteCallback = deleteCallback;
         this.text = text;
         this.previousScreen = previousScreen;
-        this.buttonYes = UtilitiesClient.newButton(Text.translatable("gui.yes"), (button) -> onYes());
-        this.buttonNo = UtilitiesClient.newButton(Text.translatable("gui.no"), (button) -> onNo());
+        this.buttonYes = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.yes"), (button) -> onYes());
+        this.buttonNo = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.no"), (button) -> onNo());
     }
 
     protected void init() {

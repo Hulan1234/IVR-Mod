@@ -12,6 +12,7 @@ import mtr.screen.WidgetBetterCheckbox;
 import net.hulan.ksd.utils.DataUtilities;
 import net.hulan.ksd.data.KSDPlatform;
 import net.hulan.ksd.packet.KSDPacketClient;
+import net.hulan.ksd.widget.BetterButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -33,7 +34,7 @@ public class KSDPlatformScreen extends SavedRailScreenBase<KSDPlatform> {
         super(savedRailBase, transportMode, null, DWELL_TIME_TEXT);
         this.dashboardScreen = dashboardScreen;
         buttonIsSpanishPlatform = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.is_spanish_platform"), this::setIsSpanishPlatform);
-        buttonDoorOpeningSide = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_value"), button -> setDoorOpeningSideText(doorOpeningSide.next()));
+        buttonDoorOpeningSide = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.mtr.add_value"), button -> setDoorOpeningSideText(doorOpeningSide.next()));
     }
 
     protected void init() {

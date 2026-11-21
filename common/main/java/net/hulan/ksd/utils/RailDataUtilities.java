@@ -1,8 +1,10 @@
 package net.hulan.ksd.utils;
 
+import mtr.data.EnumHelper;
 import mtr.data.NameColorDataBase;
 import mtr.data.RouteType;
 import net.hulan.ksd.data.KSDRoute;
+import net.hulan.ksd.data.KSDStation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,6 +12,8 @@ import java.util.Objects;
 import java.util.Set;
 
 public class RailDataUtilities {
+
+    public static final RouteType KCR = EnumHelper.valueOf(RouteType.NORMAL, "KCR");
 
     public static boolean equals(@Nullable NameColorDataBase b1, @Nullable NameColorDataBase b2) {
         if (b1 == b2) {
@@ -64,7 +68,7 @@ public class RailDataUtilities {
     }
 
     public static boolean isKCRRoute(KSDRoute route) {
-        return route.routeType.equals(Utilities.KCR);
+        return route.routeType.equals(KCR);
     }
 
     public static boolean isLightRailRoute(KSDRoute route) {
@@ -73,5 +77,23 @@ public class RailDataUtilities {
 
     public static boolean hasFirstClassService(KSDRoute route) {
         return isKCRRoute(route) && route.hasFirstClassService;
+    }
+
+    public static boolean containsX(KSDStation station, double playerX) {
+        double minX = Math.min(station.corner1.getX(), station.corner2.getX());
+        double maxX = Math.max(station.corner1.getX(), station.corner2.getX());
+        return minX <= playerX && playerX <= maxX;
+    }
+
+    public static boolean containsY(KSDStation station, double playerY) {
+        double minY = Math.min(station.corner1.getY(), station.corner2.getY());
+        double maxY = Math.max(station.corner1.getY(), station.corner2.getY());
+        return minY <= playerY && playerY <= maxY;
+    }
+
+    public static boolean containsZ(KSDStation station, double playerZ) {
+        double minZ = Math.min(station.corner1.getZ(), station.corner2.getZ());
+        double maxZ = Math.max(station.corner1.getZ(), station.corner2.getZ());
+        return minZ <= playerZ && playerZ <= maxZ;
     }
 }

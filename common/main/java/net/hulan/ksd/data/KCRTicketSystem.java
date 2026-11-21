@@ -4,6 +4,7 @@ import mtr.SoundEvents;
 import mtr.data.TicketSystem;
 import mtr.mappings.Text;
 import mtr.mappings.Utilities;
+import net.hulan.ksd.path.KSDRouteFinder;
 import net.hulan.ksd.utils.DataUtilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -88,7 +89,7 @@ public final class KCRTicketSystem {
                 long expireTime = itemTag.getLong("expire_time");
                 boolean isConcessionary = itemTag.getBoolean("is_concessionary");
                 boolean fcAvailable = itemTag.getBoolean("fc_available");
-                int actualFare = getFare(railwayData.dataCache.wayFinder, enteredStation, exitStation, isConcessionary, fcAvailable);
+                int actualFare = getFare(railwayData.dataCache.pathFinder, enteredStation, exitStation, isConcessionary, fcAvailable);
                 if (isExpired(expireTime)) {
                     playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.expired");
                     return TicketSystem.EnumTicketBarrierOpen.CLOSED;
@@ -112,7 +113,7 @@ public final class KCRTicketSystem {
                 long expireTime = getEntryTime(itemTag) + net.hulan.ksd.utils.Utilities.EXPIRE_TIME;
                 boolean isConcessionary = itemTag.getBoolean("is_concessionary");
                 boolean fcValidated = FirstClassValidationSystem.isValidated(itemTag);
-                int fare = getFare(railwayData.dataCache.wayFinder, enteredStation, exitStation, isConcessionary, fcValidated);
+                int fare = getFare(railwayData.dataCache.pathFinder, enteredStation, exitStation, isConcessionary, fcValidated);
                 if (isExpired(expireTime)) {
                     playSoundAndSendMessage(world, player.blockPosition(), player, SoundEvents.TICKET_PROCESSOR_FAIL, "gui.ksd.expired");
                     return TicketSystem.EnumTicketBarrierOpen.CLOSED;
@@ -133,10 +134,10 @@ public final class KCRTicketSystem {
         return TicketSystem.EnumTicketBarrierOpen.CLOSED;
     }
 
-    public static int getFare(WayFinder wayFinder, KSDStation from, KSDStation to, boolean isConcessionary, boolean fcAvailable) {
-        List<WayFinder.RouteSegment> segments = wayFinder.findBestRoute(from, to);
+    public static int getFare(KSDRouteFinder pathFinder, KSDStation from, KSDStation to, boolean isConcessionary, boolean fcAvailable) {
+        List<KSDRouteFinder.RouteSegment> segments = pathFinder.findBestRoute(from, to);
         int totalFare = BASE_FARE;
-        for (WayFinder.RouteSegment segment : segments) {
+        for (KSDRouteFinder.RouteSegment segment : segments) {
             int part = getZoneFare(segment.from().zone, segment.to().zone) * (segment.hasFCService() && fcAvailable ? 2 : 1);
             totalFare += part;
         }

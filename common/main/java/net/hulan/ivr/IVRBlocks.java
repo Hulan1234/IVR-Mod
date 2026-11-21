@@ -82,5 +82,7 @@ public interface IVRBlocks {
     RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_KCR_WALL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(SingleTicketSystem.TicketType.KCR, true));
     RegistryObject<Block> KCR_SINGLE_TICKET_MACHINE_LIGHT_RAIL_WALL = new RegistryObject<>(() -> new BlockKCRSingleTicketMachine(SingleTicketSystem.TicketType.LRT, true));
     RegistryObject<Block> OCTOPUS_ADD_VALUE_MACHINE_WALL = new RegistryObject<>(BlockOctopusAddValueMachine::new);
+    RegistryObject<Block> KCR_TICKET_BARRIER_ENTRY = new RegistryObject<>(() -> new BlockKCRTicketBarrier(true));
+    RegistryObject<Block> KCR_TICKET_BARRIER_EXIT = new RegistryObject<>(() -> new BlockKCRTicketBarrier(false));
     RegistryObject<Block> MODERN_ROUTE = new RegistryObject<>(BlockModernRouteSign::new);
 }

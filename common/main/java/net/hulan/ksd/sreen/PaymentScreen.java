@@ -9,6 +9,7 @@ import net.hulan.ksd.KSDItems;
 import net.hulan.ksd.data.KCRTicketSystem;
 import net.hulan.ksd.data.PaymentMethod;
 import net.hulan.ksd.packet.KSDPacketClient;
+import net.hulan.ksd.widget.BetterButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.core.BlockPos;
@@ -36,9 +37,9 @@ public abstract class PaymentScreen extends ScreenMapper implements KSDGui {
         this.mtrBalance = mtrBalance;
         this.parent = parent;
         this.storeBlockPos = storeBlockPos;
-        buttonPaymentMethod = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_value"), button -> setPaymentMethod(paymentMethod.next()));
-        buttonConfirm = UtilitiesClient.newButton(Text.translatable("gui.ksd.confirm"), button -> process(true));
-        buttonCancel = UtilitiesClient.newButton(Text.translatable("gui.ksd.cancel"), button -> process(false));
+        buttonPaymentMethod = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.mtr.add_value"), button -> setPaymentMethod(paymentMethod.next()));
+        buttonConfirm = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.ksd.confirm"), button -> process(true));
+        buttonCancel = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.ksd.cancel"), button -> process(false));
     }
 
     protected void init() {

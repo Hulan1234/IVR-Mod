@@ -1,8 +1,6 @@
 package net.hulan.ksd.utils;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import mtr.data.EnumHelper;
-import mtr.data.RouteType;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.client.gui.Font;
@@ -22,8 +20,6 @@ import java.util.function.Predicate;
 public abstract class Utilities {
 
     public static final long EXPIRE_TIME = TimeUnit.MINUTES.toMillis(150);
-
-    public static final RouteType KCR = EnumHelper.valueOf(RouteType.NORMAL, "KCR");
 
     public static ItemStack findFilteredItem(Inventory inventory, Predicate<ItemStack> filter) {
         for (int i = 0; i < inventory.getContainerSize(); i++) {

@@ -9,6 +9,7 @@ import mtr.screen.WidgetBetterCheckbox;
 import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.*;
 import net.hulan.ksd.packet.KSDPacketClient;
+import net.hulan.ksd.path.KSDRouteFinder;
 import net.hulan.ksd.utils.RailDataUtilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -89,7 +90,7 @@ public class STFareAdjustmentScreen extends PaymentScreen {
     }
 
     private void loadTicketData() {
-        WayFinder wayFinder = KSDClientData.DATA_CACHE.wayFinder;
+        KSDRouteFinder pathFinder = KSDClientData.DATA_CACHE.pathFinder;
         CompoundTag singleTicketTag = singleTicketItem.getOrCreateTag();
         long id = singleTicketTag.getLong("id");
         int fare = singleTicketTag.getInt("fare");
@@ -99,7 +100,7 @@ public class STFareAdjustmentScreen extends PaymentScreen {
         boolean fcAvailable = singleTicketTag.getBoolean("fc_available");
         singleTicketId = id;
         originFare = fare;
-        actualFare = KCRTicketSystem.getFare(wayFinder, current, destination, isConcessionary, fcAvailable);
+        actualFare = KCRTicketSystem.getFare(pathFinder, current, destination, isConcessionary, fcAvailable);
         ticketTypeText = ticketType.name();
         expired = KCRTicketSystem.isExpired(expireTime);
         expiredFare = KCRTicketSystem.getExpiredFare(expireTime);

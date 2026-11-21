@@ -4,12 +4,13 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.client.IDrawing;
 import mtr.data.IGui;
 import mtr.mappings.Text;
-import mtr.mappings.UtilitiesClient;
 import mtr.screen.WidgetBetterCheckbox;
 import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.data.*;
 import net.hulan.ksd.packet.KSDPacketClient;
+import net.hulan.ksd.path.KSDRouteFinder;
 import net.hulan.ksd.utils.RailDataUtilities;
+import net.hulan.ksd.widget.BetterButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.MutableComponent;
@@ -40,7 +41,7 @@ public class STProcessingScreen extends PaymentScreen implements IGui {
         buttonFCAvailable = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.fc_available"), this::setFCAvailable);
         for (int i = 0; i < 10; i++) {
             final int amount = i + 1;
-            amountButtons.add(UtilitiesClient.newButton(Text.literal(String.valueOf(amount)), button -> setAmount(amount)));
+            amountButtons.add(new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.literal(String.valueOf(amount)), button -> setAmount(amount)));
         }
     }
 
@@ -79,8 +80,8 @@ public class STProcessingScreen extends PaymentScreen implements IGui {
     }
 
     void countTotal() {
-        WayFinder wayFinder = KSDClientData.DATA_CACHE.wayFinder;
-        fare = KCRTicketSystem.getFare(wayFinder, current, destination, buttonIsConcessionary.selected(), buttonFCAvailable.selected());
+        KSDRouteFinder pathFinder = KSDClientData.DATA_CACHE.pathFinder;
+        fare = KCRTicketSystem.getFare(pathFinder, current, destination, buttonIsConcessionary.selected(), buttonFCAvailable.selected());
         total = fare * amount;
         super.countTotal();
     }

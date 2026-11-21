@@ -5,12 +5,12 @@ import mtr.client.IDrawing;
 import mtr.data.IGui;
 import mtr.mappings.ScreenMapper;
 import mtr.mappings.Text;
-import mtr.mappings.UtilitiesClient;
 import mtr.screen.WidgetBetterCheckbox;
-import mtr.screen.WidgetBetterTextField;
 import net.hulan.ksd.data.OctopusSystem;
 import net.hulan.ksd.data.PaymentMethod;
 import net.hulan.ksd.packet.KSDPacketClient;
+import net.hulan.ksd.widget.BetterButton;
+import net.hulan.ksd.widget.BetterTextField;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.core.BlockPos;
@@ -27,17 +27,17 @@ public class PurchaseOctopusScreen extends PaymentScreen implements IGui {
     private int addValue;
     private final WidgetBetterCheckbox buttonIsConcessionary;
     private final WidgetBetterCheckbox buttonAddValueNow;
-    private final WidgetBetterTextField textFieldAddValue;
+    private final BetterTextField textFieldAddValue;
     private final List<Button> amountButtons = new ArrayList<>(10);
 
     public PurchaseOctopusScreen(int mtrBalance, ScreenMapper parent, BlockPos storeBlockPos) {
         super(mtrBalance, parent, storeBlockPos);
         buttonIsConcessionary = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.is_concessionary"), this::setIsConcessionary);
         buttonAddValueNow = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.ksd.add_value_now"), this::setAddValueNow);
-        textFieldAddValue = new WidgetBetterTextField("Value");
+        textFieldAddValue = new BetterTextField("Value");
         for (int i = 0; i < 10; i++) {
             final int amount = i + 1;
-            amountButtons.add(UtilitiesClient.newButton(Text.literal(String.valueOf(amount)), button -> setAmount(amount)));
+            amountButtons.add(new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.literal(String.valueOf(amount)), button -> setAmount(amount)));
         }
     }
 

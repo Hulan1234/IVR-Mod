@@ -60,6 +60,17 @@
   "gui.ivr.render_config.train": "列车",
   "gui.ivr.render_config.catenary": "接触网",
   "gui.ivr.render_config.ante_rail_box": "ANTE 轨道判定箱",
+  "gui.ivr.render_config.rail_box": "轨道判定箱",
+  "gui.ivr.render_config.eye_candy": "装饰模型",
+  "gui.ivr.render_config.toggle.on": "开",
+  "gui.ivr.render_config.toggle.off": "关",
+  "gui.ivr.render_config.section_culling": "遮挡剔除",
+  "gui.ivr.render_config.section_bounds": "边界学习",
+  "gui.ivr.render_config.section_performance": "性能",
+  "gui.ivr.render_config.generic_bounds.enabled": "通用 BE 边界：开启",
+  "gui.ivr.render_config.generic_bounds.disabled": "通用 BE 边界：关闭",
+  "gui.ivr.render_config.generic_bounds.desc1": "通用 BE 边界学习：首次渲染时记录方块实体实际绘制的范围，",
+  "gui.ivr.render_config.generic_bounds.desc2": "之后用该范围做遮挡剔除；光影启用时默认停用。",
   "gui.ivr.render_config.memory_budget": "内存预算（0=自动）",
   "gui.ivr.render_config.occlusion_rays": "遮挡射线预算",
   "gui.ivr.render_config.save": "保存",
@@ -73,5 +84,7 @@
   "gui.ivr.render_config.cpu_optimization.disabled": "CPU 优化：关闭",
   "gui.ivr.render_config.gpu_optimization.enabled": "GPU 优化：开启",
   "gui.ivr.render_config.gpu_optimization.disabled": "GPU 优化：关闭",
-  "gui.ivr.render_config.save_failed": "保存失败，请检查配置文件"
+  "gui.ivr.render_config.save_failed": "保存失败，请检查配置文件",
+  "gui.ksd.show_rail_map": "显示铁轨走向",
+  "gui.ksd.hide_rail_map": "隐藏铁轨走向"
 }

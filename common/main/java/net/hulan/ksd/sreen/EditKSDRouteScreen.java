@@ -13,9 +13,11 @@ import net.hulan.ksd.client.KSDClientData;
 import net.hulan.ksd.utils.DataUtilities;
 import net.hulan.ksd.data.KSDRoute;
 import net.hulan.ksd.data.KSDStation;
-import net.hulan.ksd.utils.Utilities;
+import net.hulan.ksd.utils.RailDataUtilities;
 import net.hulan.ksd.packet.KSDPacket;
 import net.hulan.ksd.packet.KSDPacketClient;
+import net.hulan.ksd.widget.BetterButton;
+import net.hulan.ksd.widget.BetterTextField;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 
@@ -26,8 +28,8 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
     private RouteType routeType;
     private final Component lightRailRouteNumberText = Text.translatable("gui.mtr.light_rail_route_number");
     private final Component fcCarNumberText = Text.translatable("gui.ksd.fc_car_number");
-    private final WidgetBetterTextField textFieldLightRailRouteNumber;
-    private final WidgetBetterTextField textFieldFCCar;
+    private final BetterTextField textFieldLightRailRouteNumber;
+    private final BetterTextField textFieldFCCar;
     private final Button buttonRouteType;
     private final WidgetBetterCheckbox buttonIsLightRailRoute;
     private final WidgetBetterCheckbox buttonIsRouteHidden;
@@ -42,9 +44,9 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
     public EditKSDRouteScreen(KSDRoute route, KSDDashboardScreen dashboardScreen) {
         super(route, null, "gui.mtr.route_name", "gui.mtr.route_color");
         this.dashboardScreen = dashboardScreen;
-        textFieldLightRailRouteNumber = new WidgetBetterTextField("");
-        textFieldFCCar = new WidgetBetterTextField("");
-        buttonRouteType = UtilitiesClient.newButton(Text.translatable("gui.mtr.add_value"), button -> setRouteTypeText(data.transportMode, routeType.next()));
+        textFieldLightRailRouteNumber = new BetterTextField("");
+        textFieldFCCar = new BetterTextField("");
+        buttonRouteType = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.mtr.add_value"), button -> setRouteTypeText(data.transportMode, routeType.next()));
         buttonIsLightRailRoute = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.mtr.is_light_rail_route"), this::setIsLightRailRoute);
         buttonIsRouteHidden = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.mtr.is_route_hidden"), this::setIsRouteHidden);
         buttonDisableNextStationAnnouncements = new WidgetBetterCheckbox(0, 0, 0, SQUARE_SIZE, Text.translatable("gui.mtr.disable_next_station_announcements"), this::setDisableNextStationAnnouncements);
@@ -108,7 +110,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
             if (textFieldLightRailRouteNumber.visible) {
                 drawString(matrices, font, lightRailRouteNumberText, SQUARE_SIZE, SQUARE_SIZE * 7 + TEXT_PADDING, ARGB_WHITE);
             }
-            if (routeType.equals(Utilities.KCR) && buttonHasFCService.selected()) {
+            if (routeType.equals(RailDataUtilities.KCR) && buttonHasFCService.selected()) {
                 drawString(matrices, font, fcCarNumberText, width / 2 + SQUARE_SIZE, SQUARE_SIZE * 4 + TEXT_PADDING, ARGB_WHITE);
             }
             super.render(matrices, mouseX, mouseY, delta);
@@ -165,7 +167,7 @@ public class EditKSDRouteScreen extends EditNameColorScreenBase<KSDRoute> implem
     private void setRouteTypeText(TransportMode transportMode, RouteType newRouteType) {
         routeType = newRouteType;
         buttonRouteType.setMessage(Text.translatable(String.format("gui.mtr.route_type_%s_%s", transportMode, routeType).toLowerCase(Locale.ENGLISH)));
-        setShowFCService(routeType.equals(Utilities.KCR));
+        setShowFCService(routeType.equals(RailDataUtilities.KCR));
     }
 
     private void setIsLightRailRoute(boolean isLightRailRoute) {

@@ -1,4 +1,4 @@
-package net.hulan.ksd.sreen;
+package net.hulan.ksd.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import mtr.data.IGui;

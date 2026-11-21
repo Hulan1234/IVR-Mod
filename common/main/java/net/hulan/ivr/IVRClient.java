@@ -63,6 +63,8 @@ public class IVRClient implements IVRPacket, IVRBlockEntityTypes, IVRBlocks, IPa
         RegistryClient.registerTileEntityRenderer(MODERN_SIGN_7_EVEN_TILE_ENTITY.get(), RenderModernSign::new);
         RegistryClient.registerTileEntityRenderer(MODERN_SIGN_7_ODD_TILE_ENTITY.get(), RenderModernSign::new);
         RegistryClient.registerTileEntityRenderer(KCR_CLOCK_TILE_ENTITY.get(), RenderKCRClock::new);
+        RegistryClient.registerTileEntityRenderer(KCR_TICKET_BARRIER_ENTRY_TILE_ENTITY.get(), RenderKCRTicketBarrier::new);
+        RegistryClient.registerTileEntityRenderer(KCR_TICKET_BARRIER_EXIT_TILE_ENTITY.get(), RenderKCRTicketBarrier::new);
         RegistryClient.registerTileEntityRenderer(KCR_PSD_DOOR_1_TILE_ENTITY.get(), dispatcher -> new RenderKCRPSDAPGDoor<>(dispatcher, 0));
         RegistryClient.registerTileEntityRenderer(KCR_PSD_DOOR_2_TILE_ENTITY.get(), dispatcher -> new RenderKCRPSDAPGDoor<>(dispatcher, 1));
         RegistryClient.registerTileEntityRenderer(KCR_PSD_TOP_TILE_ENTITY.get(), RenderKCRPSDTop::new);

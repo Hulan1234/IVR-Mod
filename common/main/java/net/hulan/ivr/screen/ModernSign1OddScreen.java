@@ -17,6 +17,7 @@ import net.hulan.ivr.block.BlockKCRRouteSignBase;
 import net.hulan.ivr.packet.IVRPacketTrainDataGuiClient;
 import net.hulan.ivr.render.RenderModernSign;
 import net.hulan.ksd.client.KSDClientData;
+import net.hulan.ksd.widget.BetterButton;
 import net.hulan.ksd.data.KSDPlatform;
 import net.hulan.ksd.data.KSDRailwayData;
 import net.hulan.ksd.data.KSDStation;
@@ -124,15 +125,15 @@ public class ModernSign1OddScreen extends ScreenMapper implements IGui {
         buttonsEdit = new Button[2];
         for (int i = 0; i < buttonsEdit.length; i++) {
             final int index = i;
-            buttonsEdit[i] = UtilitiesClient.newButton(Text.translatable("selectWorld.edit"), button -> edit(index));
+            buttonsEdit[i] = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("selectWorld.edit"), button -> edit(index));
         }
         buttonsSelection = new Button[allSignIds.size()];
         for (int i = 0; i < allSignIds.size(); i++) {
             final int index = i;
-            buttonsSelection[i] = UtilitiesClient.newButton(SIGN_BUTTON_SIZE, Text.literal(""), button -> setNewSignId(allSignIds.get(index)));
+            buttonsSelection[i] = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.literal(""), button -> setNewSignId(allSignIds.get(index)));
         }
-        buttonClear = UtilitiesClient.newButton(Text.translatable("gui.mtr.reset_sign"), button -> setNewSignId(null));
-        buttonLight = UtilitiesClient.newButton(Text.translatable("gui.ivr.cycle_light").append(Text.translatable(luminance ? "options.mtr.on" : "options.mtr.off")), button -> setLuminance(!luminance));
+        buttonClear = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.mtr.reset_sign"), button -> setNewSignId(null));
+        buttonLight = new BetterButton(BetterButton.Style.ROUNDED, BetterButton.BACKGROUND_CYAN, Text.translatable("gui.ivr.cycle_light").append(Text.translatable(luminance ? "options.mtr.on" : "options.mtr.off")), button -> setLuminance(!luminance));
         buttonPrevPage = new ImageButton(0, 0, 0, SQUARE_SIZE, 0, 0, 20, new ResourceLocation("mtr:textures/gui/icon_left.png"), 20, 40, button -> setPage(page - 1));
         buttonNextPage = new ImageButton(0, 0, 0, SQUARE_SIZE, 0, 0, 20, new ResourceLocation("mtr:textures/gui/icon_right.png"), 20, 40, button -> setPage(page + 1));
     }

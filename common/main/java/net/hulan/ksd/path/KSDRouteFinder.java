@@ -1,5 +1,9 @@
-package net.hulan.ksd.data;
+package net.hulan.ksd.path;
 
+import net.hulan.ksd.data.KSDDataCache;
+import net.hulan.ksd.data.KSDPlatform;
+import net.hulan.ksd.data.KSDRoute;
+import net.hulan.ksd.data.KSDStation;
 import net.hulan.ksd.utils.DataUtilities;
 import net.hulan.ksd.utils.RailDataUtilities;
 import org.jetbrains.annotations.NotNull;
@@ -7,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class WayFinder {
+public class KSDRouteFinder {
 
     public final Set<KSDStation> stations;
     public final Map<Long, KSDStation> platformIdToStation;
@@ -20,7 +24,7 @@ public class WayFinder {
     private final Map<StationContext, Set<StationContext>> nextStationContexts = new HashMap<>();
     private final Map<StationContext, Set<StationContext>> previousStationContexts = new HashMap<>();
 
-    public WayFinder(KSDDataCache dataCache) {
+    public KSDRouteFinder(KSDDataCache dataCache) {
         stations = dataCache.stations;
         platformIdToStation = dataCache.platformIdToStation;
         stationIdToPlatforms = dataCache.stationIdToPlatforms;
@@ -282,7 +286,7 @@ public class WayFinder {
             this.transferCost = transferCost;
         }
 
-        public boolean better(@NotNull WayFinder.PathCost other) {
+        public boolean better(@NotNull KSDRouteFinder.PathCost other) {
             if (fcCost != other.fcCost) {
                 return fcCost < other.fcCost;
             }

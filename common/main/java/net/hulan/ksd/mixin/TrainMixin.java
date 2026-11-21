@@ -1,19 +1,14 @@
 package net.hulan.ksd.mixin;
 
-import mtr.block.BlockPSDAPGBase;
-import mtr.block.BlockPlatform;
 import mtr.data.Depot;
-import mtr.data.RailwayData;
 import mtr.data.Train;
 import mtr.path.PathData;
 import net.hulan.ksd.client.KSDClientData;
-import net.hulan.ksd.utils.DataUtilities;
 import net.hulan.ksd.data.KSDPlatform;
 import net.hulan.ksd.data.KSDRailwayData;
-import net.minecraft.core.BlockPos;
+import net.hulan.ksd.data.SpanishPlatformSystem;
+import net.hulan.ksd.utils.DataUtilities;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.phys.Vec3;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -52,6 +47,18 @@ public abstract class TrainMixin {
 
     @Shadow(remap = false)
     protected boolean doorTarget;
+
+    /** Per-train memo table for door scans; see {@link SpanishPlatformSystem}. */
+    @Unique
+    private SpanishPlatformSystem.Cache ivr$scanCache;
+
+    @Unique
+    private SpanishPlatformSystem.Cache iVR$scanCache() {
+        if (ivr$scanCache == null) {
+            ivr$scanCache = new SpanishPlatformSystem.Cache();
+        }
+        return ivr$scanCache;
+    }
 
     @Redirect(method = "calculateCar", at = @At(value = "INVOKE", target = "Lmtr/data/Train;scanDoors(Lnet/minecraft/world/level/Level;DDDFFDI)Z", ordinal = 0))
     private boolean scanLeftDoor(Train instance,
@@ -101,79 +108,28 @@ public abstract class TrainMixin {
                                      double halfSpacing,
                                      int dwellTicks,
                                      KSDPlatform.DoorOpeningSide leftOrRight) {
-        boolean scanDoor;
-        float phase = (float) getTotalDwellTicks() / 2;
         long platformId = path.get(nextPlatformIndex).savedRailBaseId;
         KSDPlatform platform = iVR$getPlatform(world, platformId);
-        if (platform != null && platform.isSpanishPlatform && !platform.doorOpeningSide.equals(KSDPlatform.DoorOpeningSide.DEFAULT)) {
-            boolean spanishCheck, original = iVR$scanDoors(invoker, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing);
-            spanishCheck = platform.doorOpeningSide.equals(leftOrRight);
-            if (phase + DOOR_DELAY <= elapsedDwellTicks && elapsedDwellTicks < phase * 2) {
-                spanishCheck = !spanishCheck;
-            }
-            scanDoor = original && spanishCheck;
-            if (scanDoor) {
-                iVR$openPSDOrAPG(invoker, world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks);
-            }
-            return scanDoor;
-        } else {
-            return invoker.invokeScanDoors(world, trainX, trainY, trainZ, checkYaw, pitch, halfSpacing, dwellTicks);
+        boolean spanish = platform != null && platform.isSpanishPlatform
+                && !platform.doorOpeningSide.equals(KSDPlatform.DoorOpeningSide.DEFAULT);
+        SpanishPlatformSystem.ScanResult entry = SpanishPlatformSystem.scan(
+                iVR$scanCache(), world, platformId, spanish,
+                trainX, trainY, trainZ, checkYaw, pitch, halfSpacing,
+                invoker::invokeSkipScanBlocks);
+        if (!spanish) {
+            return entry.hasPlatform();
         }
-    }
-
-    @Unique
-    private boolean iVR$scanDoors(TrainInvoker invoker,
-                                  Level world,
-                                  double trainX,
-                                  double trainY,
-                                  double trainZ,
-                                  float checkYaw,
-                                  float pitch,
-                                  double halfSpacing) {
-        if (invoker.invokeSkipScanBlocks(world, trainX, trainY, trainZ)) {
-            return false;
-        } else {
-            boolean hasPlatform = false;
-            Vec3 offsetVec = (new Vec3(1.0F, 0.0F, 0.0F)).yRot(checkYaw).xRot(pitch);
-            Vec3 traverseVec = (new Vec3(0.0F, 0.0F, 1.0F)).yRot(checkYaw).xRot(pitch);
-            for(int checkX = 1; checkX <= 3; ++checkX) {
-                for(int checkY = -2; checkY <= 3; ++checkY) {
-                    for(double checkZ = -halfSpacing; checkZ <= halfSpacing; ++checkZ) {
-                        BlockPos checkPos = RailwayData.newBlockPos(trainX + offsetVec.x * (double)checkX + traverseVec.x * checkZ, trainY + (double)checkY, trainZ + offsetVec.z * (double)checkX + traverseVec.z * checkZ);
-                        Block block = world.getBlockState(checkPos).getBlock();
-                        if (block instanceof BlockPlatform || block instanceof BlockPSDAPGBase) {
-                            hasPlatform = true;
-                        }
-                    }
-                }
-            }
-            return hasPlatform;
+        float phase = (float) getTotalDwellTicks() / 2;
+        boolean spanishCheck = platform.doorOpeningSide.equals(leftOrRight);
+        if (phase + DOOR_DELAY <= elapsedDwellTicks && elapsedDwellTicks < phase * 2) {
+            spanishCheck = !spanishCheck;
         }
-    }
-
-    @Unique
-    private void iVR$openPSDOrAPG(TrainInvoker invoker,
-                                  Level world,
-                                  double trainX,
-                                  double trainY,
-                                  double trainZ,
-                                  float checkYaw,
-                                  float pitch,
-                                  double halfSpacing,
-                                  int dwellTicks) {
-        Vec3 offsetVec = (new Vec3(1.0F, 0.0F, 0.0F)).yRot(checkYaw).xRot(pitch);
-        Vec3 traverseVec = (new Vec3(0.0F, 0.0F, 1.0F)).yRot(checkYaw).xRot(pitch);
-        for(int checkX = 1; checkX <= 3; ++checkX) {
-            for(int checkY = -2; checkY <= 3; ++checkY) {
-                for(double checkZ = -halfSpacing; checkZ <= halfSpacing; ++checkZ) {
-                    BlockPos checkPos = RailwayData.newBlockPos(trainX + offsetVec.x * (double)checkX + traverseVec.x * checkZ, trainY + (double)checkY, trainZ + offsetVec.z * (double)checkX + traverseVec.z * checkZ);
-                    Block block = world.getBlockState(checkPos).getBlock();
-                    if (block instanceof BlockPlatform || block instanceof BlockPSDAPGBase) {
-                        invoker.invokeOpenDoors(world, block, checkPos, dwellTicks);
-                    }
-                }
-            }
+        boolean scanDoor = entry.hasPlatform() && spanishCheck;
+        if (scanDoor) {
+            SpanishPlatformSystem.open(world, entry, dwellTicks,
+                    (block, pos, ticks) -> invoker.invokeOpenDoors(world, block, pos, ticks));
         }
+        return scanDoor;
     }
 
     @Unique
